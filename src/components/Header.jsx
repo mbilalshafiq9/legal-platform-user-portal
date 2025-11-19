@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AuthService from "../services/AuthService";
 import blank from "../assets/images/notification-profile.png";
@@ -59,6 +59,8 @@ const Header = () => {
   const [isDarkMode, setIsDarkMode] = useState(
     localStorage.getItem("darkMode") === "true" || false
   );
+  const profileDropdownTimeoutRef = useRef(null);
+  const notificationDropdownTimeoutRef = useRef(null);
 
   // Check if we're on the Ask Question page
   const isAskQuestionPage =
@@ -113,6 +115,54 @@ const Header = () => {
     navigate("/employees/detail");
     setShowProfileDropdown(false);
   };
+
+  // Handle profile dropdown with delay to prevent closing when moving cursor to dropdown
+  const handleProfileDropdownEnter = () => {
+    // Clear any pending timeout
+    if (profileDropdownTimeoutRef.current) {
+      clearTimeout(profileDropdownTimeoutRef.current);
+      profileDropdownTimeoutRef.current = null;
+    }
+    setShowProfileDropdown(true);
+  };
+
+  const handleProfileDropdownLeave = () => {
+    // Add a small delay before closing to allow cursor to move to dropdown
+    profileDropdownTimeoutRef.current = setTimeout(() => {
+      setShowProfileDropdown(false);
+      profileDropdownTimeoutRef.current = null;
+    }, 200); // 200ms delay
+  };
+
+  // Handle notification dropdown with delay to prevent closing when moving cursor to dropdown
+  const handleNotificationDropdownEnter = () => {
+    // Clear any pending timeout
+    if (notificationDropdownTimeoutRef.current) {
+      clearTimeout(notificationDropdownTimeoutRef.current);
+      notificationDropdownTimeoutRef.current = null;
+    }
+    setShowNotificationDropdown(true);
+  };
+
+  const handleNotificationDropdownLeave = () => {
+    // Add a small delay before closing to allow cursor to move to dropdown
+    notificationDropdownTimeoutRef.current = setTimeout(() => {
+      setShowNotificationDropdown(false);
+      notificationDropdownTimeoutRef.current = null;
+    }, 200); // 200ms delay
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (profileDropdownTimeoutRef.current) {
+        clearTimeout(profileDropdownTimeoutRef.current);
+      }
+      if (notificationDropdownTimeoutRef.current) {
+        clearTimeout(notificationDropdownTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
@@ -197,13 +247,13 @@ const Header = () => {
       style={{
         top: "100%",
         right: "0",
-        width: "237px",
+        width: "320px",
         maxHeight: "300px",
         zIndex: 1050,
-        marginTop: "0px",
+        marginTop: "10px",
       }}
-      onMouseEnter={() => setShowNotificationDropdown(true)}
-      onMouseLeave={() => setShowNotificationDropdown(false)}
+      onMouseEnter={handleNotificationDropdownEnter}
+      onMouseLeave={handleNotificationDropdownLeave}
     >
       <div
         className="notification-list"
@@ -260,10 +310,10 @@ const Header = () => {
         right: "0",
         width: "275px",
         zIndex: 1050,
-        marginTop: "10px",
+        marginTop: "5px",
       }}
-      onMouseEnter={() => setShowProfileDropdown(true)}
-      onMouseLeave={() => setShowProfileDropdown(false)}
+      onMouseEnter={handleProfileDropdownEnter}
+      onMouseLeave={handleProfileDropdownLeave}
     >
       <div className="p-3">
         <div className="d-flex align-items-center mb-3">
@@ -352,13 +402,13 @@ const Header = () => {
             
             <div
               className="modern-icon-container position-relative"
-              onMouseEnter={() => setShowNotificationDropdown(true)}
-              onMouseLeave={() => setShowNotificationDropdown(false)}
+              onMouseEnter={handleNotificationDropdownEnter}
+              onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell text-gray-600 fs-4"></i>
               {notifications.length > 0 && (
                 <span
-                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
                   style={{ fontSize: "0.6rem" }}
                 >
                   {notifications.length}
@@ -368,8 +418,8 @@ const Header = () => {
             </div>
             <div 
               className="symbol symbol-40px position-relative"
-              onMouseEnter={() => setShowProfileDropdown(true)}
-              onMouseLeave={() => setShowProfileDropdown(false)}
+              onMouseEnter={handleProfileDropdownEnter}
+              onMouseLeave={handleProfileDropdownLeave}
             >
               <div className="symbol-label text-white rounded-circle cursor-pointer">
                 <img
@@ -429,13 +479,13 @@ const Header = () => {
             
             <div
               className="modern-icon-container position-relative"
-              onMouseEnter={() => setShowNotificationDropdown(true)}
-              onMouseLeave={() => setShowNotificationDropdown(false)}
+              onMouseEnter={handleNotificationDropdownEnter}
+              onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell text-gray-600 fs-4"></i>
               {notifications.length > 0 && (
                 <span
-                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
                   style={{ fontSize: "0.6rem" }}
                 >
                   {notifications.length}
@@ -445,8 +495,8 @@ const Header = () => {
             </div>
             <div 
               className="symbol symbol-40px position-relative"
-              onMouseEnter={() => setShowProfileDropdown(true)}
-              onMouseLeave={() => setShowProfileDropdown(false)}
+              onMouseEnter={handleProfileDropdownEnter}
+              onMouseLeave={handleProfileDropdownLeave}
             >
               <div className="symbol-label bg-warning text-white rounded-circle cursor-pointer">
                 <img
@@ -506,13 +556,13 @@ const Header = () => {
             
             <div
               className="modern-icon-container position-relative"
-              onMouseEnter={() => setShowNotificationDropdown(true)}
-              onMouseLeave={() => setShowNotificationDropdown(false)}
+              onMouseEnter={handleNotificationDropdownEnter}
+              onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell text-gray-600 fs-4"></i>
               {notifications.length > 0 && (
                 <span
-                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
                   style={{ fontSize: "0.6rem" }}
                 >
                   {notifications.length}
@@ -522,8 +572,8 @@ const Header = () => {
             </div>
             <div 
               className="symbol symbol-40px position-relative"
-              onMouseEnter={() => setShowProfileDropdown(true)}
-              onMouseLeave={() => setShowProfileDropdown(false)}
+              onMouseEnter={handleProfileDropdownEnter}
+              onMouseLeave={handleProfileDropdownLeave}
             >
               <div className="symbol-label bg-warning text-white rounded-circle cursor-pointer">
                 <img
@@ -583,13 +633,13 @@ const Header = () => {
             
             <div
               className="modern-icon-container position-relative"
-              onMouseEnter={() => setShowNotificationDropdown(true)}
-              onMouseLeave={() => setShowNotificationDropdown(false)}
+              onMouseEnter={handleNotificationDropdownEnter}
+              onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell text-gray-600 fs-4"></i>
               {notifications.length > 0 && (
                 <span
-                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
                   style={{ fontSize: "0.6rem" }}
                 >
                   {notifications.length}
@@ -599,8 +649,8 @@ const Header = () => {
             </div>
             <div 
               className="modern-icon-container position-relative"
-              onMouseEnter={() => setShowProfileDropdown(true)}
-              onMouseLeave={() => setShowProfileDropdown(false)}
+              onMouseEnter={handleProfileDropdownEnter}
+              onMouseLeave={handleProfileDropdownLeave}
             >
               <img
                 src={blank}
@@ -660,13 +710,13 @@ const Header = () => {
             
             <div
               className="modern-icon-container position-relative"
-              onMouseEnter={() => setShowNotificationDropdown(true)}
-              onMouseLeave={() => setShowNotificationDropdown(false)}
+              onMouseEnter={handleNotificationDropdownEnter}
+              onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell text-gray-600 fs-4"></i>
               {notifications.length > 0 && (
                 <span
-                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
                   style={{ fontSize: "0.6rem" }}
                 >
                   {notifications.length}
@@ -676,8 +726,8 @@ const Header = () => {
             </div>
             <div 
               className="modern-icon-container position-relative"
-              onMouseEnter={() => setShowProfileDropdown(true)}
-              onMouseLeave={() => setShowProfileDropdown(false)}
+              onMouseEnter={handleProfileDropdownEnter}
+              onMouseLeave={handleProfileDropdownLeave}
             >
               <img
                 src={blank}
@@ -734,7 +784,7 @@ const Header = () => {
             <div className="modern-icon-container position-relative">
               <i className="bi bi-bell text-gray-600 fs-4"></i>
               <span
-                className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
                 style={{ fontSize: "0.6rem" }}
               >
                 3
@@ -742,8 +792,8 @@ const Header = () => {
             </div>
             <div 
               className="modern-icon-container position-relative"
-              onMouseEnter={() => setShowProfileDropdown(true)}
-              onMouseLeave={() => setShowProfileDropdown(false)}
+              onMouseEnter={handleProfileDropdownEnter}
+              onMouseLeave={handleProfileDropdownLeave}
             >
               <img
                 src={blank}
@@ -799,13 +849,13 @@ const Header = () => {
             
             <div
               className="modern-icon-container position-relative"
-              onMouseEnter={() => setShowNotificationDropdown(true)}
-              onMouseLeave={() => setShowNotificationDropdown(false)}
+              onMouseEnter={handleNotificationDropdownEnter}
+              onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell text-gray-600 fs-4"></i>
               {notifications.length > 0 && (
                 <span
-                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
                   style={{ fontSize: "0.6rem" }}
                 >
                   {notifications.length}
@@ -815,8 +865,8 @@ const Header = () => {
             </div>
             <div 
               className="modern-icon-container position-relative"
-              onMouseEnter={() => setShowProfileDropdown(true)}
-              onMouseLeave={() => setShowProfileDropdown(false)}
+              onMouseEnter={handleProfileDropdownEnter}
+              onMouseLeave={handleProfileDropdownLeave}
             >
               <img
                 src={blank}
@@ -874,13 +924,13 @@ const Header = () => {
             
             <div
               className="modern-icon-container position-relative"
-              onMouseEnter={() => setShowNotificationDropdown(true)}
-              onMouseLeave={() => setShowNotificationDropdown(false)}
+              onMouseEnter={handleNotificationDropdownEnter}
+              onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell text-gray-600 fs-4"></i>
               {notifications.length > 0 && (
                 <span
-                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
                   style={{ fontSize: "0.6rem" }}
                 >
                   {notifications.length}
@@ -890,8 +940,8 @@ const Header = () => {
             </div>
             <div 
               className="modern-icon-container position-relative"
-              onMouseEnter={() => setShowProfileDropdown(true)}
-              onMouseLeave={() => setShowProfileDropdown(false)}
+              onMouseEnter={handleProfileDropdownEnter}
+              onMouseLeave={handleProfileDropdownLeave}
             >
               <img
                 src={blank}
@@ -919,7 +969,7 @@ const Header = () => {
               </div>
             </div>
             <div>
-              <h1 className="fw-bold text-dark fs-2 mb-2">Employee</h1>
+              <h1 className="fw-bold text-dark fs-2 mb-2">Team</h1>
               <p className="text-gray-600 fs-6 mb-0">
                 Add your team members and send invites.
               </p>
@@ -949,13 +999,13 @@ const Header = () => {
             
             <div
               className="modern-icon-container position-relative"
-              onMouseEnter={() => setShowNotificationDropdown(true)}
-              onMouseLeave={() => setShowNotificationDropdown(false)}
+              onMouseEnter={handleNotificationDropdownEnter}
+              onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell text-gray-600 fs-4"></i>
               {notifications.length > 0 && (
                 <span
-                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
                   style={{ fontSize: "0.6rem" }}
                 >
                   {notifications.length}
@@ -965,8 +1015,8 @@ const Header = () => {
             </div>
             <div 
               className="modern-icon-container position-relative"
-              onMouseEnter={() => setShowProfileDropdown(true)}
-              onMouseLeave={() => setShowProfileDropdown(false)}
+              onMouseEnter={handleProfileDropdownEnter}
+              onMouseLeave={handleProfileDropdownLeave}
             >
               <img
                 src={blank}
@@ -1007,7 +1057,7 @@ const Header = () => {
           </div>
 
           {/* Right side icons */}
-          <div className="modern-icons-container d-flex align-items-center gap-3">
+          <div className="modern-icons-container d-flex align-items-center gap-5image.png">
             {/* Dark Mode Toggle */}
             <motion.div 
               className="modern-icon-container dark-mode-toggle"
@@ -1039,8 +1089,8 @@ const Header = () => {
             {/* Notifications Icon */}
             <div
               className="modern-notification-container position-relative"
-              onMouseEnter={() => setShowNotificationDropdown(true)}
-              onMouseLeave={() => setShowNotificationDropdown(false)}
+              onMouseEnter={handleNotificationDropdownEnter}
+              onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell modern-icon"></i>
               {notifications.length > 0 && (
@@ -1052,8 +1102,8 @@ const Header = () => {
             {/* User Profile */}
             <div
               className="app-navbar-item ms-1 ms-lg-3 position-relative"
-              onMouseEnter={() => setShowProfileDropdown(true)}
-              onMouseLeave={() => setShowProfileDropdown(false)}
+              onMouseEnter={handleProfileDropdownEnter}
+              onMouseLeave={handleProfileDropdownLeave}
             >
               <div className="cursor-pointer symbol symbol-35px symbol-md-40px profile-dropdown">
                 <img src={blank} alt="user" className="modern-profile-image" />

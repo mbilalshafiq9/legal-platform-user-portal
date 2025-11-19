@@ -140,16 +140,16 @@ const EmployeesList = () => {
               className="btn btn-white px-4 py-3 d-flex align-items-center gap-2 employees-add-button"
               style={{
                 borderRadius: "50px",
-                border: "1px solid #e0e0e0",
+                border: "none",
                 fontSize: "14px",
                 fontWeight: "500",
-                backgroundColor: "#fff",
-                color: "#000",
+                backgroundColor: "#ffffff",
+                color: "#000000",
               }}
               onClick={() => setShowAddEmployee(true)}
             >
               <i className="bi bi-plus-circle-fill"></i>
-              Add New Employee
+              Add New Team
             </button>
           </div>
         </div>
@@ -342,7 +342,7 @@ const EmployeesList = () => {
         }}
       >
         <div className="offcanvas-header border-bottom">
-          <h5 className="offcanvas-title fw-bold">Add New Employee</h5>
+          <h5 className="offcanvas-title fw-bold">Add New Team</h5>
           <button
             type="button"
             className="btn-close"

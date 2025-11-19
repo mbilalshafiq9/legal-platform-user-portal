@@ -1,12 +1,27 @@
 import React, { useState } from "react";
 import notificationProfile from "../../assets/images/notification-profile.png";
 import circle from "../../assets/images/yellow-circle.png";
+import NoMessage from "../../assets/images/NoMessage.png";
 
 const List = () => {
   const [activeTab, setActiveTab] = useState("chats");
   const [activeSubTab, setActiveSubTab] = useState("active");
   const [selectedContact, setSelectedContact] = useState(null);
   const [newMessage, setNewMessage] = useState("");
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      text: "I will review the contract and get back to you with my analysis.",
+      time: "10:30 AM",
+      isFromUser: false,
+    },
+    {
+      id: 2,
+      text: "Thank you for the quick response. I'll wait for your feedback.",
+      time: "10:32 AM",
+      isFromUser: true,
+    },
+  ]);
 
   // Sample lawyers data - Active Lawyers
   const activeLawyers = [
@@ -195,29 +210,26 @@ const List = () => {
     },
   ];
 
-  // Sample messages
-  const messages = [
-    {
-      id: 1,
-      text: "I will review the contract and get back to you with my analysis.",
-      time: "10:30 AM",
-      isFromUser: false,
-    },
-    {
-      id: 2,
-      text: "Thank you for the quick response. I'll wait for your feedback.",
-      time: "10:32 AM",
-      isFromUser: true,
-    },
-  ];
-
   const handleContactSelect = (contact) => {
     setSelectedContact(contact);
   };
 
   const handleSendMessage = () => {
     if (newMessage.trim()) {
-      console.log("Sending message:", newMessage);
+      const currentTime = new Date().toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+      });
+      
+      const newMsg = {
+        id: messages.length + 1,
+        text: newMessage.trim(),
+        time: currentTime,
+        isFromUser: true,
+      };
+      
+      setMessages([...messages, newMsg]);
       setNewMessage("");
     }
   };
@@ -265,7 +277,7 @@ const List = () => {
                 <div className="py-4">
                   <div className="d-flex gap-2 my-lawyers-tabs-container">
                     <button
-                      className={`btn flex-fill d-flex align-items-center justify-content-center gap-2 portal-tab-hover ${
+                      className={`btn flex-fill d-flex align-items-center justify-content-center gap-2 portal-tab-hover my-lawyers-main-tab ${
                         activeTab === "chats"
                           ? "border-bottom-3px text-black rounded-0 active"
                           : "text-black"
@@ -280,7 +292,7 @@ const List = () => {
                       )}
                     </button>
                     <button
-                      className={`btn flex-fill d-flex align-items-center justify-content-center gap-2 portal-tab-hover ${
+                      className={`btn flex-fill d-flex align-items-center justify-content-center gap-2 portal-tab-hover my-lawyers-main-tab ${
                         activeTab === "lawyers"
                           ? "border-bottom-3px text-black rounded-0 active"
                           : "text-black"
@@ -350,10 +362,12 @@ const List = () => {
                   {getCurrentData().map((item, index) => (
                     <div
                       key={item.id}
-                      className="p-3 cursor-pointer mb-3 bg-white my-lawyers-contact-card portal-card-hover"
+                      className={`p-3 cursor-pointer mb-3 my-lawyers-contact-card portal-card-hover ${
+                        selectedContact?.id === item.id
+                          ? "my-lawyers-contact-card-active"
+                          : "bg-white"
+                      }`}
                       onClick={() => handleContactSelect(item)}
-                      data-aos="fade-up"
-                      data-aos-delay={`${100 + index * 50}`}
                     >
                       {activeTab === "lawyers" ? (
                         // Lawyers Layout
@@ -582,11 +596,11 @@ const List = () => {
                 <div className="d-flex align-items-center justify-content-center h-100 bg-light">
                   <div className="text-center p-5">
                     <div className="mb-4">
-                      <i className="bi bi-chat-dots text-muted" style={{ fontSize: "4rem" }}></i>
+                      <img src={NoMessage} alt="No Message" style={{ maxWidth: "200px", height: "auto" }} />
                     </div>
-                    <h4 className="text-muted mb-2">Welcome to Chat</h4>
+                    <h4 className="text-muted mb-2 fw-bold">No Messages, Yet.</h4>
                     <p className="text-muted mb-0">
-                      Select a contact from the list to start chatting
+                      You don't have any messages yet.
                     </p>
                   </div>
                 </div>

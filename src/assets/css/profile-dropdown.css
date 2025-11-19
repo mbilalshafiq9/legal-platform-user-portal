@@ -38,7 +38,7 @@
 
 /* Separator styling */
 .profile-dropdown .separator {
-  border-top: 1px solid #e9ecef;
+  border-top: 0.5px solid #e9ecef;
   margin: 0.75rem 0;
 }
 

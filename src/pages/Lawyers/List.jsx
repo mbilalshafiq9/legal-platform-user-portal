@@ -1,6 +1,25 @@
 import React, { useState, useEffect } from "react";
+import { Dropdown } from "primereact/dropdown";
 import notificationProfile from "../../assets/images/lawyerImg.png";
 import lawyersImg from "../../assets/images/Lawyers.png";
+import NoLawyer from "../../assets/images/NoLawyer.png";
+
+// Import all profile images for slider
+import profile1 from "../../assets/images/profiles/profile1.jpeg";
+import profile2 from "../../assets/images/profiles/profile2.jpeg";
+import profile3 from "../../assets/images/profiles/profile3.jpeg";
+import profile4 from "../../assets/images/profiles/profile4.jpeg";
+import profile5 from "../../assets/images/profiles/profile5.jpeg";
+import profile6 from "../../assets/images/profiles/profile6.jpeg";
+import profile7 from "../../assets/images/profiles/profile7.jpeg";
+import profile8 from "../../assets/images/profiles/profile8.jpeg";
+import profile9 from "../../assets/images/profiles/profile9.jpeg";
+import profile10 from "../../assets/images/profiles/profile10.jpeg";
+import profile11 from "../../assets/images/profiles/profile11.jpeg";
+import profile12 from "../../assets/images/profiles/profile12.jpeg";
+import profile13 from "../../assets/images/profiles/profile13.jpeg";
+import profile14 from "../../assets/images/profiles/profile14.jpeg";
+import profile15 from "../../assets/images/profiles/profile15.jpeg";
 
 const List = () => {
   const [selectedFilter, setSelectedFilter] = useState("Company");
@@ -12,10 +31,44 @@ const List = () => {
   const [showLawyerDetail, setShowLawyerDetail] = useState(false);
   const [selectedLawyer, setSelectedLawyer] = useState(null);
   const [imageLoadingStates, setImageLoadingStates] = useState({});
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  
+  // Profile images array for slider
+  const profileImages = [
+    profile1, profile2, profile3, profile4, profile5,
+    profile6, profile7, profile8, profile9, profile10,
+    profile11, profile12, profile13, profile14, profile15
+  ];
+  const pricingOptions = [
+    { label: "$275 / One Time Service", value: "one-time" },
+    { label: "$150 / Hourly Consultation", value: "hourly" },
+    { label: "$350 / Retainer Service", value: "retainer" },
+    { label: "$500 / Premium Package", value: "premium" },
+    { label: "$200 / Consultation Package", value: "consultation" },
+    { label: "$400 / Legal Document Review", value: "document-review" },
+  ];
+  const [selectedPricingOption, setSelectedPricingOption] = useState(null);
+
+  const currentPricingLabel =
+    pricingOptions.find((option) => option.value === selectedPricingOption)
+      ?.label || pricingOptions[0].label;
 
   const handleLawyerClick = (lawyer) => {
     setSelectedLawyer(lawyer);
     setShowLawyerDetail(true);
+    setCurrentSlideIndex(0); // Reset slider to first image when opening
+  };
+
+  const nextSlide = () => {
+    setCurrentSlideIndex((prev) => (prev + 1) % profileImages.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlideIndex((prev) => (prev - 1 + profileImages.length) % profileImages.length);
+  };
+
+  const goToSlide = (index) => {
+    setCurrentSlideIndex(index);
   };
 
   const handleImageLoad = (imageId) => {
@@ -37,14 +90,14 @@ const List = () => {
     {
       id: 1,
       type: "Company",
-      firmName: "Justin Justice Law Firm Company",
+      firmName: "Sofia Lawyer",
       rating: 4.5,
-      location: "Dubai Internet City UAE",
+      location: "Dubai, United Arab Emirates",
       specialization: "Commercial Law + Jurisdiction: UAE+",
       image: lawyersImg,
       category: "Commercial Law",
       jurisdiction: "UAE",
-      description: "Leading commercial law firm specializing in corporate transactions and business law."
+      description: "Sophia grant is a distinguished attorney with over a decade of experience in providing comprehensive legal services to..."
     },
     {
       id: 2,
@@ -280,11 +333,11 @@ const List = () => {
                    </button>
                    
                    {showCategoryDropdown && (
-                     <div className="position-absolute top-100 start-0 mt-1 bg-white border rounded shadow-lg" style={{ zIndex: 1000, minWidth: "200px" }}>
+                     <div className="position-absolute top-100 start-0 mt-1 bg-white border rounded shadow-lg lawyers-filter-dropdown" style={{ zIndex: 1000, minWidth: "200px" }}>
                        {categories.map((category) => (
                          <button
                            key={category}
-                           className="btn btn-light w-100 text-start px-3 py-2 border-0"
+                           className="btn btn-light w-100 text-start px-3 py-2 border-0 lawyers-filter-dropdown-item"
                            onClick={() => handleCategorySelect(category)}
                            style={{ fontSize: "0.9rem" }}
                          >
@@ -325,11 +378,11 @@ const List = () => {
                    </button>
                    
                    {showJurisdictionDropdown && (
-                     <div className="position-absolute top-100 start-0 mt-1 bg-white border rounded shadow-lg" style={{ zIndex: 1000, minWidth: "200px" }}>
+                     <div className="position-absolute top-100 start-0 mt-1 bg-white border rounded shadow-lg lawyers-filter-dropdown" style={{ zIndex: 1000, minWidth: "200px" }}>
                        {jurisdictions.map((jurisdiction) => (
                          <button
                            key={jurisdiction}
-                           className="btn btn-light w-100 text-start px-3 py-2 border-0"
+                           className="btn btn-light w-100 text-start px-3 py-2 border-0 lawyers-filter-dropdown-item"
                            onClick={() => handleJurisdictionSelect(jurisdiction)}
                            style={{ fontSize: "0.9rem" }}
                          >
@@ -370,7 +423,20 @@ const List = () => {
 
       {/* Lawyers Grid */}
       <div className="row">
-        {getCurrentData().map((lawyer, index) => (
+        {getCurrentData().length === 0 ? (
+          <div className="col-12 d-flex align-items-center justify-content-center" style={{ minHeight: "400px" }}>
+            <div className="text-center p-5">
+              <div className="mb-4">
+                <img src={NoLawyer} alt="No Lawyer" style={{ maxWidth: "200px", height: "auto" }} />
+              </div>
+              <h4 className="text-muted mb-2 fw-bold">No Lawyers Hired</h4>
+              <p className="text-muted mb-0">
+                You haven't hired any lawyers yet.
+              </p>
+            </div>
+          </div>
+        ) : (
+          getCurrentData().map((lawyer, index) => (
           <div key={lawyer.id} className="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay={`${100 + index * 100}`}>
             <div
               className="card h-100 shadow-sm portal-card-hover"
@@ -417,26 +483,26 @@ const List = () => {
                     <p className="text-muted mb-3" style={{ fontSize: "0.9rem", fontWeight: "500" }}>{lawyer.title}</p>
                     <div className="d-flex align-items-center justify-content-start mb-3">
                       <div className="d-flex align-items-center me-5">
-                        <i className="bi bi-star-fill text-warning me-1" style={{ fontSize: "0.9rem" }}></i>
+                        <i className="bi bi-star-fill text-dark me-1" style={{ fontSize: "0.9rem" }}></i>
                         <span className="fw-bold text-dark lawyers-rating-hover" style={{ fontSize: "0.9rem" }}>
                           {lawyer.rating}
                         </span>
                       </div>
                       <div className="d-flex align-items-center">
                         <i className="bi bi-geo-alt-fill text-muted me-1" style={{ fontSize: "0.8rem" }}></i>
-                        <span className="text-muted" style={{ fontSize: "0.85rem" }}>{lawyer.location}</span>
+                        <span className="text-muted" style={{ fontSize: "1rem" }}>{lawyer.location}</span>
                       </div>
                     </div>
                     <p className="text-muted mb-0" style={{ fontSize: "0.8rem", lineHeight: "1.4" }}>{lawyer.specialization}</p>
                   </>
                 ) : (
                   <>
-                    <h5 className="card-title fw-bold text-dark mb-2" style={{ fontSize: "1.1rem", lineHeight: "1.3" }}>
+                    <h5 className="card-title fw-bold text-dark mb-2" style={{ fontSize: "1.6rem", lineHeight: "1.3" }}>
                       {lawyer.firmName}
                     </h5>
                     <div className="d-flex align-items-center justify-content-start mb-3">
                       <div className="d-flex align-items-center me-5">
-                        <i className="bi bi-star-fill text-warning me-1" style={{ fontSize: "0.9rem" }}></i>
+                        <i className="bi bi-star-fill text-dark me-1" style={{ fontSize: "0.9rem" }}></i>
                         <span className="fw-bold text-dark lawyers-rating-hover" style={{ fontSize: "0.9rem" }}>
                           {lawyer.rating}
                         </span>
@@ -452,7 +518,8 @@ const List = () => {
               </div>
             </div>
           </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Lawyer Detail Offcanvas */}
@@ -460,8 +527,23 @@ const List = () => {
         <div
           className="offcanvas offcanvas-end show"
           tabIndex="-1"
+          style={{ position: "fixed" }}
         >
-          <div className="offcanvas-header p-3 p-md-4">
+          <div
+            className="position-absolute top-0 start-0 m-3"
+            style={{ zIndex: 1100 }}
+          >
+            <button
+              type="button"
+              className="btn btn-light rounded-circle shadow-sm d-flex align-items-center justify-content-center lawyer-detail-close-btn"
+              style={{ width: "40px", height: "40px" }}
+              onClick={() => setShowLawyerDetail(false)}
+              aria-label="Close lawyer details"
+            >
+              <i className="bi bi-x-lg fs-5 pe-0"></i>
+            </button>
+          </div>
+          {/* <div className="offcanvas-header p-3 p-md-4">
             <div className="d-flex justify-content-between align-items-center w-100">
               <h5 className="mb-0 fw-bold fs-5 fs-md-4">Lawyer Detail</h5>
               <button
@@ -470,30 +552,113 @@ const List = () => {
                 onClick={() => setShowLawyerDetail(false)}
               ></button>
             </div>
-          </div>
+          </div> */}
 
           <div className="offcanvas-body p-0 d-flex flex-column" style={{ height: "100%" }}>
-            <div className="p-3 p-md-4 flex-grow-1" style={{ overflowY: "auto" }}>
-              {/* Main Image */}
-              <div className="mb-4">
-                <img
-                  src={selectedLawyer.image}
-                  alt={selectedLawyer.type === "Individual" ? selectedLawyer.name : selectedLawyer.firmName}
-                  className="w-100 rounded"
-                  loading="lazy"
-                  decoding="async"
-                  onLoad={() => handleImageLoad(`detail-${selectedLawyer.id}`)}
-                  onError={() => handleImageError(`detail-${selectedLawyer.id}`)}
-                  style={{ 
-                    height: "250px", 
-                    objectFit: "cover",
+            <div className="p-0 flex-grow-1" style={{ overflowY: "auto" }}>
+              {/* Image Slider */}
+              <div className="mb-4 position-relative" style={{ height: "390px" }}>
+                {/* Slider Container */}
+                <div
+                  className="position-relative w-100 h-100"
+                  style={{
+                    overflow: "hidden",
+                    borderTopRightRadius: "15px",
+                    borderTopLeftRadius: "15px",
                     backgroundColor: "#f8f9fa"
                   }}
-                />
+                >
+                  {/* Images */}
+                  {profileImages.map((image, index) => (
+                    <img
+                      key={index}
+                      src={image}
+                      alt={`Profile ${index + 1}`}
+                      className="w-100 h-100"
+                      loading="lazy"
+                      decoding="async"
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        objectPosition: "center top",
+                        opacity: index === currentSlideIndex ? 1 : 0,
+                        transition: "opacity 0.5s ease-in-out",
+                        borderTopRightRadius: "15px",
+                        borderTopLeftRadius: "15px",
+                      }}
+                    />
+                  ))}
+
+                  {/* Navigation Arrows */}
+                  <button
+                    type="button"
+                    className="btn btn-light rounded-circle position-absolute top-50 start-0 translate-middle-y ms-3 shadow-sm"
+                    style={{
+                      width: "40px",
+                      height: "40px",
+                      zIndex: 10,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: "rgba(255, 255, 255, 0.9)",
+                    }}
+                    onClick={prevSlide}
+                    aria-label="Previous image"
+                  >
+                    <i className="bi bi-chevron-left fs-5"></i>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-light rounded-circle position-absolute top-50 end-0 translate-middle-y me-3 shadow-sm"
+                    style={{
+                      width: "40px",
+                      height: "40px",
+                      zIndex: 10,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: "rgba(255, 255, 255, 0.9)",
+                    }}
+                    onClick={nextSlide}
+                    aria-label="Next image"
+                  >
+                    <i className="bi bi-chevron-right fs-5"></i>
+                  </button>
+
+                  {/* Dots Indicator */}
+                  <div
+                    className="position-absolute bottom-0 start-50 translate-middle-x mb-3"
+                    style={{ zIndex: 10 }}
+                  >
+                    <div className="d-flex gap-2">
+                      {profileImages.map((_, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          className="btn p-0 border-0"
+                          onClick={() => goToSlide(index)}
+                          style={{
+                            width: index === currentSlideIndex ? "24px" : "8px",
+                            height: "8px",
+                            borderRadius: "4px",
+                            backgroundColor: index === currentSlideIndex ? "#ffffff" : "rgba(255, 255, 255, 0.5)",
+                            transition: "all 0.3s ease",
+                            cursor: "pointer",
+                          }}
+                          aria-label={`Go to slide ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Thumbnail Images */}
-              <div className="d-flex gap-2 mb-4">
+              {/* <div className="d-flex gap-2 mb-4">
                 {[1, 2, 3, 4].map((index) => (
                   <div
                     key={index}
@@ -514,36 +679,46 @@ const List = () => {
                     />
                   </div>
                 ))}
-              </div>
+              </div> */}
 
               {/* Location */}
-              <div className="mb-2">
-                <small className="text-muted">{selectedLawyer.location}</small>
+              <div className="mb-2 px-3">
+                <small className="text-muted fs-3">{selectedLawyer.location}</small>
               </div>
 
               {/* Name and Rating */}
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h4 className="fw-bold text-dark mb-0">
+              <div className="d-flex justify-content-between align-items-center mb-3 px-3 lawyer-card-title">
+                <h1 className="fw-bold text-dark mb-0">
                   {selectedLawyer.type === "Individual" ? selectedLawyer.name : selectedLawyer.firmName}
-                </h4>
+                </h1>
                 <div className="d-flex align-items-center">
                   <span className="text-muted me-2">
-                    {selectedLawyer.type === "Individual" ? selectedLawyer.title : "Law Firm"}
+                    {selectedLawyer.type === "Individual" ? selectedLawyer.title : "Commercial Lawyer"}
                   </span>
                   <div className="d-flex align-items-center">
-                    <i className="bi bi-star-fill text-warning me-1"></i>
+                    <i className="bi bi-star-fill text-dark me-1"></i>
                     <span className="fw-bold">{selectedLawyer.rating}</span>
                   </div>
                 </div>
               </div>
 
               {/* Description */}
-              <p className="text-muted mb-4" style={{ lineHeight: "1.6" }}>
+              <p className="text-muted mb-4 px-3" style={{ lineHeight: "1.6" }}>
                 {selectedLawyer.description || "Experienced legal professional with expertise in various areas of law. Committed to providing high-quality legal services and achieving the best outcomes for clients."}
               </p>
+              <div className="px-3">
+                <h2>Jurisdiction</h2>
+                <p className="text-muted">UAE Jurisdiction</p>
+              </div>
+
+              <div className="px-3">
+                <h2>Expertise</h2>
+                <p className="text-muted">Criminal Law, Environment Law, Human rights l...</p>
+                <p className="text-end fs-4">See More</p>
+              </div>
 
               {/* Services */}
-              <div className="mb-4">
+              {/* <div className="mb-4 px-3">
                 <h6 className="fw-bold text-dark mb-3">Services</h6>
                 <div className="d-flex flex-column gap-2">
                   {[
@@ -558,32 +733,32 @@ const List = () => {
                     </div>
                   ))}
                 </div>
-              </div>
+              </div> */}
 
               {/* Reviews */}
-              <div className="mb-4">
+              {/* <div className="mb-4 px-3">
                 <h6 className="fw-bold text-dark mb-3">Reviews</h6>
                 
-                {/* Overall Rating */}
+                {/* Overall Rating 
                 <div className="d-flex align-items-center mb-3">
                   <div className="d-flex me-3">
                     {[1, 2, 3, 4, 5].map((star) => (
-                      <i key={star} className="bi bi-star-fill text-warning"></i>
+                      <i key={star} className="bi bi-star-fill text-dark"></i>
                     ))}
                   </div>
                   <span className="fw-bold me-2">5 out of 5</span>
                   <span className="text-muted">41 total review</span>
-                </div>
+                </div> */}
 
                 {/* Rating Breakdown */}
-                <div className="mb-4">
+                {/* <div className="mb-4">
                   {[5, 4, 3, 2, 1].map((rating) => (
                     <div key={rating} className="d-flex align-items-center mb-2">
                       <span className="text-muted me-2" style={{ minWidth: "20px" }}>{rating}</span>
-                      <i className="bi bi-star-fill text-warning me-2"></i>
+                      <i className="bi bi-star-fill text-dark me-2"></i>
                       <div className="flex-grow-1 me-2">
                         <div
-                          className="bg-warning"
+                          className="bg-dark"
                           style={{
                             height: "8px",
                             width: rating === 5 ? "100%" : rating === 4 ? "75%" : rating === 3 ? "50%" : rating === 2 ? "25%" : "0%",
@@ -593,10 +768,10 @@ const List = () => {
                       </div>
                     </div>
                   ))}
-                </div>
+                </div> */}
 
                 {/* Individual Reviews */}
-                <div className="d-flex flex-column gap-3">
+                {/* <div className="d-flex flex-column gap-3">
                   <div className="d-flex align-items-start">
                     <img
                       src={notificationProfile}
@@ -611,7 +786,7 @@ const List = () => {
                         <span className="fw-bold me-2">Mark Jorden</span>
                         <div className="d-flex me-2">
                           {[1, 2, 3, 4, 5].map((star) => (
-                            <i key={star} className="bi bi-star-fill text-warning" style={{ fontSize: "0.8rem" }}></i>
+                            <i key={star} className="bi bi-star-fill text-dark" style={{ fontSize: "0.8rem" }}></i>
                           ))}
                         </div>
                         <small className="text-muted">2 hour ago</small>
@@ -636,7 +811,7 @@ const List = () => {
                         <span className="fw-bold me-2">Shamra Joseph</span>
                         <div className="d-flex me-2">
                           {[1, 2, 3, 4, 5].map((star) => (
-                            <i key={star} className="bi bi-star-fill text-warning" style={{ fontSize: "0.8rem" }}></i>
+                            <i key={star} className="bi bi-star-fill text-dark" style={{ fontSize: "0.8rem" }}></i>
                           ))}
                         </div>
                         <small className="text-muted">2 hour ago</small>
@@ -646,72 +821,54 @@ const List = () => {
                       </p>
                     </div>
                   </div>
-                </div>
-              </div>
+                </div> */}
+              {/* </div> */}
             </div>
 
             {/* Pricing and Action Section - Fixed at bottom */}
-            <div className="p-4 border-top" style={{ backgroundColor: "#fff", borderRadius: "13px" }}>
-              {/* Pricing Options */}
-              <div className="mb-4">
-                <div className="d-flex flex-column gap-2">
-                  <div
-                    className="d-flex align-items-center justify-content-between p-3 rounded"
-                    style={{
-                      backgroundColor: "rgba(0, 0, 0, 0.2)",
-                      border: "2px solid #000"
-                    }}
-                  >
-                    <div className="d-flex align-items-center">
-                      <div
-                        className="rounded-circle d-flex align-items-center justify-content-center me-3"
-                        style={{
-                          width: "20px",
-                          height: "20px",
-                          backgroundColor: "#000000d3"
-                        }}
-                      >
-                        <i className="bi bi-check text-white" style={{ fontSize: "0.8rem" }}></i>
-                      </div>
-                      <span className="fw-bold">฿ 150.00 / week</span>
-                    </div>
-                  </div>
-                  
-                  <div
-                    className="d-flex align-items-center justify-content-between p-3 rounded"
-                    style={{
-                      backgroundColor: "#fff",
-                      border: "1px solid #e9ecef"
-                    }}
-                  >
-                    <div className="d-flex align-items-center">
-                      <div
-                        className="rounded-circle d-flex align-items-center justify-content-center me-3"
-                        style={{
-                          width: "20px",
-                          height: "20px",
-                          backgroundColor: "#fff",
-                          border: "1px solid #e9ecef"
-                        }}
-                      ></div>
-                      <span className="fw-bold">฿ 150.00 / week</span>
-                    </div>
-                  </div>
+            <div className="p-4" style={{ backgroundColor: "#000", borderBottomRightRadius: "15px", borderBottomLeftRadius: "15px" }}>
+              {/* Pricing and Dropdown in Same Row */}
+              <div className="d-flex align-items-center justify-content-between mb-4 p-3 rounded" style={{ backgroundColor: "#000" }}>
+                <p className="text-white fw-bold mb-0" style={{ fontSize: "1.5rem" }}>
+                  {currentPricingLabel}
+                </p>
+                <div style={{ maxWidth: "fit-content" }}>
+                  <Dropdown
+                    value={selectedPricingOption}
+                    onChange={(e) => setSelectedPricingOption(e.value)}
+                    options={pricingOptions}
+                    placeholder="2 options"
+                    className="w-100 lawyers-pricing-dropdown"
+                    panelClassName="lawyers-pricing-dropdown-panel"
+                  />
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="d-flex gap-3">
+              <div className="d-flex gap-3 justify-content-center">
                 <button
-                  className="btn btn-outline-secondary d-flex align-items-center justify-content-center"
-                  style={{ height: "55px", width: "120px", flexShrink: 0 }}
+                  className="btn d-flex align-items-center justify-content-center rounded-pill"
+                  style={{ 
+                    height: "50px", 
+                    width: "180px", 
+                    backgroundColor: "#474747",
+                    border: "none",
+                    color: "#ffffff"
+                  }}
                 >
-                  <i className="bi bi-apple me-2"></i>
-                  
+                  <i className="bi bi-apple me-2" style={{ fontSize: "1.2rem" }}></i>
+                  <span>Apple</span>
                 </button>
                 <button
-                  className="btn flex-grow-1"
-                  style={{ height: "55px", backgroundColor: "#474747", color: "white", width: "120px" }}
+                  className="btn rounded-pill fw-bold"
+                  style={{ 
+                    height: "50px", 
+                    width: "190px",
+                    backgroundColor: "#808080", 
+                    color: "#ffffff",
+                    border: "none",
+                    fontSize: "1rem"
+                  }}
                 >
                   Get Service
                 </button>

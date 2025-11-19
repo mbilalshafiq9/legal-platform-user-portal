@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import notificationProfile from "../../assets/images/notification-profile.png";
+import NoQuestion from "../../assets/images/NoQuestion.png";
 import "../../assets/css/siri-border-animation.css";
 
 const List = () => {
@@ -167,7 +168,7 @@ const List = () => {
 
             <button
               className="btn border rounded-pill d-flex align-items-center gap-2 bg-black text-white"
-              style={{ borderRadius: "12px", minWidth: "160px" }}
+              style={{ borderRadius: "12px", border: "none" }}
               onClick={handleAddQuestionClick}
             >
               <i className="bi bi-plus rounded-pill w-20px h-20px bg-white text-black d-flex justify-content-center align-items-center pe-0"></i>
@@ -179,7 +180,20 @@ const List = () => {
         {/* Questions Grid */}
         <div className="container-fluid px-3 px-md-4">
           <div className="row g-3 g-md-4">
-            {questions.map((question, index) => (
+            {questions.length === 0 ? (
+              <div className="col-12 d-flex align-items-center justify-content-center" style={{ minHeight: "400px" }}>
+                <div className="text-center p-5">
+                  <div className="mb-4">
+                    <img src={NoQuestion} alt="No Question" style={{ maxWidth: "200px", height: "auto" }} />
+                  </div>
+                  <h4 className="text-muted mb-2 fw-bold">No Questions</h4>
+                  <p className="text-muted mb-0">
+                    You don't have any questions yet.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              questions.map((question, index) => (
               <div
                 key={question.id}
                 className="col-12 col-sm-6 col-lg-4 col-xl-3"
@@ -240,7 +254,8 @@ const List = () => {
                   </div>
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>

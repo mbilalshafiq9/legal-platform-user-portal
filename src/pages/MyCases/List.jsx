@@ -148,15 +148,11 @@ const List = () => {
 
             {/* Add New Case Button */}
             <button
-              className="btn btn-outline-dark rounded-pill text-white px-4 py-2 d-flex justify-content-center align-items-center gap-2 portal-button-hover my-cases-add-button"
+              className="btn btn-outline-dark rounded-pill px-4 py-2 d-flex justify-content-center align-items-center gap-2 portal-button-hover my-cases-add-button"
               style={{
-                fontSize: "18px",
                 fontWeight: "500",
-                backgroundColor: "black",
-                width: "185px",
-                height: "45px",
                 marginLeft: "80px",
-                border: "1px solid #e9ecef",
+                border: "none",
               }}
               type="button"
               onClick={() => setShowCreateCase(true)}
@@ -164,12 +160,10 @@ const List = () => {
               <div
                 className="rounded-circle d-flex align-items-center justify-content-center"
                 style={{
-                  width: "25px",
-                  height: "25px",
-                  backgroundColor: "#000",
+                  backgroundColor: "#f8f9fa",
                 }}
               >
-                <i className="bi bi-plus text-black bg-white rounded-pill w-20px h-20px d-flex justify-content-center align-items-center pe-0 fs-1 pe-0" style={{ fontSize: "12px" }}></i>
+                <i className="bi bi-plus text-black bg-white rounded-pill d-flex justify-content-center align-items-center pe-0"></i>
               </div>
               Add New Case
             </button>
@@ -180,7 +174,7 @@ const List = () => {
       {/* Cases Grid */}
       <div className="row" style={{ marginLeft: "30px", marginRight: "30px" }}>
         {cases.map((caseItem, index) => (
-          <div key={caseItem.id} className="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay={`${100 + index * 100}`}>
+          <div key={caseItem.id} className="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay={`${100 + index * 100}`}>
             <div 
               className="card h-100 shadow-sm portal-card-hover" 
               style={{ cursor: "pointer" }}
@@ -188,38 +182,38 @@ const List = () => {
             >
               <div className="card-body p-4">
                 <div className="d-flex justify-content-between align-items-start mb-3">
-                  <h5 className="card-title mb-0 my-cases-card-title" style={{ fontSize: "21px", color: "#474747", fontWeight: "500" }}>
+                  <h5 className="card-title mb-0 my-cases-card-title" style={{ fontSize: "16px", color: "#474747", fontWeight: "500" }}>
                     {caseItem.caseType}
                   </h5>
                   <span
-                    className="badge bg-light px-3 py-2 rounded-pill my-cases-card-badge"
-                    style={{ fontSize: "14px", fontWeight: "500", color: "#474747" }}
+                    className="badge bg-black text-white px-3 py-2 rounded-pill my-cases-card-badge"
+                    style={{ fontSize: "12px", fontWeight: "500" }}
                   >
                     {caseItem.caseId}
                   </span>
                 </div>
                 
-                <p className="mb-4 my-cases-card-description" style={{ fontSize: "16px", color: "#474747" }}>
+                <p className="mb-4 my-cases-card-description" style={{ fontSize: "14px", color: "#474747" }}>
                   {caseItem.description}
                 </p>
 
                 <div className="row text-center my-cases-card-details">
                   <div className="col-4">
                     <div className="d-flex flex-column">
-                      <small className="mb-1 my-cases-card-label" style={{ fontSize: "19px", color: "#989898", fontWeight: "400" }}>Jurisdiction</small>
-                      <span className="my-cases-card-value" style={{ color: "#474747", fontSize: "23px", fontWeight: "500" }}>{caseItem.jurisdiction}</span>
+                      <small className="mb-1 my-cases-card-label" style={{ fontSize: "14px", color: "#989898", fontWeight: "400" }}>Jurisdiction</small>
+                      <span className="my-cases-card-value" style={{ color: "#474747", fontSize: "16px", fontWeight: "500" }}>{caseItem.jurisdiction}</span>
                     </div>
                   </div>
                   <div className="col-4">
                     <div className="d-flex flex-column">
-                      <small className="mb-1 my-cases-card-label" style={{ fontSize: "19px", color: "#989898", fontWeight: "400" }}>Case Budget</small>
-                      <span className="my-cases-card-value" style={{ color: "#474747", fontSize: "23px", fontWeight: "500" }}>{caseItem.caseBudget}</span>
+                      <small className="mb-1 my-cases-card-label" style={{ fontSize: "14px", color: "#989898", fontWeight: "400" }}>Case Budget</small>
+                      <span className="my-cases-card-value" style={{ color: "#474747", fontSize: "16px", fontWeight: "500" }}>{caseItem.caseBudget}</span>
                     </div>
                   </div>
                   <div className="col-4">
                     <div className="d-flex flex-column">
-                      <small className="mb-1 my-cases-card-label" style={{ fontSize: "19px", color: "#989898", fontWeight: "400" }}>Respond</small>
-                      <span className="my-cases-card-value" style={{ color: "#474747", fontSize: "23px", fontWeight: "500" }}>{caseItem.respond}</span>
+                      <small className="mb-1 my-cases-card-label" style={{ fontSize: "14px", color: "#989898", fontWeight: "400" }}>Respond</small>
+                      <span className="my-cases-card-value" style={{ color: "#474747", fontSize: "16px", fontWeight: "500" }}>{caseItem.respond}</span>
                     </div>
                   </div>
                 </div>

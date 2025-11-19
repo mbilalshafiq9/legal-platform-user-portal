@@ -118,8 +118,13 @@
 .dashboard-card-hover-icon {
   display: flex !important;
   align-items: center !important;
-  justify-content: center !important;
+  justify-content: flex-start !important;
   text-decoration: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  flex-shrink: 0 !important;
 }
 
 .dashboard-card-hover-icon:hover {
@@ -130,4 +135,8 @@
 .dashboard-card-hover-icon .dashboard-action-button {
   margin: 0 !important;
   padding: 0 !important;
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
 }

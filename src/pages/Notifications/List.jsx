@@ -102,7 +102,7 @@ const List = () => {
                             style={{
                               width: "12px",
                               height: "12px",
-                              backgroundColor: "#dc3545",
+                              backgroundColor: "#000",
                               borderRadius: "50%",
                               border: "2px solid white",
                             }}

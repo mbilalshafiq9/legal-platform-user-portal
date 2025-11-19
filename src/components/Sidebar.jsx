@@ -335,7 +335,7 @@ const Sidebar = () => {
                 <span className="menu-icon">
                   <i class="bi bi-person-lines-fill"></i>
                 </span>
-                <span className="menu-title fs-6">Employees</span>
+                <span className="menu-title fs-6">Teams</span>
               </NavLink>
             </div>
 

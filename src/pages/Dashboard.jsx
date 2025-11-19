@@ -91,6 +91,8 @@ const Dashboard = () => {
                 >
                   <div
                     className="card h-100 dashboard-card-hover dashboard-action-card"
+                    onClick={handleAddQuestionClick}
+                    style={{ cursor: "pointer" }}
                   >
                     <div className="card-body p-4 d-flex flex-column justify-content-between h-100">
                       <div>
@@ -101,7 +103,10 @@ const Dashboard = () => {
                       <div className="d-flex justify-content-between align-items-center">
                         <button
                           className="btn btn-light rounded-circle d-flex justify-content-center align-items-center portal-button-hover dashboard-action-button"
-                          onClick={handleAddQuestionClick}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddQuestionClick();
+                          }}
                         >
                           <i className="bi bi-plus fs-1 text-dark pe-0"></i>
                         </button>
@@ -120,35 +125,39 @@ const Dashboard = () => {
                   data-aos="fade-up"
                   data-aos-delay="200"
                 >
-                  <div
-                    className="card h-100 shadow dashboard-card-hover dashboard-action-card"
+                  <NavLink
+                    to={"/lawyers"}
+                    style={{ textDecoration: "none", color: "inherit" }}
                   >
-                    <div className="card-body p-4 d-flex flex-column justify-content-between h-100">
-                      <div>
-                        <h5 className="text-dark fw-bold mb-3">
-                          Hire Lawyer for Business Consultation
-                        </h5>
-                      </div>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <NavLink
-                          to={"/lawyers"}
-                          className="dashboard-card-hover-icon d-flex align-items-center"
-                        >
-                          <button
-                            className="btn btn-light rounded-circle d-flex justify-content-center align-items-center portal-button-hover dashboard-action-button"
-                            type="button"
-                          >
-                            <i className="bi bi-plus fs-1 text-dark pe-0"></i>
-                          </button>
-                        </NavLink>
-                        <img
-                          src={hireLawyer}
-                          alt="Hire Lawyer"
-                          className="rounded-circle hireLawyerImage"
-                        />
+                    <div
+                      className="card h-100 shadow dashboard-card-hover dashboard-action-card"
+                      style={{ cursor: "pointer" }}
+                    >
+                      <div className="card-body p-4 d-flex flex-column justify-content-between h-100">
+                        <div>
+                          <h5 className="text-dark fw-bold mb-3">
+                            Hire Lawyer
+                          </h5>
+                        </div>
+                        <div className="d-flex justify-content-between align-items-center">
+                          <div className="dashboard-card-hover-icon">
+                            <button
+                              className="btn btn-light rounded-circle d-flex justify-content-center align-items-center portal-button-hover dashboard-action-button"
+                              type="button"
+                              onClick={(e) => e.preventDefault()}
+                            >
+                              <i className="bi bi-plus fs-1 text-dark pe-0"></i>
+                            </button>
+                          </div>
+                          <img
+                            src={hireLawyer}
+                            alt="Hire Lawyer"
+                            className="rounded-circle hireLawyerImage"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </NavLink>
                 </div>
 
                 <div
@@ -158,6 +167,8 @@ const Dashboard = () => {
                 >
                   <div
                     className="card h-100 shadow dashboard-card-hover dashboard-action-card"
+                    onClick={() => setShowCreateCase(true)}
+                    style={{ cursor: "pointer" }}
                   >
                     <div className="card-body p-4 d-flex flex-column justify-content-between h-100">
                       <div>
@@ -168,7 +179,10 @@ const Dashboard = () => {
                       <div className="d-flex justify-content-between align-items-center">
                         <button
                           className="btn rounded-circle d-flex justify-content-center align-items-center dashboard-action-button"
-                          onClick={() => setShowCreateCase(true)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowCreateCase(true);
+                          }}
                         >
                           <i className="bi bi-plus fs-1 text-black p-0"></i>
                         </button>
@@ -407,7 +421,7 @@ const Dashboard = () => {
                         <h6 className="fw-bold text-dark mb-0">
                           Crimes Against Persons
                         </h6>
-                        <span className="badge bg-light text-dark">
+                        <span className="badge bg-black text-white dashboard-case-badge">
                           Case# 2548
                         </span>
                       </div>
@@ -428,7 +442,7 @@ const Dashboard = () => {
                         <h6 className="fw-bold text-dark mb-0">
                           Crimes Against Persons
                         </h6>
-                        <span className="badge bg-light text-dark">
+                        <span className="badge bg-black text-white dashboard-case-badge">
                           Case# 2548
                         </span>
                       </div>
@@ -449,7 +463,7 @@ const Dashboard = () => {
                         <h6 className="fw-bold text-dark mb-0">
                           Crimes Against Persons
                         </h6>
-                        <span className="badge bg-light text-dark">
+                        <span className="badge bg-black text-white dashboard-case-badge">
                           Case# 2548
                         </span>
                       </div>

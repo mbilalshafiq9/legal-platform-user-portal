@@ -452,6 +452,16 @@ body.dark-mode .portal-card-hover:hover {
   box-shadow: 0 8px 20px rgba(255, 255, 255, 0.1);
 }
 
+/* Post Question Card Borders - Dark Mode */
+body.dark-mode .post-question-card {
+  border: 1px solid #ffffff !important;
+  transition: all 0.3s ease;
+}
+
+body.dark-mode .post-question-card:hover {
+  border-color: #000000 !important;
+}
+
 body.dark-mode .portal-card-hover:hover h5,
 body.dark-mode .portal-card-hover:hover h6,
 body.dark-mode .portal-card-hover:hover p,
@@ -725,6 +735,8 @@ body.dark-mode .my-lawyers-sub-tabs .btn.bg-black:hover {
 .my-lawyers-sub-tabs {
   display: flex !important;
   gap: 0.5rem !important;
+  position: relative;
+  z-index: 1;
 }
 
 .my-lawyers-sub-tabs .btn,
@@ -736,7 +748,6 @@ body.dark-mode .my-lawyers-sub-tabs .btn.bg-black:hover {
   min-height: 40px !important;
   max-height: 40px !important;
   padding: 0.5rem 1rem !important;
-  border-radius: 20px !important;
   font-size: 0.9rem !important;
   font-weight: 500 !important;
   display: flex !important;
@@ -1312,13 +1323,32 @@ body.dark-mode .employees-add-button {
 .employees-add-button:hover,
 .btn.btn-white.employees-add-button:hover,
 .btn-white.employees-add-button:hover {
-  background-color: #f8f9fa !important;
-  color: #000000 !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
   border: none !important;
   border-color: transparent !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Plus icon inside Post New Question button on hover */
+.btn.bg-black.text-white.rounded-pill:hover i.bi-plus {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* Plus icon inside Add New Case button on hover */
+.my-cases-add-button:hover i.bi-plus {
+  color: #ffffff !important;
+}
+
+.my-cases-add-button:hover div {
+  background-color: #ffffff !important;
+}
+
+.my-cases-add-button:hover div i.bi-plus {
+  color: #000000 !important;
 }
 
 .my-cases-add-button {
@@ -1327,7 +1357,7 @@ body.dark-mode .employees-add-button {
 
 /* Override icon color on hover */
 .employees-add-button:hover i {
-  color: #000000 !important;
+  color: #ffffff !important;
 }
 
 /* Active state */
@@ -1353,8 +1383,8 @@ body.dark-mode .my-cases-add-button:hover,
 body.dark-mode .employees-add-button:hover,
 body.dark-mode .btn.btn-white.employees-add-button:hover,
 body.dark-mode .btn-white.employees-add-button:hover {
-  background-color: #f0f0f0 !important;
-  color: #000000 !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
   border: none !important;
   border-color: transparent !important;
   transform: translateY(-2px) !important;
@@ -1363,7 +1393,7 @@ body.dark-mode .btn-white.employees-add-button:hover {
 
 /* Override icon color on hover in dark mode */
 body.dark-mode .employees-add-button:hover i {
-  color: #000000 !important;
+  color: #ffffff !important;
 }
 
 /* Remove white border from Add New Case button in dark mode */

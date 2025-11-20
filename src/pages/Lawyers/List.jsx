@@ -42,12 +42,9 @@ const List = () => {
   const pricingOptions = [
     { label: "$275 / One Time Service", value: "one-time" },
     { label: "$150 / Hourly Consultation", value: "hourly" },
-    { label: "$350 / Retainer Service", value: "retainer" },
-    { label: "$500 / Premium Package", value: "premium" },
-    { label: "$200 / Consultation Package", value: "consultation" },
-    { label: "$400 / Legal Document Review", value: "document-review" },
   ];
-  const [selectedPricingOption, setSelectedPricingOption] = useState(null);
+  const [selectedPricingOption, setSelectedPricingOption] = useState("one-time");
+  const [showPricingOptions, setShowPricingOptions] = useState(false);
 
   const currentPricingLabel =
     pricingOptions.find((option) => option.value === selectedPricingOption)
@@ -536,11 +533,25 @@ const List = () => {
             <button
               type="button"
               className="btn btn-light rounded-circle shadow-sm d-flex align-items-center justify-content-center lawyer-detail-close-btn"
-              style={{ width: "40px", height: "40px" }}
+              style={{ width: "30px", height: "33px" }}
               onClick={() => setShowLawyerDetail(false)}
               aria-label="Close lawyer details"
             >
               <i className="bi bi-x-lg fs-5 pe-0"></i>
+            </button>
+          </div>
+          <div
+            className="position-absolute top-0 end-0 m-3"
+            style={{ zIndex: 1100 }}
+          >
+            <button
+              type="button"
+              className="btn btn-light rounded-circle shadow-sm d-flex align-items-center justify-content-center lawyer-detail-close-btn"
+              style={{ width: "30px", height: "33px" }}
+              onClick={() => setShowLawyerDetail(false)}
+              aria-label="Close lawyer details"
+            >
+              <i className="bi bi-upload fs-5 pe-0"></i>
             </button>
           </div>
           {/* <div className="offcanvas-header p-3 p-md-4">
@@ -561,7 +572,7 @@ const List = () => {
                 {/* Slider Container */}
                 <div
                   className="position-relative w-100 h-100"
-                  style={{
+                  style={{ 
                     overflow: "hidden",
                     borderTopRightRadius: "15px",
                     borderTopLeftRadius: "15px",
@@ -598,8 +609,8 @@ const List = () => {
                     type="button"
                     className="btn btn-light rounded-circle position-absolute top-50 start-0 translate-middle-y ms-3 shadow-sm"
                     style={{
-                      width: "40px",
-                      height: "40px",
+                      width: "20px",
+                      height: "33px",
                       zIndex: 10,
                       display: "flex",
                       alignItems: "center",
@@ -609,14 +620,14 @@ const List = () => {
                     onClick={prevSlide}
                     aria-label="Previous image"
                   >
-                    <i className="bi bi-chevron-left fs-5"></i>
+                    <i className="bi bi-chevron-left pe-1" style={{ fontSize: "1rem" }}></i>
                   </button>
                   <button
                     type="button"
                     className="btn btn-light rounded-circle position-absolute top-50 end-0 translate-middle-y me-3 shadow-sm"
                     style={{
-                      width: "40px",
-                      height: "40px",
+                      width: "20px",
+                      height: "33px",
                       zIndex: 10,
                       display: "flex",
                       alignItems: "center",
@@ -626,7 +637,7 @@ const List = () => {
                     onClick={nextSlide}
                     aria-label="Next image"
                   >
-                    <i className="bi bi-chevron-right fs-5"></i>
+                    <i className="bi bi-chevron-right pe-0" style={{ fontSize: "1rem" }}></i>
                   </button>
 
                   {/* Dots Indicator */}
@@ -714,11 +725,10 @@ const List = () => {
               <div className="px-3">
                 <h2>Expertise</h2>
                 <p className="text-muted">Criminal Law, Environment Law, Human rights l...</p>
-                <p className="text-end fs-4">See More</p>
               </div>
 
               {/* Services */}
-              {/* <div className="mb-4 px-3">
+              <div className="mb-4 px-3">
                 <h6 className="fw-bold text-dark mb-3">Services</h6>
                 <div className="d-flex flex-column gap-2">
                   {[
@@ -728,18 +738,18 @@ const List = () => {
                     "Contract negotiation"
                   ].map((service, index) => (
                     <div key={index} className="d-flex align-items-center">
-                      <i className="bi bi-check-circle-fill text-success me-2"></i>
+                      <i className="bi bi-check-circle-fill text-black me-2"></i>
                       <span className="text-muted">{service}</span>
                     </div>
                   ))}
                 </div>
-              </div> */}
+              </div>
 
               {/* Reviews */}
-              {/* <div className="mb-4 px-3">
+              <div className="mb-4 px-3">
                 <h6 className="fw-bold text-dark mb-3">Reviews</h6>
                 
-                {/* Overall Rating 
+                {/* Overall Rating */}
                 <div className="d-flex align-items-center mb-3">
                   <div className="d-flex me-3">
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -748,14 +758,14 @@ const List = () => {
                   </div>
                   <span className="fw-bold me-2">5 out of 5</span>
                   <span className="text-muted">41 total review</span>
-                </div> */}
+                </div>
 
                 {/* Rating Breakdown */}
-                {/* <div className="mb-4">
+                <div className="mb-4">
                   {[5, 4, 3, 2, 1].map((rating) => (
                     <div key={rating} className="d-flex align-items-center mb-2">
-                      <span className="text-muted me-2" style={{ minWidth: "20px" }}>{rating}</span>
-                      <i className="bi bi-star-fill text-dark me-2"></i>
+                      <span className="text-muted me-2" style={{ minWidth: "20px" }}>{rating} star</span>
+                      
                       <div className="flex-grow-1 me-2">
                         <div
                           className="bg-dark"
@@ -768,10 +778,10 @@ const List = () => {
                       </div>
                     </div>
                   ))}
-                </div> */}
+                </div>
 
                 {/* Individual Reviews */}
-                {/* <div className="d-flex flex-column gap-3">
+                <div className="d-flex flex-column gap-3">
                   <div className="d-flex align-items-start">
                     <img
                       src={notificationProfile}
@@ -782,14 +792,14 @@ const List = () => {
                       style={{ width: "40px", height: "40px" }}
                     />
                     <div className="flex-grow-1">
-                      <div className="d-flex align-items-center mb-1">
-                        <span className="fw-bold me-2">Mark Jorden</span>
-                        <div className="d-flex me-2">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <i key={star} className="bi bi-star-fill text-dark" style={{ fontSize: "0.8rem" }}></i>
-                          ))}
-                        </div>
+                      <div className="d-flex align-items-center justify-content-between mb-1">
+                        <span className="fw-bold">Mark Jorden</span>
                         <small className="text-muted">2 hour ago</small>
+                      </div>
+                      <div className="d-flex mb-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <i key={star} className="bi bi-star-fill" style={{ fontSize: "0.9rem", color: "#000" }}></i>
+                        ))}
                       </div>
                       <p className="text-muted mb-0" style={{ fontSize: "0.9rem" }}>
                         Excellent service and professional approach. Highly recommended!
@@ -807,22 +817,22 @@ const List = () => {
                       style={{ width: "40px", height: "40px" }}
                     />
                     <div className="flex-grow-1">
-                      <div className="d-flex align-items-center mb-1">
-                        <span className="fw-bold me-2">Shamra Joseph</span>
-                        <div className="d-flex me-2">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <i key={star} className="bi bi-star-fill text-dark" style={{ fontSize: "0.8rem" }}></i>
-                          ))}
-                        </div>
+                      <div className="d-flex align-items-center justify-content-between mb-1">
+                        <span className="fw-bold">Shamra Joseph</span>
                         <small className="text-muted">2 hour ago</small>
+                      </div>
+                      <div className="d-flex mb-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <i key={star} className="bi bi-star-fill" style={{ fontSize: "0.9rem", color: "#000" }}></i>
+                        ))}
                       </div>
                       <p className="text-muted mb-0" style={{ fontSize: "0.9rem" }}>
                         Great experience working with this lawyer. Very knowledgeable and helpful.
                       </p>
                     </div>
                   </div>
-                </div> */}
-              {/* </div> */}
+                </div>
+              </div>
             </div>
 
             {/* Pricing and Action Section - Fixed at bottom */}
@@ -832,17 +842,64 @@ const List = () => {
                 <p className="text-white fw-bold mb-0" style={{ fontSize: "1.5rem" }}>
                   {currentPricingLabel}
                 </p>
-                <div style={{ maxWidth: "fit-content" }}>
-                  <Dropdown
-                    value={selectedPricingOption}
-                    onChange={(e) => setSelectedPricingOption(e.value)}
-                    options={pricingOptions}
-                    placeholder="2 options"
-                    className="w-100 lawyers-pricing-dropdown"
-                    panelClassName="lawyers-pricing-dropdown-panel"
-                  />
-                </div>
+                <button
+                  onClick={() => setShowPricingOptions(!showPricingOptions)}
+                  className="btn d-flex align-items-center gap-2 text-white"
+                  style={{
+                    backgroundColor: "#000",
+                    border: "1px solid #333",
+                    borderRadius: "8px",
+                    padding: "8px 16px"
+                  }}
+                >
+                  <span>2 options</span>
+                  <i className={`bi bi-chevron-${showPricingOptions ? 'up' : 'down'}`}></i>
+                </button>
               </div>
+
+              {/* Expanded Pricing Options */}
+              {showPricingOptions && (
+                <div className="mb-4" style={{ transition: "all 0.3s ease" }}>
+                  {pricingOptions.map((option, index) => (
+                    <div
+                      key={option.value}
+                      onClick={() => {
+                        setSelectedPricingOption(option.value);
+                        setShowPricingOptions(false);
+                      }}
+                      className="d-flex align-items-center p-3 mb-2 rounded"
+                    style={{
+                        backgroundColor: selectedPricingOption === option.value ? "#007bff" : "#ffffff",
+                        border: selectedPricingOption === option.value ? "none" : "1px solid #e0e0e0",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease"
+                      }}
+                    >
+                      <div
+                        className="rounded-circle d-flex align-items-center justify-content-center me-3"
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          backgroundColor: selectedPricingOption === option.value ? "#ffffff" : "transparent",
+                          border: selectedPricingOption === option.value ? "none" : "2px solid #ccc"
+                        }}
+                      >
+                        {selectedPricingOption === option.value && (
+                          <i className="bi bi-check" style={{ fontSize: "14px", fontWeight: "bold", color: "#007bff" }}></i>
+                        )}
+                      </div>
+                      <span
+                        style={{
+                          color: selectedPricingOption === option.value ? "#ffffff" : "#000000",
+                          fontWeight: selectedPricingOption === option.value ? "500" : "400"
+                        }}
+                      >
+                        {option.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="d-flex gap-3 justify-content-center">
@@ -856,7 +913,7 @@ const List = () => {
                     color: "#ffffff"
                   }}
                 >
-                  <i className="bi bi-apple me-2" style={{ fontSize: "1.2rem" }}></i>
+                  <i className="bi bi-apple me-2 text-white" style={{ fontSize: "1.2rem" }}></i>
                   <span>Apple</span>
                 </button>
                 <button

@@ -2535,6 +2535,9 @@ progress {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch
     }
+    .app-sidebar-menu {
+        width: 250px !important;
+    }
 }
 
 @media (max-width:991.98px) {
@@ -60986,7 +60989,7 @@ input[type="number"] {
   }
 
   .menu-title {
-    font-size: 0.9rem !important;
+    font-size: 1.2rem !important;
   }
 
   /* Collapsed state adjustments for mobile */
@@ -61844,13 +61847,21 @@ body.sidebar-open {
 }
 
 .app-sidebar .menu .menu-item .menu-link.active {
-    
+    background-color: #212121 !important;
     color: white !important;
     transition: color .2s ease;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
 }
 .menu-item .menu-link.active .menu-title{
     color: black;
 }
+
+.btn.rounded-pill.portal-tab-hover.bg-black.text-white:hover {
+    background-color: black !important;
+    color: white !important;
+}
+
 /* .menu-item .menu-link.active .menu-icon .svg-icon i{
     color: black;
 } */
@@ -62059,6 +62070,15 @@ body.sidebar-open {
   height: 100%;
 }
 
+.modern-header-primary {
+  flex: 1;
+  min-width: 0;
+}
+
+.modern-header-actions {
+  min-width: 0;
+}
+
 .modern-search-container {
   position: relative;
   flex: 1;
@@ -62110,6 +62130,18 @@ body.sidebar-open {
     gap: 10px !important;
   }
   
+  .modern-header-primary {
+    width: 100% !important;
+    gap: 12px !important;
+  }
+  
+  .modern-header-actions {
+    width: 100% !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+  }
+  
   .modern-search-container {
     max-width: 100% !important;
     margin: 0 !important;
@@ -62158,6 +62190,10 @@ body.sidebar-open {
 @media (max-width: 575.98px) {
   .modern-search-container {
     margin: 0 5px !important;
+  }
+  
+  .modern-header-actions {
+    justify-content: flex-end !important;
   }
   
   .modern-search-input {
@@ -62600,6 +62636,8 @@ body.sidebar-open {
     border: 1px solid #D3D3D3;
     border-radius: 10px;
     transition: all 0.3s ease;
+    position: relative;
+    z-index: 10;
 }
 
 /* Active/Selected Contact Card - Black background, white text */
@@ -62936,6 +62974,16 @@ body.sidebar-open {
     transition: all 0.15s ease;
     cursor: pointer;
 }
+
+/* Post Question Card Borders - Light Mode */
+.post-question-card {
+    border: 1px solid #000000 !important;
+    transition: all 0.3s ease;
+}
+
+.post-question-card:hover {
+    border-color: #ffffff !important;
+}
 .portal-card-hover:hover {
     transition: all 0.15s ease;
     background-color: black !important;
@@ -62957,6 +63005,33 @@ body.sidebar-open {
 .portal-card-hover:hover h5 {
     color: #495057 !important;
     transition: color 0.3s ease-in-out;
+}
+
+@media (max-width: 576px) {
+    .post-question-list-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1.5rem;
+    }
+
+    .post-question-list-header .flex-fill {
+        max-width: 100% !important;
+    }
+
+    .post-question-action-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 0.85rem 1.25rem;
+        font-size: 1rem;
+    }
+
+    .post-question-card {
+        height: auto !important;
+    }
+
+    .post-question-card .card-body {
+        padding: 1.25rem !important;
+    }
 }
 
 /* Employee Pages Font */
@@ -63285,9 +63360,9 @@ html {
 }
 
 .employees-add-button:hover {
-    background-color: #f8f9fa !important;
-    color: #000 !important;
-    border-color: #e0e0e0 !important;
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border-color: #000000 !important;
     transform: none !important;
 }
 
@@ -63296,7 +63371,7 @@ html {
 }
 
 .employees-add-button:hover i {
-    color: #000 !important;
+    color: #ffffff !important;
 }
 
 /* Chat/List Lawyer Card Hover Effects */
@@ -63426,10 +63501,16 @@ html {
 }
 
 .notification-item-hover:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: rgba(0, 0, 0, 1);
     transform: translateX(5px);
-    border-left: 3px solid #495057;
     margin-left: 7px;
+    padding: 10px;
+    transition: all 0.3s ease;
+}
+.notification-item-hover:hover p,
+.notification-item-hover:hover span {
+    color: white !important;
+    transition: all 0.3s ease;
 }
 
 .notification-avatar-hover {

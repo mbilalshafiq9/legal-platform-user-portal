@@ -157,7 +157,7 @@ const List = () => {
             </div>
           </div>
 
-          <div className="d-flex gap-3">
+          <div className="d-flex gap-3 flex-wrap flex-md-nowrap">
             {/* <button
               className="btn btn-transparent border rounded-pill d-flex align-items-center gap-2 portal-button-hover"
               style={{ borderRadius: "12px", minWidth: "120px" }}
@@ -167,7 +167,7 @@ const List = () => {
             </button> */}
 
             <button
-              className="btn border rounded-pill d-flex align-items-center gap-2 bg-black text-white"
+              className="btn border rounded-pill d-flex align-items-center gap-2 bg-black text-white post-question-action-btn"
               style={{ borderRadius: "12px", border: "none" }}
               onClick={handleAddQuestionClick}
             >
@@ -196,17 +196,17 @@ const List = () => {
               questions.map((question, index) => (
               <div
                 key={question.id}
-                className="col-12 col-sm-6 col-lg-4 col-xl-3"
+                className="col-lg-3 col-md-6 mb-4"
                 data-aos="fade-up"
                 data-aos-delay={`${100 + index * 100}`}
               >
                 <div
-                  className={`card portal-card-hover h-100 ${
-                    question.isHighlighted ? "text-black" : "bg-white border"
+                  className={`card portal-card-hover h-100 post-question-card ${
+                    question.isHighlighted ? "text-black" : "bg-white"
                   }`}
                   style={{
                     borderRadius: "12px",
-                    minHeight: "236px",
+                    height: "300px",
                     cursor: "pointer",
                   }}
                   onClick={() => handleCardClick(question)}

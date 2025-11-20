@@ -177,7 +177,10 @@ const List = () => {
           <div key={caseItem.id} className="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay={`${100 + index * 100}`}>
             <div 
               className="card h-100 shadow-sm portal-card-hover" 
-              style={{ cursor: "pointer" }}
+              style={{ 
+                cursor: "pointer",
+                height: "300px"
+              }}
               onClick={() => navigate(`/my-cases/${caseItem.id}`)}
             >
               <div className="card-body p-4">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import AuthService from "../services/AuthService";
 import { useNavigate, NavLink } from "react-router-dom";
-import { Dropdown } from 'primereact/dropdown';
+import { Dropdown } from "primereact/dropdown";
 
 import notificationProfile from "../assets/images/notification-profile.png";
 
@@ -19,40 +19,42 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("active");
   const [showPostQuestion, setShowPostQuestion] = useState(false);
   const [showCreateCase, setShowCreateCase] = useState(false);
-  
+
   // Select states
-  const [postQuestionJurisdiction, setPostQuestionJurisdiction] = useState(null);
+  const [postQuestionJurisdiction, setPostQuestionJurisdiction] =
+    useState(null);
   const [createCaseJurisdiction, setCreateCaseJurisdiction] = useState(null);
-  const [createCaseConsultantType, setCreateCaseConsultantType] = useState(null);
+  const [createCaseConsultantType, setCreateCaseConsultantType] =
+    useState(null);
   const [createCaseLawType, setCreateCaseLawType] = useState(null);
   const [createCaseSubCategory, setCreateCaseSubCategory] = useState(null);
-  
+
   // Select options
   const jurisdictionOptions = [
-    { label: 'United States', value: 'us' },
-    { label: 'United Kingdom', value: 'uk' },
-    { label: 'Canada', value: 'ca' },
-    { label: 'Australia', value: 'au' }
+    { label: "United States", value: "us" },
+    { label: "United Kingdom", value: "uk" },
+    { label: "Canada", value: "ca" },
+    { label: "Australia", value: "au" },
   ];
-  
+
   const consultantTypeOptions = [
-    { label: 'Individual Lawyer', value: 'individual' },
-    { label: 'Law Firm', value: 'firm' },
-    { label: 'Legal Consultant', value: 'consultant' }
+    { label: "Individual Lawyer", value: "individual" },
+    { label: "Law Firm", value: "firm" },
+    { label: "Legal Consultant", value: "consultant" },
   ];
-  
+
   const lawTypeOptions = [
-    { label: 'Criminal Law', value: 'criminal' },
-    { label: 'Civil Law', value: 'civil' },
-    { label: 'Corporate Law', value: 'corporate' },
-    { label: 'Family Law', value: 'family' }
+    { label: "Criminal Law", value: "criminal" },
+    { label: "Civil Law", value: "civil" },
+    { label: "Corporate Law", value: "corporate" },
+    { label: "Family Law", value: "family" },
   ];
-  
+
   const subCategoryOptions = [
-    { label: 'Traffic Violations', value: 'traffic' },
-    { label: 'White Collar Crime', value: 'white-collar' },
-    { label: 'Drug Offenses', value: 'drug' },
-    { label: 'Violent Crimes', value: 'violent' }
+    { label: "Traffic Violations", value: "traffic" },
+    { label: "White Collar Crime", value: "white-collar" },
+    { label: "Drug Offenses", value: "drug" },
+    { label: "Violent Crimes", value: "violent" },
   ];
 
   const handleAddQuestionClick = () => {
@@ -69,9 +71,7 @@ const Dashboard = () => {
           {/* Main Content Row */}
           <div className="row">
             {/* Left Column - Main Content */}
-            <div
-              className="col-md-8 pt-4 dashboard-main-content"
-            >
+            <div className="col-md-8 pt-4 dashboard-main-content">
               {/* Welcome Header */}
               <div className="mb-6" data-aos="fade-up">
                 <h1 className="text-black mb-2 dashboard-welcome-title">
@@ -225,16 +225,26 @@ const Dashboard = () => {
                           <span className="text-black">Ans: 60</span>
                         </div>
                       </div>
-                      <div className="d-flex align-items-center justify-content-center bg-light rounded-pill py-2 px-3 dashboard-date-pill" style={{ width: "37%" }}>
-                        <span className="text-black dashboard-date-text">Jan 05 - 2025 - 10:25 AM</span>
+                      <div
+                        className="d-flex align-items-center justify-content-center bg-light rounded-pill py-2 px-3 dashboard-date-pill"
+                        style={{ width: "40%" }}
+                      >
+                        <span className="text-black dashboard-date-text">
+                          Jan 05 - 2025 - 10:25 AM
+                        </span>
                       </div>
                     </div>
 
                     {/* Lawyer Respond Section */}
                     <div className="col-lg-5 col-md-12">
                       <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
-                        <h2 className="fw-bold mb-0 mb-md-0 dashboard-lawyer-respond-title">Lawyer Respond</h2>
-                        <a href="#" className="text-muted fw-semibold text-decoration-none text-md-end">
+                        <h2 className="fw-bold mb-0 mb-md-0 dashboard-lawyer-respond-title">
+                          Lawyer Respond
+                        </h2>
+                        <a
+                          href="#"
+                          className="text-muted fw-semibold text-decoration-none text-md-end"
+                        >
                           See All
                         </a>
                       </div>
@@ -248,7 +258,9 @@ const Dashboard = () => {
                           />
                         </div>
                         <div className="flex-grow-1">
-                          <h6 className="fw-bold text-dark mb-1">Jackline Dim</h6>
+                          <h6 className="fw-bold text-dark mb-1">
+                            Jackline Dim
+                          </h6>
                           <p className="text-gray-600 mb-0 small">
                             Lorem ipsum dolor sit amet.
                           </p>
@@ -282,7 +294,9 @@ const Dashboard = () => {
                           />
                         </div>
                         <div className="flex-grow-1">
-                          <h6 className="fw-bold text-dark mb-1">Jackline Dim</h6>
+                          <h6 className="fw-bold text-dark mb-1">
+                            Jackline Dim
+                          </h6>
                           <p className="text-gray-600 mb-0 small">
                             Lorem ipsum dolor sit amet.
                           </p>
@@ -303,6 +317,7 @@ const Dashboard = () => {
                   {/* Header */}
                   <div className="d-flex justify-content-between align-items-center mb-4">
                     <h4 className="fw-bold text-dark mb-0">My Lawyers</h4>
+                    
                     <NavLink to={"/my-lawyers"}>
                       <a
                         href="#"
@@ -314,28 +329,28 @@ const Dashboard = () => {
                   </div>
 
                   {/* Tab Buttons */}
-                  <div className="d-flex gap-2 mb-4">
-                    <button
-                      className={`btn rounded-pill portal-tab-hover ${
-                        activeTab === "active"
-                          ? "bg-black text-white"
-                          : "btn-light text-black"
-                      }`}
-                      onClick={() => setActiveTab("active")}
-                    >
-                      Active Lawyers
-                    </button>
-                    <button
-                      className={`btn rounded-pill portal-tab-hover ${
-                        activeTab === "inactive"
-                          ? "bg-black text-white"
-                          : "btn-light text-black"
-                      }`}
-                      onClick={() => setActiveTab("inactive")}
-                    >
-                      Inactive Lawyers
-                    </button>
-                  </div>
+                  <div className="my-4">
+                      <button
+                        className={`btn rounded-pill portal-tab-hover ${
+                          activeTab === "active"
+                            ? "bg-black text-white"
+                            : "btn-light text-black"
+                        }`}
+                        onClick={() => setActiveTab("active")}
+                      >
+                        Active Lawyers
+                      </button>
+                      <button
+                        className={`btn rounded-pill portal-tab-hover ${
+                          activeTab === "inactive"
+                            ? "bg-black text-white"
+                            : "btn-light text-black"
+                        }`}
+                        onClick={() => setActiveTab("inactive")}
+                      >
+                        Inactive Lawyers
+                      </button>
+                    </div>
 
                   {/* Lawyers List */}
                   {[1, 2].map((_, index) => (
@@ -384,7 +399,9 @@ const Dashboard = () => {
 
                           {/* Price */}
                           <div className="col-md-2 col-sm-12 text-md-end">
-                            <div className="fw-semibold text-dark">1.99 USD</div>
+                            <div className="fw-semibold text-dark">
+                              1.99 USD
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -405,7 +422,10 @@ const Dashboard = () => {
                   <div className="d-flex justify-content-between align-items-center mb-4">
                     <h2 className="fw-bold text-dark mb-0">My Cases</h2>
                     <NavLink to={"/my-cases"}>
-                      <a href="#" className="text-muted fw-semibold text-decoration-none">
+                      <a
+                        href="#"
+                        className="text-muted fw-semibold text-decoration-none"
+                      >
                         See All
                       </a>
                     </NavLink>
@@ -484,9 +504,7 @@ const Dashboard = () => {
               >
                 <div className="card-body p-4">
                   <div className="d-flex justify-content-between align-items-center mb-4">
-                    <h4 className="fw-bold text-black mb-0">
-                      Notifications
-                    </h4>
+                    <h4 className="fw-bold text-black mb-0">Notifications</h4>
                     <NavLink to={"/notifications"}>
                       <a
                         href="#"
@@ -514,9 +532,7 @@ const Dashboard = () => {
                         Sed ut perspiciatis unde omnis iste natus error sit
                         volupta accusantium doloremque laudantium, totam rem.
                       </p>
-                      <span className="text-gray-500 small">
-                        1 hour
-                      </span>
+                      <span className="text-gray-500 small">1 hour</span>
                     </div>
                   </div>
 
@@ -537,9 +553,7 @@ const Dashboard = () => {
                         Sed ut perspiciatis unde omnis iste natus error sit
                         volupta accusantium doloremque laudantium, totam rem.
                       </p>
-                      <span className="text-gray-500 small">
-                        2 hours
-                      </span>
+                      <span className="text-gray-500 small">2 hours</span>
                     </div>
                   </div>
 
@@ -560,9 +574,7 @@ const Dashboard = () => {
                         Sed ut perspiciatis unde omnis iste natus error sit
                         volupta accusantium doloremque laudantium, totam rem.
                       </p>
-                      <span className="text-gray-500 small">
-                        3 hours
-                      </span>
+                      <span className="text-gray-500 small">3 hours</span>
                     </div>
                   </div>
 
@@ -583,9 +595,7 @@ const Dashboard = () => {
                         Sed ut perspiciatis unde omnis iste natus error sit
                         volupta accusantium doloremque laudantium, totam rem.
                       </p>
-                      <span className="text-gray-500 small">
-                        4 hours
-                      </span>
+                      <span className="text-gray-500 small">4 hours</span>
                     </div>
                   </div>
                 </div>
@@ -612,9 +622,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div
-            className="offcanvas-body p-0 d-flex flex-column dashboard-offcanvas-body"
-          >
+          <div className="offcanvas-body p-0 d-flex flex-column dashboard-offcanvas-body">
             <div className="p-3 p-md-4 flex-grow-1 dashboard-offcanvas-content">
               {/* Top Row Selects */}
               <div className="row g-2 g-md-3 mb-3">
@@ -625,7 +633,7 @@ const Dashboard = () => {
                     options={jurisdictionOptions}
                     placeholder="Select Jurisdiction"
                     className="w-100"
-                    style={{ height: '60px' }}
+                    style={{ height: "60px" }}
                   />
                 </div>
                 <div className="col-12 col-md-6">
@@ -635,7 +643,7 @@ const Dashboard = () => {
                     options={consultantTypeOptions}
                     placeholder="Type of legal consultant"
                     className="w-100"
-                    style={{ height: '60px' }}
+                    style={{ height: "60px" }}
                   />
                 </div>
               </div>
@@ -649,7 +657,7 @@ const Dashboard = () => {
                     options={lawTypeOptions}
                     placeholder="Criminal Law"
                     className="w-100"
-                    style={{ height: '60px' }}
+                    style={{ height: "60px" }}
                   />
                 </div>
                 <div className="col-12 col-md-6">
@@ -659,7 +667,7 @@ const Dashboard = () => {
                     options={subCategoryOptions}
                     placeholder="Select Sub Categories"
                     className="w-100"
-                    style={{ height: '60px' }}
+                    style={{ height: "60px" }}
                   />
                 </div>
               </div>
@@ -675,15 +683,9 @@ const Dashboard = () => {
 
               {/* Attach Document */}
               <div className="mb-3">
-                <div
-                  className="d-flex align-items-center justify-content-start border border-2 border-dashed rounded dashboard-file-upload p-3"
-                >
-                  <div
-                    className="p-2 p-md-3 me-3 rounded-1 dashboard-file-upload-icon"
-                  >
-                    <i
-                      className="bi bi-paperclip fs-4 fs-md-3 d-inline-block dashboard-paperclip-icon"
-                    ></i>
+                <div className="d-flex align-items-center justify-content-start border border-2 border-dashed rounded dashboard-file-upload p-3">
+                  <div className="p-2 p-md-3 me-3 rounded-1 dashboard-file-upload-icon">
+                    <i className="bi bi-paperclip fs-4 fs-md-3 d-inline-block dashboard-paperclip-icon"></i>
                   </div>
 
                   <p className="text-muted mb-0 fs-6">Attach Document</p>
@@ -707,12 +709,8 @@ const Dashboard = () => {
             </div>
 
             {/* Submit Button - fixed at bottom */}
-            <div
-              className="p-3 p-md-4 border-top dashboard-submit-footer"
-            >
-              <button
-                className="btn text-white rounded-pill w-100 dashboard-submit-button py-3 py-md-2"
-              >
+            <div className="p-3 p-md-4 border-top dashboard-submit-footer">
+              <button className="btn text-white rounded-pill w-100 dashboard-submit-button py-3 py-md-2">
                 Submit
               </button>
             </div>
@@ -754,7 +752,7 @@ const Dashboard = () => {
                 rows="4"
                 style={{
                   position: "relative",
-                  zIndex: 1
+                  zIndex: 1,
                 }}
               ></textarea>
             </div>
@@ -767,21 +765,15 @@ const Dashboard = () => {
                 options={jurisdictionOptions}
                 placeholder="Jurisdiction"
                 className="w-100"
-                style={{ height: '60px' }}
+                style={{ height: "60px" }}
               />
             </div>
 
             {/* File Upload */}
             <div className="mb-3">
-              <div
-                className="d-flex align-items-center justify-content-start border border-2 border-dashed rounded dashboard-post-question-upload p-3"
-              >
-                <div
-                  className="p-2 p-md-3 me-3 rounded-1 dashboard-file-upload-icon"
-                >
-                  <i
-                    className="bi bi-paperclip fs-4 fs-md-3 d-inline-block dashboard-paperclip-icon"
-                  ></i>
+              <div className="d-flex align-items-center justify-content-start border border-2 border-dashed rounded dashboard-post-question-upload p-3">
+                <div className="p-2 p-md-3 me-3 rounded-1 dashboard-file-upload-icon">
+                  <i className="bi bi-paperclip fs-4 fs-md-3 d-inline-block dashboard-paperclip-icon"></i>
                 </div>
 
                 <p className="text-muted mb-0 fs-6">Attach Document</p>
@@ -792,17 +784,13 @@ const Dashboard = () => {
             <div className="mb-3">
               <h6 className="fw-bold mb-2">How it works</h6>
               <div className="d-flex align-items-start gap-3 gap-md-5 my-3 my-md-5">
-                <i
-                  className="bi bi-moon-fill text-black dashboard-moon-icon fs-5"
-                ></i>
+                <i className="bi bi-moon-fill text-black dashboard-moon-icon fs-5"></i>
                 <small className="text-muted fs-6">
                   Ask your question and see the answer in Questions & Answers.
                 </small>
               </div>
               <div className="d-flex align-items-start gap-3 gap-md-5 my-3 my-md-5">
-                <i
-                  className="bi bi-moon-fill text-black dashboard-moon-icon fs-5"
-                ></i>
+                <i className="bi bi-moon-fill text-black dashboard-moon-icon fs-5"></i>
                 <small className="text-muted fs-6">
                   You will be notified when a lawyer answers.
                 </small>
@@ -810,17 +798,15 @@ const Dashboard = () => {
             </div>
 
             {/* Post Question Fee */}
-            <div
-              className="mb-3 rounded-4 dashboard-post-question-fee"
-            >
+            <div className="mb-3 rounded-4 dashboard-post-question-fee">
               <div className="d-flex justify-content-between align-items-center h-100 rounded">
                 <div className="p-3">
                   <h6 className="fw-bold mb-1 fs-6">Post Question Fee</h6>
-                  <small className="text-muted fs-7">1 Question post only</small>
+                  <small className="text-muted fs-7">
+                    1 Question post only
+                  </small>
                 </div>
-                <div
-                  className="text-end px-3 px-md-4 h-100 d-flex flex-column justify-content-center dashboard-fee-divider"
-                >
+                <div className="text-end px-3 px-md-4 h-100 d-flex flex-column justify-content-center dashboard-fee-divider">
                   <div className="fw-bold fs-6">USD</div>
                   <div className="fw-bold fs-5">1.00</div>
                 </div>
@@ -828,9 +814,7 @@ const Dashboard = () => {
             </div>
 
             {/* Submit Button */}
-            <button
-              className="btn text-white rounded-pill dashboard-post-question-button w-100 py-3 py-md-2"
-            >
+            <button className="btn text-white rounded-pill dashboard-post-question-button w-100 py-3 py-md-2">
               Post Your Legal Issues
             </button>
           </div>

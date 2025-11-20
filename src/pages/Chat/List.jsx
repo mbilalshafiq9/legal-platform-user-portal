@@ -3,6 +3,12 @@ import notificationProfile from "../../assets/images/notification-profile.png";
 import circle from "../../assets/images/yellow-circle.png";
 import NoMessage from "../../assets/images/NoMessage.png";
 
+const formatMessageText = (text = "") => {
+  const trimmed = text.trim();
+  if (!trimmed) return "";
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+};
+
 const List = () => {
   const [activeTab, setActiveTab] = useState("chats");
   const [activeSubTab, setActiveSubTab] = useState("active");
@@ -224,7 +230,7 @@ const List = () => {
       
       const newMsg = {
         id: messages.length + 1,
-        text: newMessage.trim(),
+        text: formatMessageText(newMessage),
         time: currentTime,
         isFromUser: true,
       };

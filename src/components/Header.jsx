@@ -1029,35 +1029,37 @@ const Header = () => {
         </div>
       ) : (
         // Default Header Layout
-        <div className="modern-header-layout d-flex align-items-center justify-content-between w-100">
-          {/* Mobile menu toggle */}
-          <div
-            className="d-flex align-items-center d-lg-none me-3"
-            title="Show sidebar menu"
-          >
+        <div className="modern-header-layout flex-column flex-lg-row w-100 gap-3">
+          <div className="modern-header-primary d-flex align-items-center flex-grow-1 gap-3 w-100">
+            {/* Mobile menu toggle */}
             <div
-              className="btn btn-icon btn-active-color-primary w-35px h-35px"
-              id="kt_app_sidebar_mobile_toggle"
+              className="d-flex align-items-center d-lg-none"
+              title="Show sidebar menu"
             >
-              <i className="bi bi-list text-gray-600 fs-1"></i>
+              <div
+                className="btn btn-icon btn-active-color-primary w-35px h-35px"
+                id="kt_app_sidebar_mobile_toggle"
+              >
+                <i className="bi bi-list text-gray-600 fs-1"></i>
+              </div>
             </div>
-          </div>
 
-          {/* Search Bar */}
-          <div className="modern-search-container flex-grow-1 me-4">
-            <div className="modern-search-wrapper position-relative">
-              <input
-                type="search"
-                name="search"
-                placeholder="Search"
-                className="modern-search-input"
-              />
-              <i className="bi bi-search modern-search-icon position-absolute"></i>
+            {/* Search Bar */}
+            <div className="modern-search-container flex-grow-1">
+              <div className="modern-search-wrapper position-relative">
+                <input
+                  type="search"
+                  name="search"
+                  placeholder="Search"
+                  className="modern-search-input"
+                />
+                <i className="bi bi-search modern-search-icon position-absolute"></i>
+              </div>
             </div>
           </div>
 
           {/* Right side icons */}
-          <div className="modern-icons-container d-flex align-items-center gap-5image.png">
+          <div className="modern-header-actions d-flex align-items-center justify-content-end gap-3 w-100 w-lg-auto">
             {/* Dark Mode Toggle */}
             <motion.div 
               className="modern-icon-container dark-mode-toggle"
@@ -1080,7 +1082,7 @@ const Header = () => {
             </motion.div>
 
             {/* Messages Icon */}
-            <NavLink to="/chat">
+            <NavLink to="/chat" className="text-decoration-none">
               <div className="modern-icon-container">
                 <i className="bi bi-chat-dots modern-icon"></i>
               </div>

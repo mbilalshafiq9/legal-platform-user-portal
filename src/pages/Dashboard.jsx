@@ -329,7 +329,7 @@ const Dashboard = () => {
                   </div>
 
                   {/* Tab Buttons */}
-                  <div className="my-4">
+                  <div className="my-4 lawyers-tabs">
                       <button
                         className={`btn rounded-pill portal-tab-hover ${
                           activeTab === "active"

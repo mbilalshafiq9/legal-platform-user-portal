@@ -589,7 +589,7 @@ const List = () => {
                         <i className="bi bi-paperclip"></i>
                       </button>
                       <button
-                        className="btn btn-dark rounded-circle d-flex justify-content-center align-items-center my-lawyers-send-button"
+                        className="btn rounded-circle d-flex justify-content-center align-items-center my-lawyers-send-button"
                         onClick={handleSendMessage}
                       >
                         <i className="bi bi-send-fill text-white"></i>

@@ -203,20 +203,36 @@
   gap: 0.5rem;
   margin-bottom: 1rem;
   opacity: 1;
-  transition: opacity 0.3s;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.login-button:hover {
-  background-color: transparent !important;
+.login-button:hover:not(:disabled) {
+  background-color: #000 !important;
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.login-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .login-button:disabled {
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.6;
+}
+
+.login-button:hover:not(:disabled) .login-button-arrow {
+  transform: translateX(3px);
+  transition: transform 0.3s ease;
 }
 
 .login-button-arrow {
   font-size: 1.2rem;
+  transition: transform 0.3s ease;
 }
 
 .google-button {

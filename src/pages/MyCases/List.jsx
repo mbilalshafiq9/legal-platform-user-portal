@@ -1,12 +1,105 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import notificationProfile from "../../assets/images/notification-profile.png";
+import { toast } from "react-toastify";
 
 const List = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const loadFromLocalStorage = (key, defaultValue) => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error(`Error loading ${key} from localStorage:`, error);
+    }
+    return defaultValue;
+  };
+
+  const [searchTerm, setSearchTerm] = useState(
+    loadFromLocalStorage("myCases_searchTerm", "")
+  );
   const [showCreateCase, setShowCreateCase] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const navigate = useNavigate();
+  const defaultCases = [
+    {
+      id: 1,
+      caseType: "Crimes Against Persons",
+      caseId: "Case# 2548",
+      description:
+        "Sed ute perspiciatis unde omnis iste natious error voluptatem accusantium...",
+      jurisdiction: "UAE",
+      caseBudget: "$2000",
+      respond: "250",
+    },
+    {
+      id: 2,
+      caseType: "Crimes Against Persons",
+      caseId: "Case# 2549",
+      description:
+        "Sed ute perspiciatis unde omnis iste natious error voluptatem accusantium...",
+      jurisdiction: "UAE",
+      caseBudget: "$3200",
+      respond: "180",
+    },
+    {
+      id: 3,
+      caseType: "Corporate Fraud Investigation",
+      caseId: "Case# 2550",
+      description:
+        "Investigating large scale corporate fraud involving offshore entities and tax evasion.",
+      jurisdiction: "Saudi Arabia",
+      caseBudget: "$4500",
+      respond: "145",
+    },
+    {
+      id: 4,
+      caseType: "Intellectual Property Dispute",
+      caseId: "Case# 2551",
+      description:
+        "Dispute regarding trademark infringement and licensing agreements in technology sector.",
+      jurisdiction: "UAE",
+      caseBudget: "$3800",
+      respond: "210",
+    },
+    {
+      id: 5,
+      caseType: "Real Estate Development",
+      caseId: "Case# 2552",
+      description:
+        "Legal assistance required for multi-phase real estate development project.",
+      jurisdiction: "Qatar",
+      caseBudget: "$5200",
+      respond: "95",
+    },
+    {
+      id: 6,
+      caseType: "Family Estate Planning",
+      caseId: "Case# 2553",
+      description:
+        "Comprehensive estate planning including trusts, wills, and guardianship arrangements.",
+      jurisdiction: "UAE",
+      caseBudget: "$1800",
+      respond: "320",
+    },
+  ];
+
+  const [cases, setCases] = useState(
+    loadFromLocalStorage("myCases_cases", defaultCases)
+  );
+
+  const initialFormState = {
+    jurisdiction: "",
+    consultantType: "",
+    lawType: "",
+    subCategory: "",
+    description: "",
+    caseBudget: "",
+    respond: "",
+  };
+
+  const [newCaseData, setNewCaseData] = useState(initialFormState);
 
   const handleCloseCase = () => {
     setIsClosing(true);
@@ -16,89 +109,56 @@ const List = () => {
     }, 300);
   };
 
-  const cases = [
-    {
-      id: 1,
-      caseType: "Crimes Against Persons",
-      caseId: "Case# 2548",
-      description: "Sed ute perspiciatis unde omnis iste natious error voluptatem accusantium...",
-      jurisdiction: "UAE",
-      caseBudget: "$2000",
-      respond: "250",
-    },
-    {
-      id: 2,
-      caseType: "Crimes Against Persons",
-      caseId: "Case# 2548",
-      description: "Sed ute perspiciatis unde omnis iste natious error voluptatem accusantium...",
-      jurisdiction: "UAE",
-      caseBudget: "$2000",
-      respond: "250",
-    },
-    {
-      id: 3,
-      caseType: "Crimes Against Persons",
-      caseId: "Case# 2548",
-      description: "Sed ute perspiciatis unde omnis iste natious error voluptatem accusantium...",
-      jurisdiction: "UAE",
-      caseBudget: "$2000",
-      respond: "250",
-    },
-    {
-      id: 4,
-      caseType: "Crimes Against Persons",
-      caseId: "Case# 2548",
-      description: "Sed ute perspiciatis unde omnis iste natious error voluptatem accusantium...",
-      jurisdiction: "UAE",
-      caseBudget: "$2000",
-      respond: "250",
-    },
-    {
-      id: 5,
-      caseType: "Crimes Against Persons",
-      caseId: "Case# 2548",
-      description: "Sed ute perspiciatis unde omnis iste natious error voluptatem accusantium...",
-      jurisdiction: "UAE",
-      caseBudget: "$2000",
-      respond: "250",
-    },
-    {
-      id: 6,
-      caseType: "Crimes Against Persons",
-      caseId: "Case# 2548",
-      description: "Sed ute perspiciatis unde omnis iste natious error voluptatem accusantium...",
-      jurisdiction: "UAE",
-      caseBudget: "$2000",
-      respond: "250",
-    },
-    {
-      id: 7,
-      caseType: "Crimes Against Persons",
-      caseId: "Case# 2548",
-      description: "Sed ute perspiciatis unde omnis iste natious error voluptatem accusantium...",
-      jurisdiction: "UAE",
-      caseBudget: "$2000",
-      respond: "250",
-    },
-    {
-      id: 8,
-      caseType: "Crimes Against Persons",
-      caseId: "Case# 2548",
-      description: "Sed ute perspiciatis unde omnis iste natious error voluptatem accusantium...",
-      jurisdiction: "UAE",
-      caseBudget: "$2000",
-      respond: "250",
-    },
-    {
-      id: 9,
-      caseType: "Crimes Against Persons",
-      caseId: "Case# 2548",
-      description: "Sed ute perspiciatis unde omnis iste natious error voluptatem accusantium...",
-      jurisdiction: "UAE",
-      caseBudget: "$2000",
-      respond: "250",
-    },
-  ];
+  useEffect(() => {
+    try {
+      localStorage.setItem("myCases_cases", JSON.stringify(cases));
+      localStorage.setItem("myCases_searchTerm", JSON.stringify(searchTerm));
+    } catch (error) {
+      console.error("Error saving my cases data:", error);
+    }
+  }, [cases, searchTerm]);
+
+  const handleNewCaseChange = (field, value) => {
+    setNewCaseData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleSubmitNewCase = (e) => {
+    e.preventDefault();
+    if (!newCaseData.description.trim()) {
+      toast.error("Please describe your case");
+      return;
+    }
+    if (!newCaseData.jurisdiction) {
+      toast.error("Please select jurisdiction");
+      return;
+    }
+
+    const newCase = {
+      id: Date.now(),
+      caseType: newCaseData.lawType || "New Case",
+      caseId: `Case# ${Math.floor(Math.random() * 9000) + 1000}`,
+      description: newCaseData.description.trim(),
+      jurisdiction: newCaseData.jurisdiction,
+      caseBudget: newCaseData.caseBudget
+        ? `$${newCaseData.caseBudget}`
+        : "$0",
+      respond: newCaseData.respond || "0",
+    };
+
+    setCases([newCase, ...cases]);
+    toast.success("Case created successfully!");
+    setNewCaseData(initialFormState);
+    handleCloseCase();
+  };
+
+  const filteredCases = cases.filter((caseItem) => {
+    if (!searchTerm) return true;
+    const text = `${caseItem.caseType} ${caseItem.caseId} ${caseItem.description} ${caseItem.jurisdiction}`.toLowerCase();
+    return text.includes(searchTerm.toLowerCase());
+  });
 
   return (
     <div className="container-fluid case-details--mukta-font">
@@ -173,7 +233,7 @@ const List = () => {
 
       {/* Cases Grid */}
       <div className="row" style={{ marginLeft: "30px", marginRight: "30px" }}>
-        {cases.map((caseItem, index) => (
+        {filteredCases.map((caseItem, index) => (
           <div key={caseItem.id} className="col-lg-3 col-md-6 mb-4" data-aos="fade-up" data-aos-delay={`${100 + index * 100}`}>
             <div 
               className="card h-100 shadow-sm portal-card-hover" 
@@ -258,7 +318,7 @@ const List = () => {
             </div>
           </div>
 
-          <div className="offcanvas-body p-0 d-flex flex-column" style={{ height: "100%" }}>
+          <form className="offcanvas-body p-0 d-flex flex-column" style={{ height: "100%" }} onSubmit={handleSubmitNewCase}>
             <div className="p-4 flex-grow-1" style={{ overflowY: "auto" }}>
               {/* Top Row Selects */}
               <div className="row g-3 mb-3">
@@ -266,6 +326,8 @@ const List = () => {
                   <div className="position-relative">
                     <select
                       className="form-select"
+                      value={newCaseData.jurisdiction}
+                      onChange={(e) => handleNewCaseChange("jurisdiction", e.target.value)}
                       style={{
                         width: "100%",
                         height: "56px",
@@ -273,7 +335,13 @@ const List = () => {
                         borderRadius: "12px",
                       }}
                     >
-                      <option>Select Jurisdiction</option>
+                      <option value="">Select Jurisdiction</option>
+                      <option value="UAE">UAE</option>
+                      <option value="Saudi Arabia">Saudi Arabia</option>
+                      <option value="Qatar">Qatar</option>
+                      <option value="Kuwait">Kuwait</option>
+                      <option value="Bahrain">Bahrain</option>
+                      <option value="Oman">Oman</option>
                     </select>
                     <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i>
                   </div>
@@ -282,6 +350,8 @@ const List = () => {
                   <div className="position-relative">
                     <select
                       className="form-select"
+                      value={newCaseData.consultantType}
+                      onChange={(e) => handleNewCaseChange("consultantType", e.target.value)}
                       style={{
                         width: "100%",
                         height: "56px",
@@ -289,7 +359,10 @@ const List = () => {
                         borderRadius: "12px",
                       }}
                     >
-                      <option>Type of legal consultant</option>
+                      <option value="">Type of legal consultant</option>
+                      <option value="Individual Lawyer">Individual Lawyer</option>
+                      <option value="Law Firm">Law Firm</option>
+                      <option value="Legal Consultant">Legal Consultant</option>
                     </select>
                     <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i>
                   </div>
@@ -302,6 +375,8 @@ const List = () => {
                   <div className="position-relative">
                     <select
                       className="form-select"
+                      value={newCaseData.lawType}
+                      onChange={(e) => handleNewCaseChange("lawType", e.target.value)}
                       style={{
                         width: "100%",
                         height: "56px",
@@ -309,7 +384,12 @@ const List = () => {
                         borderRadius: "12px",
                       }}
                     >
-                      <option>Criminal Law</option>
+                      <option value="">Select Law Type</option>
+                      <option value="Criminal Law">Criminal Law</option>
+                      <option value="Corporate Law">Corporate Law</option>
+                      <option value="Real Estate Law">Real Estate Law</option>
+                      <option value="Family Law">Family Law</option>
+                      <option value="Intellectual Property Law">Intellectual Property Law</option>
                     </select>
                     <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i>
                   </div>
@@ -318,6 +398,8 @@ const List = () => {
                   <div className="position-relative">
                     <select
                       className="form-select"
+                      value={newCaseData.subCategory}
+                      onChange={(e) => handleNewCaseChange("subCategory", e.target.value)}
                       style={{
                         width: "100%",
                         height: "56px",
@@ -325,7 +407,10 @@ const List = () => {
                         borderRadius: "12px",
                       }}
                     >
-                      <option>Select Sub Categories</option>
+                      <option value="">Select Sub Categories</option>
+                      <option value="Litigation">Litigation</option>
+                      <option value="Advisory">Advisory</option>
+                      <option value="Compliance">Compliance</option>
                     </select>
                     <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i>
                   </div>
@@ -337,6 +422,8 @@ const List = () => {
                 <textarea
                   className="form-control"
                   placeholder="Explain Your Case"
+                  value={newCaseData.description}
+                  onChange={(e) => handleNewCaseChange("description", e.target.value)}
                   style={{
                     resize: "none",
                     width: "100%",
@@ -345,6 +432,38 @@ const List = () => {
                     borderRadius: "12px",
                   }}
                 ></textarea>
+              </div>
+
+              {/* Case Budget & Respond */}
+              <div className="row g-3 mb-3">
+                <div className="col-6">
+                  <input
+                    type="number"
+                    className="form-control"
+                    placeholder="Case Budget (USD)"
+                    value={newCaseData.caseBudget}
+                    onChange={(e) => handleNewCaseChange("caseBudget", e.target.value)}
+                    style={{
+                      height: "56px",
+                      border: "1px solid #C9C9C9",
+                      borderRadius: "12px",
+                    }}
+                  />
+                </div>
+                <div className="col-6">
+                  <input
+                    type="number"
+                    className="form-control"
+                    placeholder="Respond Count"
+                    value={newCaseData.respond}
+                    onChange={(e) => handleNewCaseChange("respond", e.target.value)}
+                    style={{
+                      height: "56px",
+                      border: "1px solid #C9C9C9",
+                      borderRadius: "12px",
+                    }}
+                  />
+                </div>
               </div>
 
               {/* Attach Document */}
@@ -391,6 +510,7 @@ const List = () => {
             <div className="p-4" style={{ backgroundColor: "#fff", borderRadius: "13px" }}>
               <button
                 className="btn text-white rounded-pill w-100"
+                type="submit"
                 style={{
                   height: "63px",
                   fontSize: "20px",
@@ -401,7 +521,7 @@ const List = () => {
                 Submit
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 

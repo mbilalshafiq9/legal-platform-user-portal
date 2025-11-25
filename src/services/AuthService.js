@@ -25,7 +25,14 @@ class AuthService {
   logout() {
     localStorage.removeItem('admin');
     localStorage.removeItem('permissions');
+    localStorage.removeItem('isAuthenticated');
     window.location.href = '/legal-platform-portal/login';
+  }
+  
+  isAuthenticated() {
+    const user = this.getCurrentUser();
+    const authStatus = localStorage.getItem('isAuthenticated');
+    return !!(user && authStatus);
   }
 
   getCurrentUser() {

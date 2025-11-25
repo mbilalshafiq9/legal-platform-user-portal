@@ -1,6 +1,4 @@
-/* Circular Plus Icon Fixes for Dashboard Action Cards */
 
-/* Ensure perfect circular shape for plus icon buttons */
 .dashboard-action-button,
 .btn.dashboard-action-button,
 .btn.btn-light.dashboard-action-button,
@@ -9,7 +7,7 @@
   height: 40px !important;
   min-width: 40px !important;
   max-width: 40px !important;
-  border-radius: 50% !important; /* Perfect circle */
+  border-radius: 50% !important;
   background-color: #EAEAEA !important;
   display: flex !important;
   justify-content: center !important;
@@ -28,6 +26,42 @@
   background-color: #D5D5D5 !important;
   transform: scale(1.05) !important;
   transition: all 0.2s ease !important;
+}
+
+body:not(.dark-mode) .dashboard-action-button,
+body:not(.dark-mode) .btn.dashboard-action-button,
+body:not(.dark-mode) .btn.btn-light.dashboard-action-button,
+body:not(.dark-mode) .btn.rounded-circle.dashboard-action-button {
+  background-color: #000000 !important;
+}
+
+body:not(.dark-mode) .dashboard-action-button i,
+body:not(.dark-mode) .dashboard-action-button .bi-plus,
+body:not(.dark-mode) .btn.dashboard-action-button i,
+body:not(.dark-mode) .btn.dashboard-action-button .bi-plus,
+body:not(.dark-mode) .btn.btn-light.dashboard-action-button i,
+body:not(.dark-mode) .btn.btn-light.dashboard-action-button .bi-plus,
+body:not(.dark-mode) .btn.rounded-circle.dashboard-action-button i,
+body:not(.dark-mode) .btn.rounded-circle.dashboard-action-button .bi-plus {
+  color: #ffffff !important;
+}
+
+body:not(.dark-mode) .dashboard-card-hover:hover .dashboard-action-button,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.dashboard-action-button,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.btn-light.dashboard-action-button,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.rounded-circle.dashboard-action-button {
+  background-color: #ffffff !important;
+}
+
+body:not(.dark-mode) .dashboard-card-hover:hover .dashboard-action-button i,
+body:not(.dark-mode) .dashboard-card-hover:hover .dashboard-action-button .bi-plus,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.dashboard-action-button i,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.dashboard-action-button .bi-plus,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.btn-light.dashboard-action-button i,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.btn-light.dashboard-action-button .bi-plus,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.rounded-circle.dashboard-action-button i,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.rounded-circle.dashboard-action-button .bi-plus {
+  color: #000000 !important;
 }
 
 .dashboard-action-button:focus,
@@ -57,7 +91,6 @@
   font-size: 1.2rem !important;
 }
 
-/* Mobile Responsive - Maintain circular shape */
 @media (max-width: 768px) {
   .dashboard-action-button,
   .btn.dashboard-action-button,
@@ -67,7 +100,7 @@
     height: 40px !important;
     min-width: 40px !important;
     max-width: 40px !important;
-    border-radius: 50% !important; /* Perfect circle on mobile too */
+    border-radius: 50% !important;
   }
 }
 
@@ -80,7 +113,7 @@
     height: 40px !important;
     min-width: 40px !important;
     max-width: 40px !important;
-    border-radius: 50% !important; /* Perfect circle on small screens */
+    border-radius: 50% !important;
   }
 }
 
@@ -93,11 +126,10 @@
     height: 40px !important;
     min-width: 40px !important;
     max-width: 40px !important;
-    border-radius: 50% !important; /* Perfect circle on tablet */
+    border-radius: 50% !important;
   }
 }
 
-/* Override any conflicting Bootstrap styles */
 .btn.dashboard-action-button {
   border-radius: 50% !important;
 }
@@ -106,7 +138,6 @@
   border-radius: 50% !important;
 }
 
-/* Ensure the plus icon is centered perfectly */
 .dashboard-action-button .bi-plus {
   position: relative !important;
   top: 0 !important;
@@ -114,7 +145,6 @@
   transform: none !important;
 }
 
-/* Fix NavLink alignment issues */
 .dashboard-card-hover-icon {
   display: flex !important;
   align-items: center !important;
@@ -131,7 +161,6 @@
   text-decoration: none !important;
 }
 
-/* Ensure NavLink doesn't affect button alignment */
 .dashboard-card-hover-icon .dashboard-action-button {
   margin: 0 !important;
   padding: 0 !important;

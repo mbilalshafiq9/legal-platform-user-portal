@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import notificationProfile from "../../assets/images/notification-profile.png";
 import circle from "../../assets/images/yellow-circle.png";
 import NoMessage from "../../assets/images/NoMessage.png";
@@ -10,27 +10,81 @@ const formatMessageText = (text = "") => {
 };
 
 const List = () => {
-  const [activeTab, setActiveTab] = useState("chats");
-  const [activeSubTab, setActiveSubTab] = useState("active");
-  const [selectedContact, setSelectedContact] = useState(null);
-  const [newMessage, setNewMessage] = useState("");
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      text: "I will review the contract and get back to you with my analysis.",
-      time: "10:30 AM",
-      isFromUser: false,
-    },
-    {
-      id: 2,
-      text: "Thank you for the quick response. I'll wait for your feedback.",
-      time: "10:32 AM",
-      isFromUser: true,
-    },
-  ]);
+  // Load data from localStorage
+  const loadFromLocalStorage = (key, defaultValue) => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error(`Error loading ${key} from localStorage:`, error);
+    }
+    return defaultValue;
+  };
 
-  // Sample lawyers data - Active Lawyers
-  const activeLawyers = [
+  const ensureAvatar = (entity, fallback = notificationProfile) => {
+    const normalize = (value) => {
+      if (!value) return fallback;
+      if (typeof value === "string") {
+        return value.includes("notification-profile")
+          ? fallback
+          : value;
+      }
+      return fallback;
+    };
+
+    if (!entity) return entity;
+    if (Array.isArray(entity)) {
+      return entity.map((item) => ({
+        ...item,
+        avatar: normalize(item?.avatar),
+      }));
+    }
+    return {
+      ...entity,
+      avatar: normalize(entity?.avatar),
+    };
+  };
+
+  const [activeTab, setActiveTab] = useState(
+    loadFromLocalStorage("chat_activeTab", "chats")
+  );
+  const [activeSubTab, setActiveSubTab] = useState(
+    loadFromLocalStorage("chat_activeSubTab", "active")
+  );
+  const [selectedContact, setSelectedContact] = useState(
+    ensureAvatar(loadFromLocalStorage("chat_selectedContact", null))
+  );
+  const [newMessage, setNewMessage] = useState("");
+  
+  // Load messages for selected contact or use default
+  const getMessagesForContact = (contactId) => {
+    const allMessages = loadFromLocalStorage("chat_messages", {});
+    return allMessages[contactId] || [
+      {
+        id: 1,
+        text: "I will review the contract and get back to you with my analysis.",
+        time: "10:30 AM",
+        isFromUser: false,
+      },
+      {
+        id: 2,
+        text: "Thank you for the quick response. I'll wait for your feedback.",
+        time: "10:32 AM",
+        isFromUser: true,
+      },
+    ];
+  };
+
+  const [messages, setMessages] = useState(
+    selectedContact ? getMessagesForContact(selectedContact.id) : []
+  );
+
+  // Load lawyers and contacts from localStorage or use defaults
+  const [activeLawyers, setActiveLawyers] = useState(
+    ensureAvatar(
+      loadFromLocalStorage("chat_activeLawyers", [
     {
       id: 1,
       name: "Shamra Joseph",
@@ -86,10 +140,13 @@ const List = () => {
       price: "1.85 USD",
       unreadCount: 0,
     },
-  ];
+      ])
+    )
+  );
 
-  // Sample lawyers data - Inactive Lawyers
-  const inactiveLawyers = [
+  const [inactiveLawyers, setInactiveLawyers] = useState(
+    ensureAvatar(
+      loadFromLocalStorage("chat_inactiveLawyers", [
     {
       id: 7,
       name: "David Brown",
@@ -145,10 +202,13 @@ const List = () => {
       price: "2.15 USD",
       unreadCount: 2,
     },
-  ];
+      ])
+    )
+  );
 
-  // Sample chat contacts
-  const chatContacts = [
+  const [chatContacts, setChatContacts] = useState(
+    ensureAvatar(
+      loadFromLocalStorage("chat_chatContacts", [
     {
       id: 1,
       name: "Emily Chen",
@@ -214,14 +274,42 @@ const List = () => {
       unread: 0,
       avatar: notificationProfile,
     },
-  ];
+      ])
+    )
+  );
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem("chat_activeTab", JSON.stringify(activeTab));
+      localStorage.setItem("chat_activeSubTab", JSON.stringify(activeSubTab));
+      localStorage.setItem("chat_selectedContact", JSON.stringify(selectedContact));
+      localStorage.setItem("chat_activeLawyers", JSON.stringify(activeLawyers));
+      localStorage.setItem("chat_inactiveLawyers", JSON.stringify(inactiveLawyers));
+      localStorage.setItem("chat_chatContacts", JSON.stringify(chatContacts));
+    } catch (error) {
+      console.error("Error saving chat data to localStorage:", error);
+    }
+  }, [activeTab, activeSubTab, selectedContact, activeLawyers, inactiveLawyers, chatContacts]);
+
+  // Load messages when contact is selected
+  useEffect(() => {
+    if (selectedContact) {
+      const contactMessages = getMessagesForContact(selectedContact.id);
+      setMessages(contactMessages);
+    } else {
+      setMessages([]);
+    }
+  }, [selectedContact]);
 
   const handleContactSelect = (contact) => {
     setSelectedContact(contact);
+    const contactMessages = getMessagesForContact(contact.id);
+    setMessages(contactMessages);
   };
 
   const handleSendMessage = () => {
-    if (newMessage.trim()) {
+    if (newMessage.trim() && selectedContact) {
       const currentTime = new Date().toLocaleTimeString('en-US', { 
         hour: '2-digit', 
         minute: '2-digit',
@@ -229,13 +317,32 @@ const List = () => {
       });
       
       const newMsg = {
-        id: messages.length + 1,
+        id: Date.now(),
         text: formatMessageText(newMessage),
         time: currentTime,
         isFromUser: true,
       };
       
-      setMessages([...messages, newMsg]);
+      const updatedMessages = [...messages, newMsg];
+      setMessages(updatedMessages);
+      
+      // Save messages to localStorage for this contact
+      try {
+        const allMessages = loadFromLocalStorage("chat_messages", {});
+        allMessages[selectedContact.id] = updatedMessages;
+        localStorage.setItem("chat_messages", JSON.stringify(allMessages));
+        
+        // Update last message in chatContacts
+        const updatedContacts = chatContacts.map(contact => 
+          contact.id === selectedContact.id
+            ? { ...contact, lastMessage: newMsg.text, time: currentTime }
+            : contact
+        );
+        setChatContacts(updatedContacts);
+      } catch (error) {
+        console.error("Error saving message to localStorage:", error);
+      }
+      
       setNewMessage("");
     }
   };

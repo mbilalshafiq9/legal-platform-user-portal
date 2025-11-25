@@ -1,15 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import notificationProfile from "../../assets/images/notification-profile.png";
+import "../../assets/css/case-details-button.css";
 
 const Details = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+  // Load data from localStorage
+  const loadFromLocalStorage = (key, defaultValue) => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error(`Error loading ${key} from localStorage:`, error);
+    }
+    return defaultValue;
+  };
+
+  const [searchTerm, setSearchTerm] = useState(
+    loadFromLocalStorage("myCases_searchTerm", "")
+  );
   const [showCreateCase, setShowCreateCase] = useState(false);
 
-  const caseDetails = {
+  // Default case details with professional text
+  const defaultCaseDetails = {
     caseId: "Case# 2548",
     title: "Explain Your Case",
     description:
-      "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.",
+      "I am seeking legal representation for a complex criminal matter involving allegations of financial misconduct. The case involves multiple parties and requires expertise in both criminal defense and corporate law. I need an experienced attorney who can navigate the intricacies of UAE jurisdiction and provide strategic counsel throughout the legal proceedings. The matter is time-sensitive and requires immediate attention to protect my rights and interests.",
     countryRegion: "UAE Jurisdiction",
     legalConsultant: "Legal Advisor",
     caseCategory: "Criminal Law",
@@ -18,7 +36,12 @@ const Details = () => {
     caseBudget: "$2000",
   };
 
-  const lawyers = [
+  const [caseDetails, setCaseDetails] = useState(
+    loadFromLocalStorage("myCases_caseDetails", defaultCaseDetails)
+  );
+
+  // Default lawyers data
+  const defaultLawyers = [
     {
       id: 1,
       name: "Shamra Joseph",
@@ -57,6 +80,85 @@ const Details = () => {
     },
   ];
 
+  const [lawyers, setLawyers] = useState(
+    loadFromLocalStorage("myCases_lawyers", defaultLawyers)
+  );
+
+  // Form states for Create Case offcanvas
+  const [createCaseForm, setCreateCaseForm] = useState({
+    jurisdiction: loadFromLocalStorage("myCases_createCase_jurisdiction", ""),
+    legalConsultantType: loadFromLocalStorage("myCases_createCase_legalConsultantType", ""),
+    caseCategory: loadFromLocalStorage("myCases_createCase_caseCategory", ""),
+    subCategory: loadFromLocalStorage("myCases_createCase_subCategory", ""),
+    explainCase: loadFromLocalStorage("myCases_createCase_explainCase", ""),
+    acceptTerms: loadFromLocalStorage("myCases_createCase_acceptTerms", false),
+  });
+
+  // Save all data to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem("myCases_searchTerm", JSON.stringify(searchTerm));
+      localStorage.setItem("myCases_caseDetails", JSON.stringify(caseDetails));
+      localStorage.setItem("myCases_lawyers", JSON.stringify(lawyers));
+      localStorage.setItem("myCases_createCase_jurisdiction", JSON.stringify(createCaseForm.jurisdiction));
+      localStorage.setItem("myCases_createCase_legalConsultantType", JSON.stringify(createCaseForm.legalConsultantType));
+      localStorage.setItem("myCases_createCase_caseCategory", JSON.stringify(createCaseForm.caseCategory));
+      localStorage.setItem("myCases_createCase_subCategory", JSON.stringify(createCaseForm.subCategory));
+      localStorage.setItem("myCases_createCase_explainCase", JSON.stringify(createCaseForm.explainCase));
+      localStorage.setItem("myCases_createCase_acceptTerms", JSON.stringify(createCaseForm.acceptTerms));
+    } catch (error) {
+      console.error("Error saving MyCases data to localStorage:", error);
+    }
+  }, [searchTerm, caseDetails, lawyers, createCaseForm]);
+
+  const handleFormChange = (field, value) => {
+    setCreateCaseForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleSubmitCase = () => {
+    if (!createCaseForm.acceptTerms) {
+      toast.error("Please accept the Privacy policy & Terms & conditions");
+      return;
+    }
+
+    if (!createCaseForm.explainCase.trim()) {
+      toast.error("Please provide a case description");
+      return;
+    }
+
+    // Create new case
+    const newCaseId = `Case# ${Date.now()}`;
+    const newCase = {
+      caseId: newCaseId,
+      title: "Explain Your Case",
+      description: createCaseForm.explainCase,
+      countryRegion: createCaseForm.jurisdiction || "UAE Jurisdiction",
+      legalConsultant: createCaseForm.legalConsultantType || "Legal Advisor",
+      caseCategory: createCaseForm.caseCategory || "Criminal Law",
+      subCategory: createCaseForm.subCategory || "Crimes Against Persons",
+      caseValue: "$1M",
+      caseBudget: "$2000",
+    };
+
+    setCaseDetails(newCase);
+    toast.success("Case created successfully!");
+    
+    // Reset form
+    setCreateCaseForm({
+      jurisdiction: "",
+      legalConsultantType: "",
+      caseCategory: "",
+      subCategory: "",
+      explainCase: "",
+      acceptTerms: false,
+    });
+    
+    setShowCreateCase(false);
+  };
+
   return (
     <div className="container-fluid case-details--mukta-font">
       {/* Search and Filter Section */}
@@ -91,7 +193,7 @@ const Details = () => {
 
             {/* Add New Case Button */}
             <button
-              className="btn bg-transparent btn-outline-dark rounded-pill text-black px-4 py-2 d-flex justify-content-center align-items-center gap-2 case-details-add-case-btn portal-button-hover" style={{ border: "1px solid #DEDEDE", marginLeft: "80px" }}
+              className="btn rounded-pill px-4 py-2 d-flex justify-content-center align-items-center gap-2 case-details-add-case-btn portal-button-hover" style={{ marginLeft: "80px" }}
               type="button"
               onClick={() => setShowCreateCase(true)}
             >
@@ -294,7 +396,7 @@ const Details = () => {
                         height="48"
                       />
                       <div>
-                        <h6 className="fw-bold mb-0" style={{ fontSize: "20px", color: "#474747" }}>
+                        <h6 className="fw-bold mb-0" style={{ fontSize: "18px", color: "#474747" }}>
                           {lawyer.name}
                         </h6>
                       </div>
@@ -373,6 +475,8 @@ const Details = () => {
                   <div className="position-relative">
                     <select
                       className="form-select"
+                      value={createCaseForm.jurisdiction}
+                      onChange={(e) => handleFormChange("jurisdiction", e.target.value)}
                       style={{
                         width: "100%",
                         height: "56px",
@@ -380,15 +484,23 @@ const Details = () => {
                         borderRadius: "12px",
                       }}
                     >
-                      <option>Select Jurisdiction</option>
+                      <option value="">Select Jurisdiction</option>
+                      <option value="UAE Jurisdiction">UAE Jurisdiction</option>
+                      <option value="Saudi Arabia Jurisdiction">Saudi Arabia Jurisdiction</option>
+                      <option value="Kuwait Jurisdiction">Kuwait Jurisdiction</option>
+                      <option value="Qatar Jurisdiction">Qatar Jurisdiction</option>
+                      <option value="Bahrain Jurisdiction">Bahrain Jurisdiction</option>
+                      <option value="Oman Jurisdiction">Oman Jurisdiction</option>
                     </select>
-                    <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i>
+                    {/* <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i> */}
                   </div>
                 </div>
                 <div className="col-6">
                   <div className="position-relative">
                     <select
                       className="form-select"
+                      value={createCaseForm.legalConsultantType}
+                      onChange={(e) => handleFormChange("legalConsultantType", e.target.value)}
                       style={{
                         width: "100%",
                         height: "56px",
@@ -396,9 +508,15 @@ const Details = () => {
                         borderRadius: "12px",
                       }}
                     >
-                      <option>Type of legal consultant</option>
+                      <option value="">Type of legal consultant</option>
+                      <option value="Legal Advisor">Legal Advisor</option>
+                      <option value="Corporate Lawyer">Corporate Lawyer</option>
+                      <option value="Criminal Defense Attorney">Criminal Defense Attorney</option>
+                      <option value="Family Law Attorney">Family Law Attorney</option>
+                      <option value="Real Estate Lawyer">Real Estate Lawyer</option>
+                      <option value="Tax Attorney">Tax Attorney</option>
                     </select>
-                    <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i>
+                    {/* <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i> */}
                   </div>
                 </div>
               </div>
@@ -409,6 +527,8 @@ const Details = () => {
                   <div className="position-relative">
                     <select
                       className="form-select"
+                      value={createCaseForm.caseCategory}
+                      onChange={(e) => handleFormChange("caseCategory", e.target.value)}
                       style={{
                         width: "100%",
                         height: "56px",
@@ -416,15 +536,24 @@ const Details = () => {
                         borderRadius: "12px",
                       }}
                     >
-                      <option>Criminal Law</option>
+                      <option value="">Select Case Category</option>
+                      <option value="Criminal Law">Criminal Law</option>
+                      <option value="Corporate Law">Corporate Law</option>
+                      <option value="Family Law">Family Law</option>
+                      <option value="Real Estate Law">Real Estate Law</option>
+                      <option value="Tax Law">Tax Law</option>
+                      <option value="Employment Law">Employment Law</option>
+                      <option value="Intellectual Property Law">Intellectual Property Law</option>
                     </select>
-                    <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i>
+                    {/* <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i> */}
                   </div>
                 </div>
                 <div className="col-6">
                   <div className="position-relative">
                     <select
                       className="form-select"
+                      value={createCaseForm.subCategory}
+                      onChange={(e) => handleFormChange("subCategory", e.target.value)}
                       style={{
                         width: "100%",
                         height: "56px",
@@ -432,9 +561,14 @@ const Details = () => {
                         borderRadius: "12px",
                       }}
                     >
-                      <option>Select Sub Categories</option>
+                      <option value="">Select Sub Categories</option>
+                      <option value="Crimes Against Persons">Crimes Against Persons</option>
+                      <option value="Property Crimes">Property Crimes</option>
+                      <option value="White Collar Crimes">White Collar Crimes</option>
+                      <option value="Drug Crimes">Drug Crimes</option>
+                      <option value="Traffic Violations">Traffic Violations</option>
                     </select>
-                    <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i>
+                    {/* <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i> */}
                   </div>
                 </div>
               </div>
@@ -444,6 +578,8 @@ const Details = () => {
                 <textarea
                   className="form-control"
                   placeholder="Explain Your Case"
+                  value={createCaseForm.explainCase}
+                  onChange={(e) => handleFormChange("explainCase", e.target.value)}
                   style={{
                     resize: "none",
                     width: "100%",
@@ -487,7 +623,13 @@ const Details = () => {
 
               {/* Accept Terms */}
               <div className="form-check mb-4">
-                <input className="form-check-input" type="checkbox" id="acceptTerms" />
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  id="acceptTerms"
+                  checked={createCaseForm.acceptTerms}
+                  onChange={(e) => handleFormChange("acceptTerms", e.target.checked)}
+                />
                 <label className="form-check-label ms-2" htmlFor="acceptTerms">
                   Accept all Privacy policy & Terms & conditions
                 </label>
@@ -498,6 +640,7 @@ const Details = () => {
             <div className="p-4 border-top" style={{ backgroundColor: "#fff", borderRadius: "13px" }}>
               <button
                 className="btn text-white rounded-pill w-100"
+                onClick={handleSubmitCase}
                 style={{
                   height: "63px",
                   fontSize: "20px",

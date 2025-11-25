@@ -16,18 +16,89 @@ import "../assets/css/siri-border-animation.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("active");
-  const [showPostQuestion, setShowPostQuestion] = useState(false);
-  const [showCreateCase, setShowCreateCase] = useState(false);
+  
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check authentication on component mount
+  useEffect(() => {
+    const currentUser = AuthService.getCurrentUser();
+    const authStatus = localStorage.getItem("isAuthenticated");
+    
+    if (!currentUser || !authStatus) {
+      toast.error("Please login to access the dashboard");
+      navigate("/login");
+      return;
+    }
+    
+    setIsAuthenticated(true);
+  }, [navigate]);
+  
+  // Load initial state from localStorage or use defaults
+  const loadFromLocalStorage = () => {
+    try {
+      const saved = localStorage.getItem("dashboardData");
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error("Error loading dashboard data from localStorage:", error);
+    }
+    return null;
+  };
+
+  const savedData = loadFromLocalStorage();
+
+  const [activeTab, setActiveTab] = useState(
+    savedData?.activeTab || "active"
+  );
+  const [showPostQuestion, setShowPostQuestion] = useState(
+    savedData?.showPostQuestion || false
+  );
+  const [showCreateCase, setShowCreateCase] = useState(
+    savedData?.showCreateCase || false
+  );
 
   // Select states
   const [postQuestionJurisdiction, setPostQuestionJurisdiction] =
-    useState(null);
-  const [createCaseJurisdiction, setCreateCaseJurisdiction] = useState(null);
+    useState(savedData?.postQuestionJurisdiction || null);
+  const [createCaseJurisdiction, setCreateCaseJurisdiction] = useState(
+    savedData?.createCaseJurisdiction || null
+  );
   const [createCaseConsultantType, setCreateCaseConsultantType] =
-    useState(null);
-  const [createCaseLawType, setCreateCaseLawType] = useState(null);
-  const [createCaseSubCategory, setCreateCaseSubCategory] = useState(null);
+    useState(savedData?.createCaseConsultantType || null);
+  const [createCaseLawType, setCreateCaseLawType] = useState(
+    savedData?.createCaseLawType || null
+  );
+  const [createCaseSubCategory, setCreateCaseSubCategory] = useState(
+    savedData?.createCaseSubCategory || null
+  );
+
+  // Form field states
+  const [postQuestionText, setPostQuestionText] = useState(
+    savedData?.postQuestionText || ""
+  );
+  const [createCaseText, setCreateCaseText] = useState(
+    savedData?.createCaseText || ""
+  );
+  const [acceptTerms, setAcceptTerms] = useState(
+    savedData?.acceptTerms || false
+  );
+
+  // Load posted questions from localStorage
+  const loadPostedQuestions = () => {
+    try {
+      const saved = localStorage.getItem("postedQuestions");
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error("Error loading posted questions from localStorage:", error);
+    }
+    return [];
+  };
+
+  const [postedQuestions, setPostedQuestions] = useState(loadPostedQuestions());
 
   // Select options
   const jurisdictionOptions = [
@@ -57,9 +128,94 @@ const Dashboard = () => {
     { label: "Violent Crimes", value: "violent" },
   ];
 
+  // Save all dashboard data to localStorage whenever any state changes
+  useEffect(() => {
+    const dashboardData = {
+      activeTab,
+      showPostQuestion,
+      showCreateCase,
+      postQuestionJurisdiction,
+      createCaseJurisdiction,
+      createCaseConsultantType,
+      createCaseLawType,
+      createCaseSubCategory,
+      postQuestionText,
+      createCaseText,
+      acceptTerms,
+    };
+
+    try {
+      localStorage.setItem("dashboardData", JSON.stringify(dashboardData));
+    } catch (error) {
+      console.error("Error saving dashboard data to localStorage:", error);
+    }
+  }, [
+    activeTab,
+    showPostQuestion,
+    showCreateCase,
+    postQuestionJurisdiction,
+    createCaseJurisdiction,
+    createCaseConsultantType,
+    createCaseLawType,
+    createCaseSubCategory,
+    postQuestionText,
+    createCaseText,
+    acceptTerms,
+  ]);
+
+  // Save posted questions to localStorage whenever postedQuestions changes
+  useEffect(() => {
+    try {
+      localStorage.setItem("postedQuestions", JSON.stringify(postedQuestions));
+    } catch (error) {
+      console.error("Error saving posted questions to localStorage:", error);
+    }
+  }, [postedQuestions]);
+
   const handleAddQuestionClick = () => {
     setShowPostQuestion(true);
   };
+
+  // Handle posting a question
+  const handlePostQuestion = () => {
+    if (!postQuestionText.trim()) {
+      toast.error("Please enter your question");
+      return;
+    }
+
+    const newQuestion = {
+      id: Date.now().toString(),
+      question: postQuestionText,
+      jurisdiction: postQuestionJurisdiction,
+      timestamp: new Date().toISOString(),
+      date: new Date().toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+      }),
+      time: new Date().toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      }),
+    };
+
+    // Add the new question to the posted questions array
+    setPostedQuestions((prev) => [newQuestion, ...prev]);
+
+    // Show success message
+    toast.success("Question posted successfully!");
+
+    // Reset form
+    setPostQuestionText("");
+    setPostQuestionJurisdiction(null);
+    setShowPostQuestion(false);
+  };
+
+  // Don't render dashboard if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="d-flex flex-column flex-column-fluid header-main dashboard--inter-font">
@@ -678,6 +834,8 @@ const Dashboard = () => {
                   className="form-control form-control-lg dashboard-textarea"
                   placeholder="Explain Your Case"
                   rows="4"
+                  value={createCaseText}
+                  onChange={(e) => setCreateCaseText(e.target.value)}
                 ></textarea>
               </div>
 
@@ -698,6 +856,8 @@ const Dashboard = () => {
                   className="form-check-input"
                   type="checkbox"
                   id="acceptTermsDashboard"
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
                 />
                 <label
                   className="form-check-label ms-2"
@@ -743,80 +903,89 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="offcanvas-body p-3 p-md-4">
-            {/* Question Input */}
-            <div className="mb-3 siri-border-animation">
-              <textarea
-                className="form-control form-control-lg dashboard-post-question-textarea"
-                placeholder="Explain Your Question"
-                rows="4"
-                style={{
-                  position: "relative",
-                  zIndex: 1,
-                }}
-              ></textarea>
-            </div>
+          <div className="offcanvas-body p-3 p-md-4 d-flex flex-column">
+            <div className="flex-grow-1 overflow-auto">
+              {/* Question Input */}
+              <div className="mb-3 siri-border-animation">
+                <textarea
+                  className="form-control form-control-lg dashboard-post-question-textarea"
+                  placeholder="Explain Your Question"
+                  rows="4"
+                  value={postQuestionText}
+                  onChange={(e) => setPostQuestionText(e.target.value)}
+                  style={{
+                    position: "relative",
+                    zIndex: 1,
+                  }}
+                ></textarea>
+              </div>
 
-            {/* Jurisdiction Dropdown */}
-            <div className="mb-3">
-              <Dropdown
-                value={postQuestionJurisdiction}
-                onChange={(e) => setPostQuestionJurisdiction(e.value)}
-                options={jurisdictionOptions}
-                placeholder="Jurisdiction"
-                className="w-100"
-                style={{ height: "60px" }}
-              />
-            </div>
+              {/* Jurisdiction Dropdown */}
+              <div className="mb-3">
+                <Dropdown
+                  value={postQuestionJurisdiction}
+                  onChange={(e) => setPostQuestionJurisdiction(e.value)}
+                  options={jurisdictionOptions}
+                  placeholder="Jurisdiction"
+                  className="w-100"
+                  style={{ height: "60px" }}
+                />
+              </div>
 
-            {/* File Upload */}
-            <div className="mb-3">
-              <div className="d-flex align-items-center justify-content-start border border-2 border-dashed rounded dashboard-post-question-upload p-3">
-                <div className="p-2 p-md-3 me-3 rounded-1 dashboard-file-upload-icon">
-                  <i className="bi bi-paperclip fs-4 fs-md-3 d-inline-block dashboard-paperclip-icon"></i>
+              {/* File Upload */}
+              <div className="mb-3">
+                <div className="d-flex align-items-center justify-content-start border border-2 border-dashed rounded dashboard-post-question-upload p-3">
+                  <div className="p-2 p-md-3 me-3 rounded-1 dashboard-file-upload-icon">
+                    <i className="bi bi-paperclip fs-4 fs-md-3 d-inline-block dashboard-paperclip-icon"></i>
+                  </div>
+
+                  <p className="text-muted mb-0 fs-6">Attach Document</p>
                 </div>
-
-                <p className="text-muted mb-0 fs-6">Attach Document</p>
               </div>
-            </div>
 
-            {/* How it works Section */}
-            <div className="mb-3">
-              <h6 className="fw-bold mb-2">How it works</h6>
-              <div className="d-flex align-items-start gap-3 gap-md-5 my-3 my-md-5">
-                <i className="bi bi-moon-fill text-black dashboard-moon-icon fs-5"></i>
-                <small className="text-muted fs-6">
-                  Ask your question and see the answer in Questions & Answers.
-                </small>
-              </div>
-              <div className="d-flex align-items-start gap-3 gap-md-5 my-3 my-md-5">
-                <i className="bi bi-moon-fill text-black dashboard-moon-icon fs-5"></i>
-                <small className="text-muted fs-6">
-                  You will be notified when a lawyer answers.
-                </small>
-              </div>
-            </div>
-
-            {/* Post Question Fee */}
-            <div className="mb-3 rounded-4 dashboard-post-question-fee">
-              <div className="d-flex justify-content-between align-items-center h-100 rounded">
-                <div className="p-3">
-                  <h6 className="fw-bold mb-1 fs-6">Post Question Fee</h6>
-                  <small className="text-muted fs-7">
-                    1 Question post only
+              {/* How it works Section */}
+              <div className="mb-3">
+                <h6 className="fw-bold mb-2">How it works</h6>
+                <div className="d-flex align-items-start gap-3 gap-md-5 my-3 my-md-5">
+                  <i className="bi bi-moon-fill text-black dashboard-moon-icon fs-5"></i>
+                  <small className="text-muted fs-6">
+                    Ask your question and see the answer in Questions & Answers.
                   </small>
                 </div>
-                <div className="text-end px-3 px-md-4 h-100 d-flex flex-column justify-content-center dashboard-fee-divider">
-                  <div className="fw-bold fs-6">USD</div>
-                  <div className="fw-bold fs-5">1.00</div>
+                <div className="d-flex align-items-start gap-3 gap-md-5 my-3 my-md-5">
+                  <i className="bi bi-moon-fill text-black dashboard-moon-icon fs-5"></i>
+                  <small className="text-muted fs-6">
+                    You will be notified when a lawyer answers.
+                  </small>
+                </div>
+              </div>
+
+              {/* Post Question Fee */}
+              <div className="mb-3 rounded-4 dashboard-post-question-fee">
+                <div className="d-flex justify-content-between align-items-center h-100 rounded">
+                  <div className="p-3">
+                    <h6 className="fw-bold mb-1 fs-6">Post Question Fee</h6>
+                    <small className="text-muted fs-7">
+                      1 Question post only
+                    </small>
+                  </div>
+                  <div className="text-end px-3 px-md-4 h-100 d-flex flex-column justify-content-center dashboard-fee-divider">
+                    <div className="fw-bold fs-6">USD</div>
+                    <div className="fw-bold fs-5">1.00</div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Submit Button */}
-            <button className="btn text-white rounded-pill dashboard-post-question-button w-100 py-3 py-md-2">
-              Post Your Legal Issues
-            </button>
+            {/* Submit Button - Fixed at bottom center */}
+            <div className="mt-auto pt-3 border-top">
+              <button
+                className="btn text-white rounded-pill dashboard-post-question-button w-100 py-3 py-md-2"
+                onClick={handlePostQuestion}
+              >
+                Post Your Legal Issues
+              </button>
+            </div>
           </div>
         </div>
       )}

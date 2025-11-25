@@ -1,15 +1,40 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { toast } from "react-toastify";
 import notificationProfile from "../../assets/images/notification-profile.png";
 
 const EmployeesList = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+  // Load data from localStorage
+  const loadFromLocalStorage = (key, defaultValue) => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error(`Error loading ${key} from localStorage:`, error);
+    }
+    return defaultValue;
+  };
+
+  const [searchTerm, setSearchTerm] = useState(
+    loadFromLocalStorage("employees_searchTerm", "")
+  );
   const [showAddEmployee, setShowAddEmployee] = useState(false);
   const navigate = useNavigate();
 
-  // Sample employee data
-  const employees = [
+  // Form states for Add New Team
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    location: "",
+    role: "",
+    employeeId: "",
+  });
+
+  // Default employee data
+  const defaultEmployees = [
     {
       id: 1,
       name: "Shamra Joseph",
@@ -72,6 +97,21 @@ const EmployeesList = () => {
     },
   ];
 
+  // Load employees from localStorage or use defaults
+  const [employees, setEmployees] = useState(
+    loadFromLocalStorage("employees_list", defaultEmployees)
+  );
+
+  // Save employees to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem("employees_list", JSON.stringify(employees));
+      localStorage.setItem("employees_searchTerm", JSON.stringify(searchTerm));
+    } catch (error) {
+      console.error("Error saving employees data to localStorage:", error);
+    }
+  }, [employees, searchTerm]);
+
   const filteredEmployees = employees.filter(
     (employee) =>
       employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -81,6 +121,54 @@ const EmployeesList = () => {
 
   const handleEmployeeClick = (employeeId) => {
     navigate(`/employees/${employeeId}`);
+  };
+
+  const handleInputChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleAddEmployee = (e) => {
+    e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.fullName.trim() || !formData.email.trim() || !formData.phone.trim()) {
+      toast.error("Please fill in all required fields (Name, Email, Phone)");
+      return;
+    }
+
+    // Generate employee ID if not provided
+    const employeeId = formData.employeeId.trim() || `#${Date.now()}PL`;
+
+    const newEmployee = {
+      id: Date.now(),
+      name: formData.fullName.trim(),
+      location: formData.location.trim() || "Not specified",
+      employeeId: employeeId,
+      email: formData.email.trim(),
+      phone: formData.phone.trim(),
+      role: formData.role || "Not specified",
+      profileImage: notificationProfile,
+    };
+
+    // Add new employee to the list
+    const updatedEmployees = [...employees, newEmployee];
+    setEmployees(updatedEmployees);
+
+    toast.success("Employee added successfully!");
+    
+    // Reset form and close offcanvas
+    setFormData({
+      fullName: "",
+      email: "",
+      phone: "",
+      location: "",
+      role: "",
+      employeeId: "",
+    });
+    setShowAddEmployee(false);
   };
 
   return (
@@ -146,7 +234,18 @@ const EmployeesList = () => {
                 backgroundColor: "#ffffff",
                 color: "#000000",
               }}
-              onClick={() => setShowAddEmployee(true)}
+              onClick={() => {
+                setShowAddEmployee(true);
+                // Reset form when opening
+                setFormData({
+                  fullName: "",
+                  email: "",
+                  phone: "",
+                  location: "",
+                  role: "",
+                  employeeId: "",
+                });
+              }}
             >
               <i className="bi bi-plus-circle-fill"></i>
               Add New Team
@@ -346,7 +445,18 @@ const EmployeesList = () => {
           <button
             type="button"
             className="btn-close"
-            onClick={() => setShowAddEmployee(false)}
+            onClick={() => {
+              setShowAddEmployee(false);
+              // Reset form when closing
+              setFormData({
+                fullName: "",
+                email: "",
+                phone: "",
+                location: "",
+                role: "",
+                employeeId: "",
+              });
+            }}
           ></button>
         </div>
         <div
@@ -354,13 +464,16 @@ const EmployeesList = () => {
           style={{ height: "100%" }}
         >
           <div className="p-4 flex-grow-1" style={{ overflowY: "auto" }}>
-            <form>
+            <form onSubmit={handleAddEmployee}>
               <div className="mb-3">
                 <label className="form-label fw-semibold">Full Name</label>
                 <input
                   type="text"
                   className="form-control portal-form-hover"
                   placeholder="Enter full name"
+                  value={formData.fullName}
+                  onChange={(e) => handleInputChange("fullName", e.target.value)}
+                  required
                 />
               </div>
               <div className="mb-3">
@@ -369,6 +482,9 @@ const EmployeesList = () => {
                   type="email"
                   className="form-control portal-form-hover"
                   placeholder="Enter email address"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  required
                 />
               </div>
               <div className="mb-3">
@@ -377,6 +493,9 @@ const EmployeesList = () => {
                   type="tel"
                   className="form-control portal-form-hover"
                   placeholder="Enter phone number"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  required
                 />
               </div>
               <div className="mb-3">
@@ -385,18 +504,24 @@ const EmployeesList = () => {
                   type="text"
                   className="form-control portal-form-hover"
                   placeholder="Enter location"
+                  value={formData.location}
+                  onChange={(e) => handleInputChange("location", e.target.value)}
                 />
               </div>
               <div className="mb-3">
                 <label className="form-label fw-semibold">Role</label>
-                <select className="form-select portal-form-hover">
+                <select
+                  className="form-select portal-form-hover"
+                  value={formData.role}
+                  onChange={(e) => handleInputChange("role", e.target.value)}
+                >
                   <option value="">Select role</option>
-                  <option value="hr">HR Management</option>
-                  <option value="developer">Software Developer</option>
-                  <option value="manager">Project Manager</option>
-                  <option value="designer">Designer</option>
-                  <option value="marketing">Marketing Manager</option>
-                  <option value="sales">Sales Executive</option>
+                  <option value="HR Management">HR Management</option>
+                  <option value="Software Developer">Software Developer</option>
+                  <option value="Project Manager">Project Manager</option>
+                  <option value="Designer">Designer</option>
+                  <option value="Marketing Manager">Marketing Manager</option>
+                  <option value="Sales Executive">Sales Executive</option>
                 </select>
               </div>
               <div className="mb-3">
@@ -404,7 +529,9 @@ const EmployeesList = () => {
                 <input
                   type="text"
                   className="form-control portal-form-hover"
-                  placeholder="Enter employee ID"
+                  placeholder="Enter employee ID (optional)"
+                  value={formData.employeeId}
+                  onChange={(e) => handleInputChange("employeeId", e.target.value)}
                 />
               </div>
             </form>
@@ -418,7 +545,9 @@ const EmployeesList = () => {
             }}
           >
             <button
+              type="button"
               className="btn text-white rounded-pill w-100 portal-button-hover"
+              onClick={handleAddEmployee}
               style={{
                 height: "63px",
                 fontSize: "20px",

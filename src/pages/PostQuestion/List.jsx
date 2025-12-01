@@ -105,14 +105,21 @@ const List = () => {
     },
   ];
 
-  const [selectedQuestion, setSelectedQuestion] = useState(null);
-  const [showDetail, setShowDetail] = useState(false);
-  const [showPostQuestion, setShowPostQuestion] = useState(false);
+  // Load popup states from localStorage
+  const savedSelectedQuestion = loadFromLocalStorage("postQuestions_selectedQuestion", null);
+  const savedShowDetail = loadFromLocalStorage("postQuestions_showDetail", false);
+  const savedShowPostQuestion = loadFromLocalStorage("postQuestions_showPostQuestion", false);
+  const savedQuestionText = loadFromLocalStorage("postQuestions_questionText", "");
+  const savedQuestionJurisdiction = loadFromLocalStorage("postQuestions_questionJurisdiction", "");
+
+  const [selectedQuestion, setSelectedQuestion] = useState(savedSelectedQuestion);
+  const [showDetail, setShowDetail] = useState(savedShowDetail);
+  const [showPostQuestion, setShowPostQuestion] = useState(savedShowPostQuestion);
   const [isClosing, setIsClosing] = useState(false);
 
   // Form states
-  const [questionText, setQuestionText] = useState("");
-  const [questionJurisdiction, setQuestionJurisdiction] = useState("");
+  const [questionText, setQuestionText] = useState(savedQuestionText);
+  const [questionJurisdiction, setQuestionJurisdiction] = useState(savedQuestionJurisdiction);
 
   // Load questions from localStorage or merge with dashboard questions
   const savedQuestions = loadFromLocalStorage("postQuestions_questions", []);
@@ -166,6 +173,19 @@ const List = () => {
     }
   }, [questions]);
 
+  // Save popup states and form data to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem("postQuestions_showPostQuestion", JSON.stringify(showPostQuestion));
+      localStorage.setItem("postQuestions_showDetail", JSON.stringify(showDetail));
+      localStorage.setItem("postQuestions_selectedQuestion", JSON.stringify(selectedQuestion));
+      localStorage.setItem("postQuestions_questionText", JSON.stringify(questionText));
+      localStorage.setItem("postQuestions_questionJurisdiction", JSON.stringify(questionJurisdiction));
+    } catch (error) {
+      console.error("Error saving postQuestions popup states to localStorage:", error);
+    }
+  }, [showPostQuestion, showDetail, selectedQuestion, questionText, questionJurisdiction]);
+
   // Update lawyer responses when question is selected
   useEffect(() => {
     if (selectedQuestion) {
@@ -198,6 +218,13 @@ const List = () => {
       // Reset form
       setQuestionText("");
       setQuestionJurisdiction("");
+      // Clear form data from localStorage when closing
+      try {
+        localStorage.setItem("postQuestions_questionText", JSON.stringify(""));
+        localStorage.setItem("postQuestions_questionJurisdiction", JSON.stringify(""));
+      } catch (error) {
+        console.error("Error clearing form data from localStorage:", error);
+      }
     }, 300); // Match animation duration
   };
 

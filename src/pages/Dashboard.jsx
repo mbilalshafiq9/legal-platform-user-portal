@@ -58,6 +58,7 @@ const Dashboard = () => {
   const [showCreateCase, setShowCreateCase] = useState(
     savedData?.showCreateCase || false
   );
+  const [isClosing, setIsClosing] = useState(false);
 
   // Select states
   const [postQuestionJurisdiction, setPostQuestionJurisdiction] =
@@ -84,6 +85,7 @@ const Dashboard = () => {
   const [acceptTerms, setAcceptTerms] = useState(
     savedData?.acceptTerms || false
   );
+  const [selectedFiles, setSelectedFiles] = useState([]);
 
   // Load posted questions from localStorage
   const loadPostedQuestions = () => {
@@ -176,6 +178,25 @@ const Dashboard = () => {
     setShowPostQuestion(true);
   };
 
+  const handleClosePostQuestion = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setShowPostQuestion(false);
+      setIsClosing(false);
+      // Reset form
+      setPostQuestionText("");
+      setPostQuestionJurisdiction(null);
+      setSelectedFiles([]);
+      // Clear form data from localStorage when closing
+      try {
+        localStorage.setItem("postQuestions_questionText", JSON.stringify(""));
+        localStorage.setItem("postQuestions_questionJurisdiction", JSON.stringify(""));
+      } catch (error) {
+        console.error("Error clearing form data from localStorage:", error);
+      }
+    }, 300); // Match animation duration
+  };
+
   // Handle posting a question
   const handlePostQuestion = () => {
     if (!postQuestionText.trim()) {
@@ -187,6 +208,11 @@ const Dashboard = () => {
       id: Date.now().toString(),
       question: postQuestionText,
       jurisdiction: postQuestionJurisdiction,
+      files: selectedFiles.map((file) => ({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      })),
       timestamp: new Date().toISOString(),
       date: new Date().toLocaleDateString("en-US", {
         month: "short",
@@ -209,7 +235,8 @@ const Dashboard = () => {
     // Reset form
     setPostQuestionText("");
     setPostQuestionJurisdiction(null);
-    setShowPostQuestion(false);
+    setSelectedFiles([]);
+    handleClosePostQuestion();
   };
 
   // Don't render dashboard if not authenticated
@@ -889,103 +916,237 @@ const Dashboard = () => {
       {/* Post Question Offcanvas */}
       {showPostQuestion && (
         <div
-          className="offcanvas offcanvas-end show dashboard-post-question-offcanvas"
+          className="offcanvas offcanvas-end show"
           tabIndex="-1"
+          style={{
+            position: "fixed",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            visibility: "visible",
+            width: "633px",
+            transition: "all 0.3s ease-out",
+            borderRadius: "13px",
+            margin: "20px",
+            zIndex: 1045,
+            transform: isClosing ? "translateX(100%)" : "translateX(0)",
+            animation: isClosing ? "slideOutToRight 0.3s ease-in" : "slideInFromRight 0.3s ease-out",
+            backgroundColor: "#fff",
+          }}
         >
-          <div className="offcanvas-header border-bottom p-3 p-md-4">
+          <div className="offcanvas-header border-bottom" style={{ borderTopLeftRadius: "15px", borderTopRightRadius: "15px" }}>
             <div className="d-flex justify-content-between align-items-center w-100">
-              <h5 className="mb-0 fw-bold fs-5 fs-md-4">Post Question</h5>
+              <h5 className="mb-0 fw-bold">Post Question</h5>
               <button
                 type="button"
                 className="btn-close"
-                onClick={() => setShowPostQuestion(false)}
+                onClick={handleClosePostQuestion}
               ></button>
             </div>
           </div>
 
-          <div className="offcanvas-body p-3 p-md-4 d-flex flex-column">
-            <div className="flex-grow-1 overflow-auto">
-              {/* Question Input */}
-              <div className="mb-3 siri-border-animation">
-                <textarea
-                  className="form-control form-control-lg dashboard-post-question-textarea"
-                  placeholder="Explain Your Question"
-                  rows="4"
-                  value={postQuestionText}
-                  onChange={(e) => setPostQuestionText(e.target.value)}
+          <div className="offcanvas-body p-4" style={{ borderBottomLeftRadius: "15px", borderBottomRightRadius: "15px" }}>
+            {/* Question Input */}
+            <div className="mb-3 siri-border-animation">
+              <textarea
+                className="form-control"
+                placeholder="Explain Your Question"
+                value={postQuestionText}
+                onChange={(e) => setPostQuestionText(e.target.value)}
+                style={{
+                  resize: "none",
+                  width: "606px",
+                  height: "217px",
+                  border: "1px solid #C9C9C9",
+                  borderRadius: "8px",
+                  position: "relative",
+                  zIndex: 1,
+                  backgroundColor: "#ffffff",
+                }}
+              ></textarea>
+            </div>
+
+            {/* Jurisdiction Dropdown */}
+            <div className="mb-3">
+              <div className="position-relative">
+                <select
+                  className="form-select"
+                  value={postQuestionJurisdiction || ""}
+                  onChange={(e) => setPostQuestionJurisdiction(e.target.value)}
                   style={{
-                    position: "relative",
-                    zIndex: 1,
+                    width: "606px",
+                    height: "79px",
+                    border: "1px solid #C9C9C9",
+                    borderRadius: "8px",
                   }}
-                ></textarea>
-              </div>
-
-              {/* Jurisdiction Dropdown */}
-              <div className="mb-3">
-                <Dropdown
-                  value={postQuestionJurisdiction}
-                  onChange={(e) => setPostQuestionJurisdiction(e.value)}
-                  options={jurisdictionOptions}
-                  placeholder="Jurisdiction"
-                  className="w-100"
-                  style={{ height: "60px" }}
-                />
-              </div>
-
-              {/* File Upload */}
-              <div className="mb-3">
-                <div className="d-flex align-items-center justify-content-start border border-2 border-dashed rounded dashboard-post-question-upload p-3">
-                  <div className="p-2 p-md-3 me-3 rounded-1 dashboard-file-upload-icon">
-                    <i className="bi bi-paperclip fs-4 fs-md-3 d-inline-block dashboard-paperclip-icon"></i>
-                  </div>
-
-                  <p className="text-muted mb-0 fs-6">Attach Document</p>
-                </div>
-              </div>
-
-              {/* How it works Section */}
-              <div className="mb-3">
-                <h6 className="fw-bold mb-2">How it works</h6>
-                <div className="d-flex align-items-start gap-3 gap-md-5 my-3 my-md-5">
-                  <i className="bi bi-moon-fill text-black dashboard-moon-icon fs-5"></i>
-                  <small className="text-muted fs-6">
-                    Ask your question and see the answer in Questions & Answers.
-                  </small>
-                </div>
-                <div className="d-flex align-items-start gap-3 gap-md-5 my-3 my-md-5">
-                  <i className="bi bi-moon-fill text-black dashboard-moon-icon fs-5"></i>
-                  <small className="text-muted fs-6">
-                    You will be notified when a lawyer answers.
-                  </small>
-                </div>
-              </div>
-
-              {/* Post Question Fee */}
-              <div className="mb-3 rounded-4 dashboard-post-question-fee">
-                <div className="d-flex justify-content-between align-items-center h-100 rounded">
-                  <div className="p-3">
-                    <h6 className="fw-bold mb-1 fs-6">Post Question Fee</h6>
-                    <small className="text-muted fs-7">
-                      1 Question post only
-                    </small>
-                  </div>
-                  <div className="text-end px-3 px-md-4 h-100 d-flex flex-column justify-content-center dashboard-fee-divider">
-                    <div className="fw-bold fs-6">USD</div>
-                    <div className="fw-bold fs-5">1.00</div>
-                  </div>
-                </div>
+                >
+                  <option value="">Jurisdiction</option>
+                  <option value="us">United States</option>
+                  <option value="uk">United Kingdom</option>
+                  <option value="ca">Canada</option>
+                  <option value="au">Australia</option>
+                </select>
+                <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i>
               </div>
             </div>
 
-            {/* Submit Button - Fixed at bottom center */}
-            <div className="mt-auto pt-3 border-top">
-              <button
-                className="btn text-white rounded-pill dashboard-post-question-button w-100 py-3 py-md-2"
-                onClick={handlePostQuestion}
+            {/* File Upload */}
+            <div className="mb-3">
+              <input
+                type="file"
+                id="fileInput"
+                multiple
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const files = Array.from(e.target.files);
+                  setSelectedFiles((prev) => [...prev, ...files]);
+                }}
+                accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+              />
+              <div
+                className="d-flex align-items-center justify-content-start border border-2 border-dashed rounded"
+                style={{
+                  border: "1.5px dashed #C9C9C9",
+                  width: "606px",
+                  minHeight: "80px",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  padding: selectedFiles.length > 0 ? "10px" : "0",
+                }}
+                onClick={() => document.getElementById("fileInput").click()}
               >
-                Post Your Legal Issues
-              </button>
+                <div
+                  className="p-3 mx-3 rounded-1"
+                  style={{
+                    backgroundColor: "#FDFDFD",
+                    border: "1px dashed #BEBEBE",
+                  }}
+                >
+                  <i
+                    className="bi bi-paperclip fs-3 d-inline-block"
+                    style={{
+                      transform: "rotate(45deg)",
+                      display: "inline-block",
+                    }}
+                  ></i>
+                </div>
+                <div className="flex-grow-1">
+                  {selectedFiles.length === 0 ? (
+                    <p className="text-muted mb-0">Attach Document</p>
+                  ) : (
+                    <div>
+                      {selectedFiles.map((file, index) => (
+                        <div
+                          key={index}
+                          className="d-flex align-items-center justify-content-between mb-2"
+                          style={{
+                            backgroundColor: "#f8f9fa",
+                            padding: "5px 10px",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          <span className="text-dark small">
+                            {file.name.length > 30
+                              ? file.name.substring(0, 30) + "..."
+                              : file.name}
+                          </span>
+                          <button
+                            type="button"
+                            className="btn btn-sm p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedFiles((prev) =>
+                                prev.filter((_, i) => i !== index)
+                              );
+                            }}
+                            style={{
+                              color: "#dc3545",
+                              fontSize: "18px",
+                              lineHeight: "1",
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                      <p className="text-muted mb-0 small mt-1">
+                        Click to add more files
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
+
+            {/* How it works Section */}
+            <div className="mb-3">
+              <h6 className="fw-bold mb-2">How it works</h6>
+              <div className="d-flex align-items-start gap-5 my-5">
+                <i
+                  className="bi bi-moon-fill text-black"
+                  style={{
+                    transform: "rotate(35deg)",
+                    display: "inline-block",
+                  }}
+                ></i>
+                <small className="text-muted">
+                  Ask your question and see the answer in Questions & Answers.
+                </small>
+              </div>
+              <div className="d-flex align-items-start gap-5 my-5">
+                <i
+                  className="bi bi-moon-fill text-black"
+                  style={{
+                    transform: "rotate(35deg)",
+                    display: "inline-block",
+                  }}
+                ></i>
+                <small className="text-muted">
+                  You will be notified when a lawyer answers.
+                </small>
+              </div>
+            </div>
+
+            {/* Post Question Fee */}
+            <div
+              className="mb-3 rounded-4"
+              style={{
+                border: "1px solid #D3D3D3",
+                width: "606px",
+                height: "92px",
+                borderRadius: "8px",
+              }}
+            >
+              <div className="d-flex justify-content-between align-items-center h-100 rounded">
+                <div className="p-3">
+                  <h6 className="fw-bold mb-1">Post Question Fee</h6>
+                  <small className="text-muted">1 Question post only</small>
+                </div>
+                <div
+                  className="text-end px-4 h-100 d-flex flex-column justify-content-center"
+                  style={{ borderLeft: "1px solid #D3D3D3" }}
+                >
+                  <div className="fw-bold">USD</div>
+                  <div className="fw-bold fs-5">1.00</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              className="btn text-white rounded-pill"
+              onClick={handlePostQuestion}
+              style={{
+                height: "63px",
+                fontSize: "20px",
+                fontWeight: "500",
+                backgroundColor: "#474747",
+                width: "606px",
+                marginTop: "25px",
+              }}
+            >
+              Post Your Legal Issues
+            </button>
           </div>
         </div>
       )}
@@ -993,8 +1154,19 @@ const Dashboard = () => {
       {/* Backdrop for Post Question */}
       {showPostQuestion && (
         <div
-          className="offcanvas-backdrop fade show dashboard-backdrop"
-          onClick={() => setShowPostQuestion(false)}
+          className="offcanvas-backdrop fade show"
+          onClick={handleClosePostQuestion}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            zIndex: 1040,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0,0,0,0.2)",
+            transition: "all 0.3s ease-out",
+            animation: isClosing ? "fadeOut 0.3s ease-in" : "fadeIn 0.3s ease-out",
+          }}
         ></div>
       )}
     </div>

@@ -47,10 +47,16 @@ const List = () => {
   );
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showJurisdictionDropdown, setShowJurisdictionDropdown] = useState(false);
-  const [showLawyerDetail, setShowLawyerDetail] = useState(false);
-  const [selectedLawyer, setSelectedLawyer] = useState(null);
+  const [showLawyerDetail, setShowLawyerDetail] = useState(
+    loadFromLocalStorage("lawyers_showLawyerDetail", false)
+  );
+  const [selectedLawyer, setSelectedLawyer] = useState(
+    loadFromLocalStorage("lawyers_selectedLawyer", null)
+  );
   const [imageLoadingStates, setImageLoadingStates] = useState({});
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(
+    loadFromLocalStorage("lawyers_currentSlideIndex", 0)
+  );
   
   // Profile images array for slider
   const profileImages = [
@@ -62,8 +68,12 @@ const List = () => {
     { label: "$275 / One Time Service", value: "one-time" },
     { label: "$150 / Hourly Consultation", value: "hourly" },
   ];
-  const [selectedPricingOption, setSelectedPricingOption] = useState("one-time");
-  const [showPricingOptions, setShowPricingOptions] = useState(false);
+  const [selectedPricingOption, setSelectedPricingOption] = useState(
+    loadFromLocalStorage("lawyers_selectedPricingOption", "one-time")
+  );
+  const [showPricingOptions, setShowPricingOptions] = useState(
+    loadFromLocalStorage("lawyers_showPricingOptions", false)
+  );
 
   const currentPricingLabel =
     pricingOptions.find((option) => option.value === selectedPricingOption)
@@ -342,10 +352,15 @@ const List = () => {
       localStorage.setItem("lawyers_selectedJurisdiction", JSON.stringify(selectedJurisdiction));
       localStorage.setItem("lawyers_companyLawyers", JSON.stringify(companyLawyers));
       localStorage.setItem("lawyers_individualLawyers", JSON.stringify(individualLawyers));
+      localStorage.setItem("lawyers_showLawyerDetail", JSON.stringify(showLawyerDetail));
+      localStorage.setItem("lawyers_selectedLawyer", JSON.stringify(selectedLawyer));
+      localStorage.setItem("lawyers_currentSlideIndex", JSON.stringify(currentSlideIndex));
+      localStorage.setItem("lawyers_selectedPricingOption", JSON.stringify(selectedPricingOption));
+      localStorage.setItem("lawyers_showPricingOptions", JSON.stringify(showPricingOptions));
     } catch (error) {
       console.error("Error saving lawyers data to localStorage:", error);
     }
-  }, [selectedFilter, selectedCategory, selectedJurisdiction, companyLawyers, individualLawyers]);
+  }, [selectedFilter, selectedCategory, selectedJurisdiction, companyLawyers, individualLawyers, showLawyerDetail, selectedLawyer, currentSlideIndex, selectedPricingOption, showPricingOptions]);
 
   const handleFilterClick = (filter) => {
     setSelectedFilter(filter);

@@ -2035,8 +2035,14 @@ body.dark-mode .login-button {
   border-color: #000000 !important;
 }
 
-body.dark-mode .login-button:hover {
-  background-color: transparent !important;
+body.dark-mode .login-button:hover:not(:disabled) {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  opacity: 0.9;
+}
+
+body.dark-mode .login-button:hover:not(:disabled) .login-text {
+  color: #ffffff !important;
 }
 
 body.dark-mode .login-button:disabled {

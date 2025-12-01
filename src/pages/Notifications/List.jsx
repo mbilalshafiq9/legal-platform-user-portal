@@ -1,8 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import notificationProfile from "../../assets/images/notification-profile.png";
 
 const List = () => {
-  const [notifications] = useState([
+  // Load data from localStorage
+  const loadFromLocalStorage = (key, defaultValue) => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error(`Error loading ${key} from localStorage:`, error);
+    }
+    return defaultValue;
+  };
+
+  const defaultNotifications = [
     {
       id: 1,
       name: "Maxwell Clarck",
@@ -67,7 +80,20 @@ const List = () => {
       isUnread: true,
       avatar: notificationProfile,
     },
-  ]);
+  ];
+
+  const [notifications, setNotifications] = useState(
+    loadFromLocalStorage("notifications_list", defaultNotifications)
+  );
+
+  // Save notifications to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem("notifications_list", JSON.stringify(notifications));
+    } catch (error) {
+      console.error("Error saving notifications to localStorage:", error);
+    }
+  }, [notifications]);
 
   return (
     <div className="d-flex flex-column flex-column-fluid notification-header">

@@ -19,7 +19,9 @@ const List = () => {
   const [searchTerm, setSearchTerm] = useState(
     loadFromLocalStorage("myCases_searchTerm", "")
   );
-  const [showCreateCase, setShowCreateCase] = useState(false);
+  const [showCreateCase, setShowCreateCase] = useState(
+    loadFromLocalStorage("myCases_showCreateCase", false)
+  );
   const [isClosing, setIsClosing] = useState(false);
   const navigate = useNavigate();
   const defaultCases = [
@@ -99,7 +101,9 @@ const List = () => {
     respond: "",
   };
 
-  const [newCaseData, setNewCaseData] = useState(initialFormState);
+  // Load form data from localStorage
+  const savedNewCaseData = loadFromLocalStorage("myCases_newCaseData", initialFormState);
+  const [newCaseData, setNewCaseData] = useState(savedNewCaseData);
 
   const handleCloseCase = () => {
     setIsClosing(true);
@@ -113,10 +117,12 @@ const List = () => {
     try {
       localStorage.setItem("myCases_cases", JSON.stringify(cases));
       localStorage.setItem("myCases_searchTerm", JSON.stringify(searchTerm));
+      localStorage.setItem("myCases_showCreateCase", JSON.stringify(showCreateCase));
+      localStorage.setItem("myCases_newCaseData", JSON.stringify(newCaseData));
     } catch (error) {
       console.error("Error saving my cases data:", error);
     }
-  }, [cases, searchTerm]);
+  }, [cases, searchTerm, showCreateCase, newCaseData]);
 
   const handleNewCaseChange = (field, value) => {
     setNewCaseData((prev) => ({
@@ -151,6 +157,12 @@ const List = () => {
     setCases([newCase, ...cases]);
     toast.success("Case created successfully!");
     setNewCaseData(initialFormState);
+    // Clear form data from localStorage when case is submitted
+    try {
+      localStorage.setItem("myCases_newCaseData", JSON.stringify(initialFormState));
+    } catch (error) {
+      console.error("Error clearing form data from localStorage:", error);
+    }
     handleCloseCase();
   };
 

@@ -20,11 +20,13 @@ const EmployeesList = () => {
   const [searchTerm, setSearchTerm] = useState(
     loadFromLocalStorage("employees_searchTerm", "")
   );
-  const [showAddEmployee, setShowAddEmployee] = useState(false);
+  const [showAddEmployee, setShowAddEmployee] = useState(
+    loadFromLocalStorage("employees_showAddEmployee", false)
+  );
   const navigate = useNavigate();
 
-  // Form states for Add New Team
-  const [formData, setFormData] = useState({
+  // Form states for Add New Team - Load from localStorage
+  const savedFormData = loadFromLocalStorage("employees_formData", {
     fullName: "",
     email: "",
     phone: "",
@@ -32,6 +34,7 @@ const EmployeesList = () => {
     role: "",
     employeeId: "",
   });
+  const [formData, setFormData] = useState(savedFormData);
 
   // Default employee data
   const defaultEmployees = [
@@ -107,10 +110,12 @@ const EmployeesList = () => {
     try {
       localStorage.setItem("employees_list", JSON.stringify(employees));
       localStorage.setItem("employees_searchTerm", JSON.stringify(searchTerm));
+      localStorage.setItem("employees_showAddEmployee", JSON.stringify(showAddEmployee));
+      localStorage.setItem("employees_formData", JSON.stringify(formData));
     } catch (error) {
       console.error("Error saving employees data to localStorage:", error);
     }
-  }, [employees, searchTerm]);
+  }, [employees, searchTerm, showAddEmployee, formData]);
 
   const filteredEmployees = employees.filter(
     (employee) =>
@@ -160,15 +165,22 @@ const EmployeesList = () => {
     toast.success("Employee added successfully!");
     
     // Reset form and close offcanvas
-    setFormData({
+    const emptyFormData = {
       fullName: "",
       email: "",
       phone: "",
       location: "",
       role: "",
       employeeId: "",
-    });
+    };
+    setFormData(emptyFormData);
     setShowAddEmployee(false);
+    // Clear form data from localStorage when employee is added
+    try {
+      localStorage.setItem("employees_formData", JSON.stringify(emptyFormData));
+    } catch (error) {
+      console.error("Error clearing form data from localStorage:", error);
+    }
   };
 
   return (
@@ -236,15 +248,7 @@ const EmployeesList = () => {
               }}
               onClick={() => {
                 setShowAddEmployee(true);
-                // Reset form when opening
-                setFormData({
-                  fullName: "",
-                  email: "",
-                  phone: "",
-                  location: "",
-                  role: "",
-                  employeeId: "",
-                });
+                // Don't reset form - keep saved form data for user convenience
               }}
             >
               <i className="bi bi-plus-circle-fill"></i>
@@ -447,15 +451,7 @@ const EmployeesList = () => {
             className="btn-close"
             onClick={() => {
               setShowAddEmployee(false);
-              // Reset form when closing
-              setFormData({
-                fullName: "",
-                email: "",
-                phone: "",
-                location: "",
-                role: "",
-                employeeId: "",
-              });
+              // Keep form data in localStorage when closing (user might reopen)
             }}
           ></button>
         </div>

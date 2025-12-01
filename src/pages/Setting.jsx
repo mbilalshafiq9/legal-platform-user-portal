@@ -11,12 +11,28 @@ const Setting = () => {
   const currency = process.env.REACT_APP_CURRENCY;
 
   const [isLoader, setIsLoader] = useState(false);
-  const [formData, setFormData] = useState({
-    platform_fee: "",
-    android_version: "",
-    ios_version: "",
-    payment_mode: "",
-  });
+  
+  // Load data from localStorage
+  const loadFromLocalStorage = (key, defaultValue) => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error(`Error loading ${key} from localStorage:`, error);
+    }
+    return defaultValue;
+  };
+
+  const [formData, setFormData] = useState(
+    loadFromLocalStorage("settings_formData", {
+      platform_fee: "",
+      android_version: "",
+      ios_version: "",
+      payment_mode: "",
+    })
+  );
 
   const paymentOptions = [
     { label: "Test", value: "test" },
@@ -27,6 +43,15 @@ const Setting = () => {
         getSingleData();
     }, []);
 
+    // Save formData to localStorage whenever it changes
+    useEffect(() => {
+      try {
+        localStorage.setItem("settings_formData", JSON.stringify(formData));
+      } catch (error) {
+        console.error("Error saving settings formData to localStorage:", error);
+      }
+    }, [formData]);
+
   const getSingleData = async () => {
     setIsLoader(true);
     try {
@@ -36,7 +61,14 @@ const Setting = () => {
       });
       const data = response.data;
       if (data.status) {
-        setFormData(data.data);
+        const updatedFormData = data.data;
+        setFormData(updatedFormData);
+        // Save to localStorage when loaded from API
+        try {
+          localStorage.setItem("settings_formData", JSON.stringify(updatedFormData));
+        } catch (error) {
+          console.error("Error saving settings formData to localStorage:", error);
+        }
       } else {
         toast.error(data.message);
       }

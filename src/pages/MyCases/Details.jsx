@@ -20,7 +20,9 @@ const Details = () => {
   const [searchTerm, setSearchTerm] = useState(
     loadFromLocalStorage("myCases_searchTerm", "")
   );
-  const [showCreateCase, setShowCreateCase] = useState(false);
+  const [showCreateCase, setShowCreateCase] = useState(
+    loadFromLocalStorage("myCases_details_showCreateCase", false)
+  );
 
   // Default case details with professional text
   const defaultCaseDetails = {
@@ -100,6 +102,7 @@ const Details = () => {
       localStorage.setItem("myCases_searchTerm", JSON.stringify(searchTerm));
       localStorage.setItem("myCases_caseDetails", JSON.stringify(caseDetails));
       localStorage.setItem("myCases_lawyers", JSON.stringify(lawyers));
+      localStorage.setItem("myCases_details_showCreateCase", JSON.stringify(showCreateCase));
       localStorage.setItem("myCases_createCase_jurisdiction", JSON.stringify(createCaseForm.jurisdiction));
       localStorage.setItem("myCases_createCase_legalConsultantType", JSON.stringify(createCaseForm.legalConsultantType));
       localStorage.setItem("myCases_createCase_caseCategory", JSON.stringify(createCaseForm.caseCategory));
@@ -109,7 +112,7 @@ const Details = () => {
     } catch (error) {
       console.error("Error saving MyCases data to localStorage:", error);
     }
-  }, [searchTerm, caseDetails, lawyers, createCaseForm]);
+  }, [searchTerm, caseDetails, lawyers, createCaseForm, showCreateCase]);
 
   const handleFormChange = (field, value) => {
     setCreateCaseForm((prev) => ({

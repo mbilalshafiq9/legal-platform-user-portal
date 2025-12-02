@@ -19,6 +19,8 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("active");
   const [showPostQuestion, setShowPostQuestion] = useState(false);
   const [showCreateCase, setShowCreateCase] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
 
   // Select states
   const [postQuestionJurisdiction, setPostQuestionJurisdiction] =
@@ -59,6 +61,14 @@ const Dashboard = () => {
 
   const handleAddQuestionClick = () => {
     setShowPostQuestion(true);
+  };
+
+  const handleClosePostQuestion = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setShowPostQuestion(false);
+      setIsClosing(false);
+    }, 300); // Match animation duration
   };
 
   return (
@@ -729,96 +739,177 @@ const Dashboard = () => {
       {/* Post Question Offcanvas */}
       {showPostQuestion && (
         <div
-          className="offcanvas offcanvas-end show dashboard-post-question-offcanvas"
-          tabIndex="-1"
-        >
-          <div className="offcanvas-header border-bottom p-3 p-md-4">
-            <div className="d-flex justify-content-between align-items-center w-100">
-              <h5 className="mb-0 fw-bold fs-5 fs-md-4">Post Question</h5>
-              <button
-                type="button"
-                className="btn-close"
-                onClick={() => setShowPostQuestion(false)}
-              ></button>
-            </div>
-          </div>
-
-          <div className="offcanvas-body p-3 p-md-4">
-            {/* Question Input */}
-            <div className="mb-3 siri-border-animation">
-              <textarea
-                className="form-control form-control-lg dashboard-post-question-textarea"
-                placeholder="Explain Your Question"
-                rows="4"
-                style={{
-                  position: "relative",
-                  zIndex: 1,
-                }}
-              ></textarea>
-            </div>
-
-            {/* Jurisdiction Dropdown */}
-            <div className="mb-3">
-              <Dropdown
-                value={postQuestionJurisdiction}
-                onChange={(e) => setPostQuestionJurisdiction(e.value)}
-                options={jurisdictionOptions}
-                placeholder="Jurisdiction"
-                className="w-100"
-                style={{ height: "60px" }}
-              />
-            </div>
-
-            {/* File Upload */}
-            <div className="mb-3">
-              <div className="d-flex align-items-center justify-content-start border border-2 border-dashed rounded dashboard-post-question-upload p-3">
-                <div className="p-2 p-md-3 me-3 rounded-1 dashboard-file-upload-icon">
-                  <i className="bi bi-paperclip fs-4 fs-md-3 d-inline-block dashboard-paperclip-icon"></i>
-                </div>
-
-                <p className="text-muted mb-0 fs-6">Attach Document</p>
-              </div>
-            </div>
-
-            {/* How it works Section */}
-            <div className="mb-3">
-              <h6 className="fw-bold mb-2">How it works</h6>
-              <div className="d-flex align-items-start gap-3 gap-md-5 my-3 my-md-5">
-                <i className="bi bi-moon-fill text-black dashboard-moon-icon fs-5"></i>
-                <small className="text-muted fs-6">
-                  Ask your question and see the answer in Questions & Answers.
-                </small>
-              </div>
-              <div className="d-flex align-items-start gap-3 gap-md-5 my-3 my-md-5">
-                <i className="bi bi-moon-fill text-black dashboard-moon-icon fs-5"></i>
-                <small className="text-muted fs-6">
-                  You will be notified when a lawyer answers.
-                </small>
-              </div>
-            </div>
-
-            {/* Post Question Fee */}
-            <div className="mb-3 rounded-4 dashboard-post-question-fee">
-              <div className="d-flex justify-content-between align-items-center h-100 rounded">
-                <div className="p-3">
-                  <h6 className="fw-bold mb-1 fs-6">Post Question Fee</h6>
-                  <small className="text-muted fs-7">
-                    1 Question post only
-                  </small>
-                </div>
-                <div className="text-end px-3 px-md-4 h-100 d-flex flex-column justify-content-center dashboard-fee-divider">
-                  <div className="fw-bold fs-6">USD</div>
-                  <div className="fw-bold fs-5">1.00</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <button className="btn text-white rounded-pill dashboard-post-question-button w-100 py-3 py-md-2">
-              Post Your Legal Issues
-            </button>
+        className="offcanvas offcanvas-end show"
+        tabIndex="-1"
+        style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          visibility: "visible",
+          width: "633px",
+          transition: "all 0.3s ease-out",
+          borderRadius: "13px",
+          margin: "20px",
+          zIndex: 1045,
+          transform: isClosing ? "translateX(100%)" : "translateX(0)",
+          animation: isClosing ? "slideOutToRight 0.3s ease-in" : "slideInFromRight 0.3s ease-out",
+          backgroundColor: "#fff",
+        }}
+      >
+        <div className="offcanvas-header border-bottom" style={{ borderTopLeftRadius: "15px", borderTopRightRadius: "15px" }}>
+          <div className="d-flex justify-content-between align-items-center w-100">
+            <h5 className="mb-0 fw-bold">Post Question</h5>
+            <button
+              type="button"
+              className="btn-close"
+              onClick={handleClosePostQuestion}
+            ></button>
           </div>
         </div>
+
+        <div className="offcanvas-body p-4" style={{ borderBottomLeftRadius: "15px", borderBottomRightRadius: "15px" }}>
+          {/* Question Input */}
+          <div className="mb-3 siri-border-animation">
+            <textarea
+              className="form-control"
+              placeholder="Explain Your Question"
+              style={{
+                resize: "none",
+                width: "606px",
+                height: "217px",
+                border: "1px solid #C9C9C9",
+                borderRadius: "8px",
+                position: "relative",
+                zIndex: 1,
+                backgroundColor: "#ffffff",
+              }}
+            ></textarea>
+          </div>
+
+          {/* Jurisdiction Dropdown */}
+          <div className="mb-3">
+            <div className="position-relative">
+              <select
+                className="form-select"
+                style={{
+                  width: "606px",
+                  height: "79px",
+                  border: "1px solid #C9C9C9",
+                  borderRadius: "8px",
+                }}
+              >
+                <option>Jurisdiction</option>
+                <option>United States</option>
+                <option>United Kingdom</option>
+                <option>Canada</option>
+                <option>Australia</option>
+              </select>
+              <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i>
+            </div>
+          </div>
+
+          {/* File Upload */}
+          <div className="mb-3">
+            <div
+              className="d-flex align-items-center justify-content-start border border-2 border-dashed rounded"
+              style={{
+                border: "1.5px dashed #C9C9C9",
+                width: "606px",
+                height: "80px",
+                borderRadius: "8px",
+              }}
+            >
+              <div
+                className="p-3 mx-3 rounded-1"
+                style={{
+                  backgroundColor: "#FDFDFD",
+                  border: "1px dashed #BEBEBE",
+                }}
+              >
+                <i
+                  className="bi bi-paperclip fs-3 d-inline-block"
+                  style={{
+                    transform: "rotate(45deg)",
+                    display: "inline-block",
+                  }}
+                ></i>
+              </div>
+
+              <p className="text-muted mb-0">Attach Document</p>
+            </div>
+          </div>
+
+          {/* How it works Section */}
+          <div className="mb-3">
+            <h6 className="fw-bold mb-2">How it works</h6>
+            <div className="d-flex align-items-start gap-5 my-5">
+              <i
+                className="bi bi-moon-fill text-black"
+                style={{
+                  transform: "rotate(35deg)",
+                  display: "inline-block",
+                }}
+              ></i>
+              <small className="text-muted">
+                Ask your question and see the answer in Questions & Answers.
+              </small>
+            </div>
+            <div className="d-flex align-items-start gap-5 my-5">
+              <i
+                className="bi bi-moon-fill text-black"
+                style={{
+                  transform: "rotate(35deg)",
+                  display: "inline-block",
+                }}
+              ></i>
+              <small className="text-muted">
+                You will be notified when a lawyer answers.
+              </small>
+            </div>
+          </div>
+
+          {/* Post Question Fee */}
+          <div
+            className="mb-3 rounded-4"
+            style={{
+              border: "1px solid #D3D3D3",
+              width: "606px",
+              height: "92px",
+              borderRadius: "8px",
+            }}
+          >
+            <div className="d-flex justify-content-between align-items-center h-100 rounded">
+              <div className="p-3">
+                <h6 className="fw-bold mb-1">Post Question Fee</h6>
+                <small className="text-muted">1 Question post only</small>
+              </div>
+              <div
+                className="text-end px-4 h-100 d-flex flex-column justify-content-center"
+                style={{ borderLeft: "1px solid #D3D3D3" }}
+              >
+                <div className="fw-bold">USD</div>
+                <div className="fw-bold fs-5">1.00</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            className="btn text-white rounded-pill"
+            style={{
+              height: "63px",
+              fontSize: "20px",
+              fontWeight: "500",
+              backgroundColor: "#000",
+              width: "606px",
+              marginTop: "25px",
+            }}
+          >
+            Post Your Legal Issues
+          </button>
+        </div>
+      </div>
       )}
 
       {/* Backdrop for Post Question */}

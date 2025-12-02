@@ -349,12 +349,12 @@ const Sidebar = () => {
             </div>
 
             <div className="menu-item">
-              <span className="menu-link">
+              <NavLink to="/help-support" className="menu-link portal-nav-hover">
                 <span className="menu-icon">
                   <i class="bi bi-headset"></i>
                 </span>
-                <span className="menu-title fs-6">Help</span>
-              </span>
+                <span className="menu-title fs-6">Help & Support</span>
+              </NavLink>
             </div>
           </div>
         </div>

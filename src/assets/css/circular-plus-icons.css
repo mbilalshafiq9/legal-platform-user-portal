@@ -1,4 +1,3 @@
-/* Circular Plus Icon Fixes for Dashboard Action Cards */
 
 /* Ensure perfect circular shape for plus icon buttons */
 .dashboard-action-button,
@@ -28,6 +27,44 @@
   background-color: #D5D5D5 !important;
   transform: scale(1.05) !important;
   transition: all 0.2s ease !important;
+}
+
+/* Light mode only: Default state - black background, white plus icon */
+body:not(.dark-mode) .dashboard-action-button,
+body:not(.dark-mode) .btn.dashboard-action-button,
+body:not(.dark-mode) .btn.btn-light.dashboard-action-button,
+body:not(.dark-mode) .btn.rounded-circle.dashboard-action-button {
+  background-color: #000000 !important;
+}
+
+body:not(.dark-mode) .dashboard-action-button i,
+body:not(.dark-mode) .dashboard-action-button .bi-plus,
+body:not(.dark-mode) .btn.dashboard-action-button i,
+body:not(.dark-mode) .btn.dashboard-action-button .bi-plus,
+body:not(.dark-mode) .btn.btn-light.dashboard-action-button i,
+body:not(.dark-mode) .btn.btn-light.dashboard-action-button .bi-plus,
+body:not(.dark-mode) .btn.rounded-circle.dashboard-action-button i,
+body:not(.dark-mode) .btn.rounded-circle.dashboard-action-button .bi-plus {
+  color: #ffffff !important;
+}
+
+/* Light mode only: On card hover - white background, black plus icon */
+body:not(.dark-mode) .dashboard-card-hover:hover .dashboard-action-button,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.dashboard-action-button,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.btn-light.dashboard-action-button,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.rounded-circle.dashboard-action-button {
+  background-color: #ffffff !important;
+}
+
+body:not(.dark-mode) .dashboard-card-hover:hover .dashboard-action-button i,
+body:not(.dark-mode) .dashboard-card-hover:hover .dashboard-action-button .bi-plus,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.dashboard-action-button i,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.dashboard-action-button .bi-plus,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.btn-light.dashboard-action-button i,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.btn-light.dashboard-action-button .bi-plus,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.rounded-circle.dashboard-action-button i,
+body:not(.dark-mode) .dashboard-card-hover:hover .btn.rounded-circle.dashboard-action-button .bi-plus {
+  color: #000000 !important;
 }
 
 .dashboard-action-button:focus,

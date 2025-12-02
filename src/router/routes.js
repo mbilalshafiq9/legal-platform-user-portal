@@ -41,6 +41,7 @@ import WebsiteList from '../pages/websites/List';
 
 import EmployeesList from '../pages/Employees/List';
 import EmployeeDetails from '../pages/Employees/Details';
+import HelpSupport from '../pages/HelpSupport/List';
 
 
 const routes = [
@@ -198,6 +199,12 @@ const routes = [
         path: '/employees/:id',
         component: EmployeeDetails,
         meta: { requiresAuth: true, hideHeader: false, permission: 'view-employee-details' }
+    },
+
+    {
+        path: '/help-support',
+        component: HelpSupport,
+        meta: { requiresAuth: true, hideHeader: false }
     },
     
 

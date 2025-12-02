@@ -832,8 +832,28 @@ body.dark-mode .my-lawyers-sub-tabs .btn.flex-fill {
 }
 
 body.dark-mode .dashboard-post-question-button {
-  background-color: #fff !important;
-  color: black !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .dashboard-post-question-button:hover {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+body.dark-mode .dashboard-post-question-button:active {
+  background-color: #000000 !important;
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+body.dark-mode .dashboard-post-question-button:focus {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.25) !important;
+  outline: none !important;
 }
 
 /* Target all bg-black buttons in chat/lawyers pages */
@@ -2015,8 +2035,14 @@ body.dark-mode .login-button {
   border-color: #000000 !important;
 }
 
-body.dark-mode .login-button:hover {
-  background-color: transparent !important;
+body.dark-mode .login-button:hover:not(:disabled) {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  opacity: 0.9;
+}
+
+body.dark-mode .login-button:hover:not(:disabled) .login-text {
+  color: #ffffff !important;
 }
 
 body.dark-mode .login-button:disabled {

@@ -9,7 +9,7 @@ import Layout from './Layout';
 
 const AppRouter = () => {
     const isAuthenticated = AuthService.getCurrentUser();
-    const basePath=process.env.REACT_APP_BASE_PATH;
+    const basePath = process.env.REACT_APP_BASE_PATH || '/legal-platform-portal-demo';
     
     return (
         <Router  basename={basePath} >

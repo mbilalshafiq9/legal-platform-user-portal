@@ -22,16 +22,41 @@ import profile14 from "../../assets/images/profiles/profile14.jpeg";
 import profile15 from "../../assets/images/profiles/profile15.jpeg";
 
 const List = () => {
-  const [selectedFilter, setSelectedFilter] = useState("Company");
+  // Load data from localStorage
+  const loadFromLocalStorage = (key, defaultValue) => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error(`Error loading ${key} from localStorage:`, error);
+    }
+    return defaultValue;
+  };
+
+  const [selectedFilter, setSelectedFilter] = useState(
+    loadFromLocalStorage("lawyers_selectedFilter", "Company")
+  );
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedJurisdiction, setSelectedJurisdiction] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(
+    loadFromLocalStorage("lawyers_selectedCategory", "")
+  );
+  const [selectedJurisdiction, setSelectedJurisdiction] = useState(
+    loadFromLocalStorage("lawyers_selectedJurisdiction", "")
+  );
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showJurisdictionDropdown, setShowJurisdictionDropdown] = useState(false);
-  const [showLawyerDetail, setShowLawyerDetail] = useState(false);
-  const [selectedLawyer, setSelectedLawyer] = useState(null);
+  const [showLawyerDetail, setShowLawyerDetail] = useState(
+    loadFromLocalStorage("lawyers_showLawyerDetail", false)
+  );
+  const [selectedLawyer, setSelectedLawyer] = useState(
+    loadFromLocalStorage("lawyers_selectedLawyer", null)
+  );
   const [imageLoadingStates, setImageLoadingStates] = useState({});
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(
+    loadFromLocalStorage("lawyers_currentSlideIndex", 0)
+  );
   
   // Profile images array for slider
   const profileImages = [
@@ -43,8 +68,12 @@ const List = () => {
     { label: "$275 / One Time Service", value: "one-time" },
     { label: "$150 / Hourly Consultation", value: "hourly" },
   ];
-  const [selectedPricingOption, setSelectedPricingOption] = useState("one-time");
-  const [showPricingOptions, setShowPricingOptions] = useState(false);
+  const [selectedPricingOption, setSelectedPricingOption] = useState(
+    loadFromLocalStorage("lawyers_selectedPricingOption", "one-time")
+  );
+  const [showPricingOptions, setShowPricingOptions] = useState(
+    loadFromLocalStorage("lawyers_showPricingOptions", false)
+  );
 
   const currentPricingLabel =
     pricingOptions.find((option) => option.value === selectedPricingOption)
@@ -82,8 +111,8 @@ const List = () => {
     }));
   };
 
-  // Company lawyers data
-  const companyLawyers = [
+  // Default company lawyers data
+  const defaultCompanyLawyers = [
     {
       id: 1,
       type: "Company",
@@ -94,7 +123,7 @@ const List = () => {
       image: lawyersImg,
       category: "Commercial Law",
       jurisdiction: "UAE",
-      description: "Sophia grant is a distinguished attorney with over a decade of experience in providing comprehensive legal services to..."
+      description: "Sophia grant is a distinguished attorney with over a decade of experience in providing comprehensive legal services to clients across various industries."
     },
     {
       id: 2,
@@ -106,7 +135,7 @@ const List = () => {
       image: lawyersImg,
       category: "Corporate Law",
       jurisdiction: "UAE",
-      description: "Premier corporate law firm with expertise in mergers, acquisitions, and corporate governance."
+      description: "Premier corporate law firm with expertise in mergers, acquisitions, and corporate governance. Serving businesses of all sizes."
     },
     {
       id: 3,
@@ -118,12 +147,48 @@ const List = () => {
       image: lawyersImg,
       category: "Real Estate Law",
       jurisdiction: "UAE",
-      description: "Specialized real estate law firm handling property transactions and development projects."
+      description: "Specialized real estate law firm handling property transactions and development projects throughout the UAE."
+    },
+    {
+      id: 7,
+      type: "Company",
+      firmName: "Gulf Legal Solutions",
+      rating: 4.6,
+      location: "Sharjah, UAE",
+      specialization: "Tax Law + Jurisdiction: UAE+",
+      image: lawyersImg,
+      category: "Tax Law",
+      jurisdiction: "UAE",
+      description: "Expert tax law firm providing comprehensive tax planning and compliance services for individuals and businesses."
+    },
+    {
+      id: 8,
+      type: "Company",
+      firmName: "Arabian Legal Group",
+      rating: 4.7,
+      location: "Dubai, UAE",
+      specialization: "Intellectual Property Law + Jurisdiction: UAE+",
+      image: lawyersImg,
+      category: "Intellectual Property Law",
+      jurisdiction: "UAE",
+      description: "Leading IP law firm specializing in patents, trademarks, copyrights, and trade secret protection."
+    },
+    {
+      id: 9,
+      type: "Company",
+      firmName: "Emirates Corporate Law",
+      rating: 4.4,
+      location: "Abu Dhabi, UAE",
+      specialization: "Employment Law + Jurisdiction: UAE+",
+      image: lawyersImg,
+      category: "Employment Law",
+      jurisdiction: "UAE",
+      description: "Dedicated employment law practice helping employers and employees navigate workplace legal matters."
     }
   ];
 
-  // Individual lawyers data
-  const individualLawyers = [
+  // Default individual lawyers data
+  const defaultIndividualLawyers = [
     {
       id: 4,
       type: "Individual",
@@ -135,7 +200,7 @@ const List = () => {
       image: lawyersImg,
       category: "Criminal Law",
       jurisdiction: "UAE",
-      description: "Experienced criminal defense attorney with 15+ years of practice in UAE courts."
+      description: "Experienced criminal defense attorney with 15+ years of practice in UAE courts. Known for strategic defense and client advocacy."
     },
     {
       id: 5,
@@ -148,7 +213,7 @@ const List = () => {
       image: lawyersImg,
       category: "Family Law",
       jurisdiction: "UAE",
-      description: "Dedicated family law practitioner specializing in divorce, custody, and inheritance matters."
+      description: "Dedicated family law practitioner specializing in divorce, custody, and inheritance matters with a compassionate approach."
     },
     {
       id: 6,
@@ -161,9 +226,83 @@ const List = () => {
       image: lawyersImg,
       category: "Immigration Law",
       jurisdiction: "UAE",
-      description: "Expert immigration lawyer helping clients with visa applications and residency matters."
+      description: "Expert immigration lawyer helping clients with visa applications and residency matters. Fluent in multiple languages."
+    },
+    {
+      id: 10,
+      type: "Individual",
+      name: "Ahmed Hassan",
+      title: "Senior Counsel",
+      rating: 4.8,
+      location: "Dubai, UAE",
+      specialization: "Commercial Litigation + Jurisdiction: UAE+",
+      image: lawyersImg,
+      category: "Commercial Law",
+      jurisdiction: "UAE",
+      description: "Seasoned commercial litigator with extensive experience in complex business disputes and contract negotiations."
+    },
+    {
+      id: 11,
+      type: "Individual",
+      name: "Fatima Al-Mansoori",
+      title: "Principal Attorney",
+      rating: 4.9,
+      location: "Abu Dhabi, UAE",
+      specialization: "Corporate Law + Jurisdiction: UAE+",
+      image: lawyersImg,
+      category: "Corporate Law",
+      jurisdiction: "UAE",
+      description: "Corporate law expert specializing in M&A transactions, corporate restructuring, and regulatory compliance."
+    },
+    {
+      id: 12,
+      type: "Individual",
+      name: "James Wilson",
+      title: "Partner",
+      rating: 4.5,
+      location: "Dubai, UAE",
+      specialization: "Real Estate Law + Jurisdiction: UAE+",
+      image: lawyersImg,
+      category: "Real Estate Law",
+      jurisdiction: "UAE",
+      description: "Real estate attorney with deep knowledge of property law, development projects, and commercial leasing."
+    },
+    {
+      id: 13,
+      type: "Individual",
+      name: "Layla Mohammed",
+      title: "Senior Associate",
+      rating: 4.7,
+      location: "Sharjah, UAE",
+      specialization: "Tax Law + Jurisdiction: UAE+",
+      image: lawyersImg,
+      category: "Tax Law",
+      jurisdiction: "UAE",
+      description: "Tax law specialist providing strategic tax planning and dispute resolution services for high-net-worth individuals."
+    },
+    {
+      id: 14,
+      type: "Individual",
+      name: "Robert Chen",
+      title: "Counsel",
+      rating: 4.6,
+      location: "Dubai, UAE",
+      specialization: "Intellectual Property Law + Jurisdiction: UAE+",
+      image: lawyersImg,
+      category: "Intellectual Property Law",
+      jurisdiction: "UAE",
+      description: "IP attorney with expertise in patent prosecution, trademark registration, and IP litigation across various industries."
     }
   ];
+
+  // Load lawyers from localStorage or use defaults
+  const [companyLawyers, setCompanyLawyers] = useState(
+    loadFromLocalStorage("lawyers_companyLawyers", defaultCompanyLawyers)
+  );
+
+  const [individualLawyers, setIndividualLawyers] = useState(
+    loadFromLocalStorage("lawyers_individualLawyers", defaultIndividualLawyers)
+  );
 
   const categories = ["Commercial Law", "Corporate Law", "Criminal Law", "Family Law", "Real Estate Law", "Immigration Law", "Tax Law"];
   const jurisdictions = ["UAE", "Saudi Arabia", "Qatar", "Kuwait", "Bahrain", "Oman"];
@@ -204,6 +343,24 @@ const List = () => {
 
     return data;
   };
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem("lawyers_selectedFilter", JSON.stringify(selectedFilter));
+      localStorage.setItem("lawyers_selectedCategory", JSON.stringify(selectedCategory));
+      localStorage.setItem("lawyers_selectedJurisdiction", JSON.stringify(selectedJurisdiction));
+      localStorage.setItem("lawyers_companyLawyers", JSON.stringify(companyLawyers));
+      localStorage.setItem("lawyers_individualLawyers", JSON.stringify(individualLawyers));
+      localStorage.setItem("lawyers_showLawyerDetail", JSON.stringify(showLawyerDetail));
+      localStorage.setItem("lawyers_selectedLawyer", JSON.stringify(selectedLawyer));
+      localStorage.setItem("lawyers_currentSlideIndex", JSON.stringify(currentSlideIndex));
+      localStorage.setItem("lawyers_selectedPricingOption", JSON.stringify(selectedPricingOption));
+      localStorage.setItem("lawyers_showPricingOptions", JSON.stringify(showPricingOptions));
+    } catch (error) {
+      console.error("Error saving lawyers data to localStorage:", error);
+    }
+  }, [selectedFilter, selectedCategory, selectedJurisdiction, companyLawyers, individualLawyers, showLawyerDetail, selectedLawyer, currentSlideIndex, selectedPricingOption, showPricingOptions]);
 
   const handleFilterClick = (filter) => {
     setSelectedFilter(filter);

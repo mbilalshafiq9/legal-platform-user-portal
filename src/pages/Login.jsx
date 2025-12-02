@@ -14,7 +14,23 @@ import "../assets/css/dark-mode.css";
 import "./Login.css";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  // Load saved credentials from localStorage
+  const loadSavedCredentials = () => {
+    try {
+      const saved = localStorage.getItem("loginCredentials");
+      if (saved) {
+        const credentials = JSON.parse(saved);
+        return credentials;
+      }
+    } catch (error) {
+      console.error("Error loading saved credentials:", error);
+    }
+    return null;
+  };
+
+  const savedCredentials = loadSavedCredentials();
+  
+  const [email, setEmail] = useState(savedCredentials?.email || "");
   const [password, setPassword] = useState("");
   const [isLoader, setIsLoader] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -58,12 +74,12 @@ const Login = () => {
   // ];
 
   useEffect(() => {
-    // COMMENTED OUT: Authentication check to allow direct access
-    // const isAuthenticated = AuthService.getCurrentUser();
-    // if (isAuthenticated) {
-    //   navigate("/dashboard");
-    // }
-  }, []);
+    // Check if user is already authenticated
+    const isAuthenticated = AuthService.getCurrentUser();
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
 
   // Apply dark mode on component mount and when it changes
   useEffect(() => {
@@ -117,45 +133,50 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    
+    // Validate email and password are provided
+    if (!email.trim() || !password.trim()) {
+      toast.error("Please enter both email and password");
+      return;
+    }
+
     setIsLoader(true);
 
-    // COMMENTED OUT: Authentication logic to allow direct access to dashboard
-    // try {
-    //   const data = await AuthService.login(email, password);
-    //   if (data.status) {
-    //     toast.success(data.message);
-    //     let user = data.data.user;
-    //     user.auth_token = data.data.auth_token;
+    // Temporary authentication: Accept any email and password
+    // This will be replaced with API integration later
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-    //     localStorage.setItem("admin", JSON.stringify(user));
+      // Create a temporary user object
+      const user = {
+        id: Date.now(),
+        email: email,
+        name: email.split('@')[0] || 'User',
+        auth_token: 'temp_token_' + Date.now(),
+        isAuthenticated: true
+      };
 
-    //     // Handle permissions if they exist in the response
-    //     if (data.data.permissions) {
-    //       localStorage.setItem(
-    //         "permissions",
-    //         JSON.stringify(data.data.permissions)
-    //       );
-    //       setPermissions(data.data.permissions);
-    //     }
+      // Save user to localStorage (using 'admin' key to match existing AuthService)
+      localStorage.setItem("admin", JSON.stringify(user));
+      localStorage.setItem("isAuthenticated", "true");
 
-    //     navigate("/dashboard");
-    //     // window.location.href=process.env.REACT_APP_BASE_PATH+'/dashboard';
-    //   } else {
-    //     toast.error(data.message);
-    //   }
-    // } catch (error) {
-    //   console.error("Login failed:", error);
-    //   toast.error("Login failed. Please check your credentials.");
-    // } finally {
-    //   setIsLoader(false);
-    // }
+      // Save login credentials to localStorage
+      const loginCredentials = {
+        email: email,
+        password: password,
+        lastLogin: new Date().toISOString()
+      };
+      localStorage.setItem("loginCredentials", JSON.stringify(loginCredentials));
 
-    // DIRECT NAVIGATION TO DASHBOARD - NO AUTHENTICATION REQUIRED
-    setTimeout(() => {
       toast.success("Login successful!");
       navigate("/dashboard");
+    } catch (error) {
+      console.error("Login failed:", error);
+      toast.error("Login failed. Please try again.");
+    } finally {
       setIsLoader(false);
-    }, 1000);
+    }
   };
 
   return (

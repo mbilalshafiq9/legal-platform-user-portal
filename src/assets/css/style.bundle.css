@@ -60644,8 +60644,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .form-check:not(.form-switch) .form-check-input[type=checkbox]:checked {
-    background-color: var(--bs-base);
-    border-color: var(--bs-base);
+    background-color: #000000;
+    border-color: #000000;
 }
 
 .custom-pills {
@@ -62785,7 +62785,7 @@ body.sidebar-open {
 .case-details-search-input {
     padding-left: 45px;
     width: 483px;
-    height: 58px;
+    height: 45px;
     border: 1px solid #e9ecef;
     background-color: #fff;
 }
@@ -62801,17 +62801,17 @@ body.sidebar-open {
 }
 
 .case-details-add-case-btn {
-    font-size: 18px;
+    font-size: 13px;
     font-weight: 500;
     background-color: white;
-    width: 224px;
-    height: 58px;
+    width: 136px;
+    height: 34px;
     border: 1px solid #e9ecef;
 }
 
 .case-details-add-case-icon {
-    width: 25px;
-    height: 25px;
+    width: 18px;
+    height: 18px;
     background-color: #000;
 }
 
@@ -62855,12 +62855,12 @@ body.sidebar-open {
 }
 
 .case-details-info-label {
-    font-size: 19px;
+    font-size: 15px;
     color: #989898;
 }
 
 .case-details-info-value {
-    font-size: 20px;
+    font-size: 18px;
     color: #474747;
     font-weight: 500;
 }
@@ -62877,12 +62877,12 @@ body.sidebar-open {
 }
 
 .case-details-financial-label {
-    font-size: 19px;
+    font-size: 18px;
     color: #989898;
 }
 
 .case-details-financial-value {
-    font-size: 20px;
+    font-size: 18px;
     color: #474747;
     font-weight: 500;
 }

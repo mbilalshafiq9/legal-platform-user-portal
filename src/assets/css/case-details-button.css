@@ -1,0 +1,43 @@
+/* Add New Case Button Styles - Light Mode */
+.case-details-add-case-btn {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #000000 !important;
+  transition: all 0.3s ease !important;
+}
+
+.case-details-add-case-btn:hover {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #000000 !important;
+  opacity: 0.9 !important;
+}
+
+.case-details-add-case-btn:active,
+.case-details-add-case-btn:focus {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #000000 !important;
+}
+
+/* Add New Case Button Styles - Dark Mode */
+body.dark-mode .case-details-add-case-btn {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #ffffff !important;
+}
+
+body.dark-mode .case-details-add-case-btn:hover {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #ffffff !important;
+  opacity: 0.9 !important;
+}
+
+body.dark-mode .case-details-add-case-btn:active,
+body.dark-mode .case-details-add-case-btn:focus {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #ffffff !important;
+}
+

@@ -1,124 +1,209 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, NavLink } from "react-router-dom";
+import { toast } from "react-toastify";
 import notificationProfile from "../../assets/images/notification-profile.png";
 import NoQuestion from "../../assets/images/NoQuestion.png";
 import "../../assets/css/siri-border-animation.css";
 
 const List = () => {
-  const [selectedQuestion, setSelectedQuestion] = useState(null);
-  const [showDetail, setShowDetail] = useState(false);
-  const [showPostQuestion, setShowPostQuestion] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
+  // Load data from localStorage
+  const loadFromLocalStorage = (key, defaultValue) => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error(`Error loading ${key} from localStorage:`, error);
+    }
+    return defaultValue;
+  };
 
-  const [questions, setQuestions] = useState([
+  // Load posted questions from Dashboard if available
+  const loadPostedQuestionsFromDashboard = () => {
+    try {
+      const postedQuestions = loadFromLocalStorage("postedQuestions", []);
+      return postedQuestions.map((q, index) => ({
+        id: q.id || Date.now() + index,
+        title: q.question || "",
+        date: q.date || new Date().toLocaleDateString("en-US", {
+          month: "short",
+          day: "2-digit",
+          year: "numeric",
+        }) + " - " + (q.time || new Date().toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        })),
+        views: 0,
+        answers: 0,
+        isHighlighted: index === 0,
+        jurisdiction: q.jurisdiction || null,
+        timestamp: q.timestamp || new Date().toISOString(),
+      }));
+    } catch (error) {
+      console.error("Error loading posted questions from dashboard:", error);
+      return [];
+    }
+  };
+
+  // Load questions from localStorage or use defaults
+  const defaultQuestions = [
     {
       id: 1,
       title:
-        "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.",
-      date: "Jan 05 - 2025 - 10:25 AM",
-      views: 260,
-      answers: 60,
+        "Hi, I want some help with understanding my employment contract. Can someone explain the non-compete clause and what it means for my future career opportunities?",
+      date: "Nov 24 - 2025 - 10:25 AM",
+      views: 0,
+      answers: 0,
       isHighlighted: true,
     },
     {
       id: 2,
       title:
-        "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.",
-      date: "Jan 05 - 2025 - 10:25 AM",
-      views: 260,
-      answers: 60,
+        "I'm dealing with a landlord dispute regarding security deposit return. They're claiming damages that were pre-existing when I moved in. What are my legal rights and how should I proceed?",
+      date: "Nov 23 - 2025 - 02:15 PM",
+      views: 12,
+      answers: 3,
       isHighlighted: false,
     },
     {
       id: 3,
       title:
-        "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.",
-      date: "Jan 05 - 2025 - 10:25 AM",
-      views: 260,
-      answers: 60,
+        "Need advice on intellectual property rights for my startup. We're developing a mobile app and want to protect our code and design. What steps should we take for copyright and trademark protection?",
+      date: "Nov 22 - 2025 - 09:30 AM",
+      views: 45,
+      answers: 8,
       isHighlighted: false,
     },
     {
       id: 4,
       title:
-        "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.",
-      date: "Jan 05 - 2025 - 10:25 AM",
-      views: 260,
-      answers: 60,
+        "My business partner and I are having disagreements about profit distribution. We signed a partnership agreement but it's unclear on this matter. How can we resolve this legally?",
+      date: "Nov 21 - 2025 - 04:20 PM",
+      views: 28,
+      answers: 5,
       isHighlighted: false,
     },
     {
       id: 5,
       title:
-        "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.",
-      date: "Jan 05 - 2025 - 10:25 AM",
-      views: 260,
-      answers: 60,
+        "I received a cease and desist letter regarding a domain name I own. The company claims I'm infringing on their trademark. Is this a valid claim and what should I do?",
+      date: "Nov 20 - 2025 - 11:45 AM",
+      views: 67,
+      answers: 12,
       isHighlighted: false,
     },
     {
       id: 6,
       title:
-        "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.",
-      date: "Jan 05 - 2025 - 10:25 AM",
-      views: 260,
-      answers: 60,
+        "Looking for guidance on estate planning. I want to set up a will and trust for my family but don't know where to start. What documents do I need and what should I consider?",
+      date: "Nov 19 - 2025 - 08:10 AM",
+      views: 34,
+      answers: 7,
       isHighlighted: false,
     },
-  ]);
-
-  // Sample lawyer responses data
-  const lawyerResponses = [
-    {
-      id: 1,
-      name: "Shamra Joseph",
-      title: "Corporate lawyer",
-      response:
-        "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque.",
-      time: "10:35 AM",
-      avatar: notificationProfile,
-    },
-    {
-      id: 2,
-      name: "Shamra Joseph",
-      title: "Corporate lawyer",
-      response:
-        "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque.",
-      time: "10:35 AM",
-      avatar: notificationProfile,
-    },
-    {
-      id: 3,
-      name: "Shamra Joseph",
-      title: "Corporate lawyer",
-      response:
-        "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque.",
-      time: "10:35 AM",
-      avatar: notificationProfile,
-    },
-    {
-      id: 4,
-      name: "Shamra Joseph",
-      title: "Corporate lawyer",
-      response:
-        "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque.",
-      time: "10:35 AM",
-      avatar: notificationProfile,
-    },
-    {
-      id: 5,
-      name: "Shamra Joseph",
-      title: "Corporate lawyer",
-      response:
-        "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque.",
-      time: "10:35 AM",
-      avatar: notificationProfile,
-    },
   ];
+
+  // Load popup states from localStorage
+  const savedSelectedQuestion = loadFromLocalStorage("postQuestions_selectedQuestion", null);
+  const savedShowDetail = loadFromLocalStorage("postQuestions_showDetail", false);
+  const savedShowPostQuestion = loadFromLocalStorage("postQuestions_showPostQuestion", false);
+  const savedQuestionText = loadFromLocalStorage("postQuestions_questionText", "");
+  const savedQuestionJurisdiction = loadFromLocalStorage("postQuestions_questionJurisdiction", "");
+
+  const [selectedQuestion, setSelectedQuestion] = useState(savedSelectedQuestion);
+  const [showDetail, setShowDetail] = useState(savedShowDetail);
+  const [showPostQuestion, setShowPostQuestion] = useState(savedShowPostQuestion);
+  const [isClosing, setIsClosing] = useState(false);
+
+  // Form states
+  const [questionText, setQuestionText] = useState(savedQuestionText);
+  const [questionJurisdiction, setQuestionJurisdiction] = useState(savedQuestionJurisdiction);
+
+  // Load questions from localStorage or merge with dashboard questions
+  const savedQuestions = loadFromLocalStorage("postQuestions_questions", []);
+  const dashboardQuestions = loadPostedQuestionsFromDashboard();
+  
+  // Initialize questions: use defaults if no saved data, otherwise merge all
+  const initializeQuestions = () => {
+    // If no saved questions and no dashboard questions, use defaults
+    if (savedQuestions.length === 0 && dashboardQuestions.length === 0) {
+      return defaultQuestions;
+    }
+    
+    // Merge all questions: defaults + dashboard + saved, avoiding duplicates by ID
+    const allQuestions = [...defaultQuestions, ...dashboardQuestions, ...savedQuestions];
+    // Remove duplicates based on ID, keeping the first occurrence
+    const uniqueQuestions = allQuestions.filter(
+      (q, index, self) => index === self.findIndex((t) => t.id === q.id)
+    );
+    return uniqueQuestions;
+  };
+
+  const [questions, setQuestions] = useState(initializeQuestions());
+
+  // Load lawyer responses from localStorage
+  const getLawyerResponsesForQuestion = (questionId) => {
+    const allResponses = loadFromLocalStorage("postQuestions_lawyerResponses", {});
+    return allResponses[questionId] || [];
+  };
+
+  const [lawyerResponses, setLawyerResponses] = useState([]);
+
+  // Initialize with defaults on first load if localStorage is empty
+  useEffect(() => {
+    const savedQuestions = loadFromLocalStorage("postQuestions_questions", []);
+    const dashboardQuestions = loadPostedQuestionsFromDashboard();
+    
+    // If no questions exist, initialize with defaults
+    if (savedQuestions.length === 0 && dashboardQuestions.length === 0 && questions.length === 0) {
+      setQuestions(defaultQuestions);
+    }
+  }, []); // Run only on mount
+
+  // Save questions to localStorage whenever they change
+  useEffect(() => {
+    try {
+      if (questions.length > 0) {
+        localStorage.setItem("postQuestions_questions", JSON.stringify(questions));
+      }
+    } catch (error) {
+      console.error("Error saving questions to localStorage:", error);
+    }
+  }, [questions]);
+
+  // Save popup states and form data to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem("postQuestions_showPostQuestion", JSON.stringify(showPostQuestion));
+      localStorage.setItem("postQuestions_showDetail", JSON.stringify(showDetail));
+      localStorage.setItem("postQuestions_selectedQuestion", JSON.stringify(selectedQuestion));
+      localStorage.setItem("postQuestions_questionText", JSON.stringify(questionText));
+      localStorage.setItem("postQuestions_questionJurisdiction", JSON.stringify(questionJurisdiction));
+    } catch (error) {
+      console.error("Error saving postQuestions popup states to localStorage:", error);
+    }
+  }, [showPostQuestion, showDetail, selectedQuestion, questionText, questionJurisdiction]);
+
+  // Update lawyer responses when question is selected
+  useEffect(() => {
+    if (selectedQuestion) {
+      const responses = getLawyerResponsesForQuestion(selectedQuestion.id);
+      setLawyerResponses(responses);
+    } else {
+      setLawyerResponses([]);
+    }
+  }, [selectedQuestion]);
 
   const handleCardClick = (question) => {
     setSelectedQuestion(question);
     setShowDetail(true);
+    // Increment views when question is clicked
+    const updatedQuestions = questions.map((q) =>
+      q.id === question.id ? { ...q, views: (q.views || 0) + 1 } : q
+    );
+    setQuestions(updatedQuestions);
   };
 
   const handleAddQuestionClick = () => {
@@ -130,7 +215,71 @@ const List = () => {
     setTimeout(() => {
       setShowPostQuestion(false);
       setIsClosing(false);
+      // Reset form
+      setQuestionText("");
+      setQuestionJurisdiction("");
+      // Clear form data from localStorage when closing
+      try {
+        localStorage.setItem("postQuestions_questionText", JSON.stringify(""));
+        localStorage.setItem("postQuestions_questionJurisdiction", JSON.stringify(""));
+      } catch (error) {
+        console.error("Error clearing form data from localStorage:", error);
+      }
     }, 300); // Match animation duration
+  };
+
+  const handlePostQuestion = () => {
+    if (!questionText.trim()) {
+      toast.error("Please enter your question");
+      return;
+    }
+
+    const currentDate = new Date();
+    const formattedDate = currentDate.toLocaleDateString("en-US", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+    });
+    const formattedTime = currentDate.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    const newQuestion = {
+      id: Date.now(),
+      title: questionText.trim(),
+      date: `${formattedDate} - ${formattedTime}`,
+      views: 0,
+      answers: 0,
+      isHighlighted: questions.length === 0,
+      jurisdiction: questionJurisdiction || null,
+      timestamp: currentDate.toISOString(),
+    };
+
+    // Add new question to the beginning of the list
+    const updatedQuestions = [newQuestion, ...questions];
+    setQuestions(updatedQuestions);
+
+    // Also save to Dashboard's posted questions
+    try {
+      const postedQuestions = loadFromLocalStorage("postedQuestions", []);
+      const dashboardQuestion = {
+        id: newQuestion.id.toString(),
+        question: newQuestion.title,
+        jurisdiction: newQuestion.jurisdiction,
+        timestamp: newQuestion.timestamp,
+        date: formattedDate,
+        time: formattedTime,
+      };
+      postedQuestions.unshift(dashboardQuestion);
+      localStorage.setItem("postedQuestions", JSON.stringify(postedQuestions));
+    } catch (error) {
+      console.error("Error saving to dashboard questions:", error);
+    }
+
+    toast.success("Question posted successfully!");
+    handleClosePostQuestion();
   };
 
   return (
@@ -363,7 +512,7 @@ const List = () => {
                         </div>
                       </div>
 
-                      {/* Right Side: Time + Chat Button */}
+                      {/* Right Side*/}
                       <div className="text-end ms-3">
                         <small className="text-muted d-block mb-2">
                           {lawyer.time}
@@ -432,6 +581,8 @@ const List = () => {
               <textarea
                 className="form-control"
                 placeholder="Explain Your Question"
+                value={questionText}
+                onChange={(e) => setQuestionText(e.target.value)}
                 style={{
                   resize: "none",
                   width: "606px",
@@ -450,6 +601,8 @@ const List = () => {
               <div className="position-relative">
                 <select
                   className="form-select"
+                  value={questionJurisdiction}
+                  onChange={(e) => setQuestionJurisdiction(e.target.value)}
                   style={{
                     width: "606px",
                     height: "79px",
@@ -457,11 +610,11 @@ const List = () => {
                     borderRadius: "8px",
                   }}
                 >
-                  <option>Jurisdiction</option>
-                  <option>United States</option>
-                  <option>United Kingdom</option>
-                  <option>Canada</option>
-                  <option>Australia</option>
+                  <option value="">Jurisdiction</option>
+                  <option value="us">United States</option>
+                  <option value="uk">United Kingdom</option>
+                  <option value="ca">Canada</option>
+                  <option value="au">Australia</option>
                 </select>
                 <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i>
               </div>
@@ -555,6 +708,7 @@ const List = () => {
             {/* Submit Button */}
             <button
               className="btn text-white rounded-pill"
+              onClick={handlePostQuestion}
               style={{
                 height: "63px",
                 fontSize: "20px",

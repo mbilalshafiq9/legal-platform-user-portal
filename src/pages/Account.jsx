@@ -8,12 +8,38 @@ const Account = () => {
   const navigate = useNavigate();
   const admin= JSON.parse(localStorage.getItem('admin'));
 
-  const [tab, setTab] = useState("email");
-  const [email, setEmail] = useState(admin.email);
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  // Load data from localStorage
+  const loadFromLocalStorage = (key, defaultValue) => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (error) {
+      console.error(`Error loading ${key} from localStorage:`, error);
+    }
+    return defaultValue;
+  };
+
+  const [tab, setTab] = useState(loadFromLocalStorage("account_tab", "email"));
+  const [email, setEmail] = useState(loadFromLocalStorage("account_email", admin?.email || ""));
+  const [oldPassword, setOldPassword] = useState(loadFromLocalStorage("account_oldPassword", ""));
+  const [newPassword, setNewPassword] = useState(loadFromLocalStorage("account_newPassword", ""));
+  const [confirmPassword, setConfirmPassword] = useState(loadFromLocalStorage("account_confirmPassword", ""));
   const [isLoader, setIsLoader] = useState(false);
+
+  // Save account data to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem("account_tab", JSON.stringify(tab));
+      localStorage.setItem("account_email", JSON.stringify(email));
+      localStorage.setItem("account_oldPassword", JSON.stringify(oldPassword));
+      localStorage.setItem("account_newPassword", JSON.stringify(newPassword));
+      localStorage.setItem("account_confirmPassword", JSON.stringify(confirmPassword));
+    } catch (error) {
+      console.error("Error saving account data to localStorage:", error);
+    }
+  }, [tab, email, oldPassword, newPassword, confirmPassword]);
 
 
 const handleSubmit = async (e) => {
@@ -43,6 +69,14 @@ const handleSubmit = async (e) => {
             setOldPassword('');
             setNewPassword('');
             setConfirmPassword('');
+            // Clear password fields from localStorage after successful update
+            try {
+              localStorage.setItem("account_oldPassword", JSON.stringify(""));
+              localStorage.setItem("account_newPassword", JSON.stringify(""));
+              localStorage.setItem("account_confirmPassword", JSON.stringify(""));
+            } catch (error) {
+              console.error("Error clearing password fields from localStorage:", error);
+            }
         } else {
             toast.error(data.message);
         }

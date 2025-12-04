@@ -34045,8 +34045,8 @@ html:not([data-theme=dark]) .theme-light-bg-body {
     overflow: hidden;
     flex-shrink: 0;
     margin-left: 5px;
-    width: 9px;
-    height: 9px
+    width: 20px;
+    height: 12px
 }
 
 .menu-item .menu-link .menu-arrow:after {

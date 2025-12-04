@@ -1,0 +1,179 @@
+/* Track My Ticket Page Styles */
+
+.track-ticket-container {
+  padding: 2rem 0;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  margin-top: 50px;
+}
+
+/* Summary Cards */
+.ticket-summary-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  height: 100px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.ticket-summary-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.ticket-summary-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ticket-summary-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #212529;
+}
+
+.ticket-summary-icon {
+  font-size: 2.5rem;
+  color: #e9ecef;
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+
+.ticket-summary-card:hover .ticket-summary-icon {
+  opacity: 1;
+  transform: scale(1.1);
+  color: #6c757d;
+}
+
+/* Section Title */
+.ticket-section-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #212529;
+}
+
+/* Table Styles */
+.table {
+  margin-bottom: 0;
+}
+
+.table thead th {
+  border-bottom: 2px solid #e9ecef;
+  padding: 1rem 0.75rem;
+  font-weight: 600;
+}
+
+.table tbody td {
+  padding: 1rem 0.75rem;
+  vertical-align: middle;
+}
+
+.table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* Status Badges */
+.badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.bg-success {
+  background-color: #50cd89 !important;
+}
+
+.bg-info {
+  background-color: #50cd89 !important;
+}
+
+/* Custom status badge colors for tickets */
+.ticket-status-open {
+  background-color: #90ee90 !important;
+  color: #ffffff !important;
+}
+
+.ticket-status-resolved {
+  background-color: #87ceeb !important;
+  color: #ffffff !important;
+}
+
+/* Dark Mode Styles */
+body.dark-mode .track-ticket-container {
+  background-color: #1a1a1a;
+}
+
+body.dark-mode .ticket-summary-card {
+  background-color: #2d2d2d;
+  border: 1px solid #404040;
+}
+
+body.dark-mode .ticket-summary-card:hover {
+  border-color: #555555;
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .ticket-summary-value {
+  color: #ffffff;
+}
+
+body.dark-mode .ticket-summary-icon {
+  color: #404040;
+}
+
+body.dark-mode .ticket-section-title {
+  color: #ffffff;
+}
+
+body.dark-mode .table thead th {
+  border-bottom-color: #404040;
+  color: #aaaaaa;
+}
+
+body.dark-mode .table tbody td {
+  color: #ffffff;
+}
+
+body.dark-mode .table tbody tr:hover {
+  background-color: #2d2d2d;
+}
+
+body.dark-mode .card {
+  background-color: #2d2d2d;
+  border-color: #404040;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .track-ticket-container {
+    padding: 1rem 0;
+  }
+
+  .ticket-summary-card {
+    padding: 1.25rem;
+  }
+
+  .ticket-summary-value {
+    font-size: 1.75rem;
+  }
+
+  .ticket-section-title {
+    font-size: 1.5rem;
+  }
+
+  .table thead th,
+  .table tbody td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.875rem;
+  }
+}
+

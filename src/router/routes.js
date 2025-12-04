@@ -46,6 +46,11 @@ import HelpSupport from '../pages/HelpSupport/List';
 
 const routes = [
     {
+        path: '/',
+        component: Dashboard,
+        meta: { requiresAuth: true, hideHeader: false }
+    },
+    {
         path: '/dashboard',
         component: Dashboard,
         meta: { requiresAuth: true, hideHeader: false }

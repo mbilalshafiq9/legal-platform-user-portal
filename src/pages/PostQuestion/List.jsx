@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { Link, NavLink } from "react-router-dom";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { NavLink } from "react-router-dom";
 import { toast } from "react-toastify";
+import ApiService from "../../services/ApiService";
 import notificationProfile from "../../assets/images/notification-profile.png";
 import NoQuestion from "../../assets/images/NoQuestion.png";
 import "../../assets/css/siri-border-animation.css";
@@ -19,91 +20,8 @@ const List = () => {
     return defaultValue;
   };
 
-  // Load posted questions from Dashboard if available
-  const loadPostedQuestionsFromDashboard = () => {
-    try {
-      const postedQuestions = loadFromLocalStorage("postedQuestions", []);
-      return postedQuestions.map((q, index) => ({
-        id: q.id || Date.now() + index,
-        title: q.question || "",
-        date: q.date || new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "2-digit",
-          year: "numeric",
-        }) + " - " + (q.time || new Date().toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        })),
-        views: 0,
-        answers: 0,
-        isHighlighted: index === 0,
-        jurisdiction: q.jurisdiction || null,
-        timestamp: q.timestamp || new Date().toISOString(),
-      }));
-    } catch (error) {
-      console.error("Error loading posted questions from dashboard:", error);
-      return [];
-    }
-  };
 
-  // Load questions from localStorage or use defaults
-  const defaultQuestions = [
-    {
-      id: 1,
-      title:
-        "Hi, I want some help with understanding my employment contract. Can someone explain the non-compete clause and what it means for my future career opportunities?",
-      date: "Nov 24 - 2025 - 10:25 AM",
-      views: 0,
-      answers: 0,
-      isHighlighted: true,
-    },
-    {
-      id: 2,
-      title:
-        "I'm dealing with a landlord dispute regarding security deposit return. They're claiming damages that were pre-existing when I moved in. What are my legal rights and how should I proceed?",
-      date: "Nov 23 - 2025 - 02:15 PM",
-      views: 12,
-      answers: 3,
-      isHighlighted: false,
-    },
-    {
-      id: 3,
-      title:
-        "Need advice on intellectual property rights for my startup. We're developing a mobile app and want to protect our code and design. What steps should we take for copyright and trademark protection?",
-      date: "Nov 22 - 2025 - 09:30 AM",
-      views: 45,
-      answers: 8,
-      isHighlighted: false,
-    },
-    {
-      id: 4,
-      title:
-        "My business partner and I are having disagreements about profit distribution. We signed a partnership agreement but it's unclear on this matter. How can we resolve this legally?",
-      date: "Nov 21 - 2025 - 04:20 PM",
-      views: 28,
-      answers: 5,
-      isHighlighted: false,
-    },
-    {
-      id: 5,
-      title:
-        "I received a cease and desist letter regarding a domain name I own. The company claims I'm infringing on their trademark. Is this a valid claim and what should I do?",
-      date: "Nov 20 - 2025 - 11:45 AM",
-      views: 67,
-      answers: 12,
-      isHighlighted: false,
-    },
-    {
-      id: 6,
-      title:
-        "Looking for guidance on estate planning. I want to set up a will and trust for my family but don't know where to start. What documents do I need and what should I consider?",
-      date: "Nov 19 - 2025 - 08:10 AM",
-      views: 34,
-      answers: 7,
-      isHighlighted: false,
-    },
-  ];
+  // No default questions - only show API data
 
   // Load popup states from localStorage
   const savedSelectedQuestion = loadFromLocalStorage("postQuestions_selectedQuestion", null);
@@ -120,28 +38,13 @@ const List = () => {
   // Form states
   const [questionText, setQuestionText] = useState(savedQuestionText);
   const [questionJurisdiction, setQuestionJurisdiction] = useState(savedQuestionJurisdiction);
+  const [attachments, setAttachments] = useState([]);
+  const [postingQuestion, setPostingQuestion] = useState(false);
+  const [closingQuestion, setClosingQuestion] = useState(false);
+  const [showJurisdictionDropdown, setShowJurisdictionDropdown] = useState(false);
 
-  // Load questions from localStorage or merge with dashboard questions
-  const savedQuestions = loadFromLocalStorage("postQuestions_questions", []);
-  const dashboardQuestions = loadPostedQuestionsFromDashboard();
-  
-  // Initialize questions: use defaults if no saved data, otherwise merge all
-  const initializeQuestions = () => {
-    // If no saved questions and no dashboard questions, use defaults
-    if (savedQuestions.length === 0 && dashboardQuestions.length === 0) {
-      return defaultQuestions;
-    }
-    
-    // Merge all questions: defaults + dashboard + saved, avoiding duplicates by ID
-    const allQuestions = [...defaultQuestions, ...dashboardQuestions, ...savedQuestions];
-    // Remove duplicates based on ID, keeping the first occurrence
-    const uniqueQuestions = allQuestions.filter(
-      (q, index, self) => index === self.findIndex((t) => t.id === q.id)
-    );
-    return uniqueQuestions;
-  };
-
-  const [questions, setQuestions] = useState(initializeQuestions());
+  // Initialize with empty array - only API data will be shown
+  const [questions, setQuestions] = useState([]);
 
   // Load lawyer responses from localStorage
   const getLawyerResponsesForQuestion = (questionId) => {
@@ -150,17 +53,201 @@ const List = () => {
   };
 
   const [lawyerResponses, setLawyerResponses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [pagination, setPagination] = useState(null);
+  const [questionDetails, setQuestionDetails] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [jurisdictions, setJurisdictions] = useState([]);
+  const [loadingJurisdictions, setLoadingJurisdictions] = useState(false);
+  const fetchedQuestionIds = useRef(new Set());
+  const fetchingRef = useRef(false);
+  const searchTimeoutRef = useRef(null);
+  const jurisdictionDropdownRef = useRef(null);
 
-  // Initialize with defaults on first load if localStorage is empty
+  // Close jurisdiction dropdown when clicking outside
   useEffect(() => {
-    const savedQuestions = loadFromLocalStorage("postQuestions_questions", []);
-    const dashboardQuestions = loadPostedQuestionsFromDashboard();
-    
-    // If no questions exist, initialize with defaults
-    if (savedQuestions.length === 0 && dashboardQuestions.length === 0 && questions.length === 0) {
-      setQuestions(defaultQuestions);
+    const handleClickOutside = (event) => {
+      if (jurisdictionDropdownRef.current && !jurisdictionDropdownRef.current.contains(event.target)) {
+        setShowJurisdictionDropdown(false);
+      }
+    };
+
+    if (showJurisdictionDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
     }
-  }, []); // Run only on mount
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showJurisdictionDropdown]);
+
+  // Fetch jurisdictions from API
+  useEffect(() => {
+    const fetchJurisdictions = async () => {
+      try {
+        setLoadingJurisdictions(true);
+        const response = await ApiService.request({
+          method: "GET",
+          url: "getDropdownData",
+        });
+        const data = response.data;
+        if (data.status && data.data && data.data.jurisdictions) {
+          setJurisdictions(data.data.jurisdictions);
+        } else {
+          setJurisdictions([]);
+        }
+      } catch (error) {
+        console.error("Error fetching jurisdictions:", error);
+        setJurisdictions([]);
+      } finally {
+        setLoadingJurisdictions(false);
+      }
+    };
+
+    fetchJurisdictions();
+  }, []);
+
+  // Fetch questions from API
+  useEffect(() => {
+    const fetchQuestions = async (search = "") => {
+      try {
+        setLoading(true);
+        const response = await ApiService.request({
+          method: "GET",
+          url: "getMyQuestions",
+          data: search ? { search } : {},
+        });
+        const data = response.data;
+        if (data.status && data.data.questions) {
+          // Transform API data to match component format
+          const apiQuestions = data.data.questions.map((q, index) => {
+            const createdDate = q.created_at ? new Date(q.created_at) : new Date();
+            const formattedDate = createdDate.toLocaleDateString("en-US", {
+              month: "short",
+              day: "2-digit",
+              year: "numeric",
+            });
+            const formattedTime = createdDate.toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            });
+
+            return {
+              id: q.id,
+              title: q.question || "",
+              date: `${formattedDate} - ${formattedTime}`,
+              views: 0, // Will be updated when question details are fetched
+              answers: q.answers_count || 0,
+              isHighlighted: index === 0,
+              jurisdiction: q.jurisdiction ? {
+                id: q.jurisdiction.id,
+                name: q.jurisdiction.name || ""
+              } : null,
+              timestamp: q.created_at,
+              rawData: q, // Keep raw data for detail view
+            };
+          });
+
+          // Use API questions only
+          setQuestions(apiQuestions);
+          
+          setPagination(data.data.pagination);
+        } else {
+          // If API fails, show empty
+          setQuestions([]);
+        }
+      } catch (error) {
+        console.error("Error fetching questions:", error);
+        // On error, show empty
+        setQuestions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuestions("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only on mount - searchQuery handled in separate useEffect
+
+  // Handle search with debouncing
+  useEffect(() => {
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Set new timeout for debounced search
+    searchTimeoutRef.current = setTimeout(() => {
+      const fetchQuestions = async (search = "") => {
+        try {
+          setLoading(true);
+          // Clear fetched IDs when searching
+          fetchedQuestionIds.current.clear();
+          
+          const response = await ApiService.request({
+            method: "GET",
+            url: "getMyQuestions",
+            data: search ? { search } : {},
+          });
+          const data = response.data;
+          if (data.status && data.data.questions) {
+            // Transform API data to match component format
+            const apiQuestions = data.data.questions.map((q, index) => {
+              const createdDate = q.created_at ? new Date(q.created_at) : new Date();
+              const formattedDate = createdDate.toLocaleDateString("en-US", {
+                month: "short",
+                day: "2-digit",
+                year: "numeric",
+              });
+              const formattedTime = createdDate.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              });
+
+              return {
+                id: q.id,
+                title: q.question || "",
+                date: `${formattedDate} - ${formattedTime}`,
+                views: 0,
+                answers: q.answers_count || 0,
+                isHighlighted: index === 0,
+                jurisdiction: q.jurisdiction ? {
+                  id: q.jurisdiction.id,
+                  name: q.jurisdiction.name || ""
+                } : null,
+                timestamp: q.created_at,
+                rawData: {
+                  ...q,
+                  status: q.status || null,
+                },
+              };
+            });
+            setQuestions(apiQuestions);
+            setPagination(data.data.pagination);
+          } else {
+            setQuestions([]);
+          }
+        } catch (error) {
+          console.error("Error fetching questions:", error);
+          setQuestions([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchQuestions(searchQuery);
+    }, 500); // 500ms debounce delay
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
 
   // Save questions to localStorage whenever they change
   useEffect(() => {
@@ -186,24 +273,124 @@ const List = () => {
     }
   }, [showPostQuestion, showDetail, selectedQuestion, questionText, questionJurisdiction]);
 
-  // Update lawyer responses when question is selected
-  useEffect(() => {
-    if (selectedQuestion) {
-      const responses = getLawyerResponsesForQuestion(selectedQuestion.id);
+  // Fetch question details function
+  const fetchQuestionDetails = useCallback(async (questionId) => {
+    // Prevent multiple simultaneous calls
+    if (fetchingRef.current) {
+      return;
+    }
+    
+    try {
+      fetchingRef.current = true;
+      setLoadingDetails(true);
+      
+      const response = await ApiService.request({
+        method: "GET",
+        url: "myQuestionDetails",
+        data: { question_id: questionId }
+      });
+      const data = response.data;
+      if (data.status && data.data) {
+        const questionData = data.data;
+        
+        // Mark this question as fetched
+        fetchedQuestionIds.current.add(questionId);
+        
+        // Store full question details
+        setQuestionDetails(questionData);
+        
+        // Transform lawyer answers to match component format
+        const responses = (questionData.answers || []).map((answer) => ({
+          id: answer.id,
+          name: answer.lawyer?.name || "Lawyer",
+          title: answer.lawyer?.categories?.[0]?.name || answer.lawyer?.subCategories?.[0]?.name || "Legal Expert",
+          response: answer.answer || "",
+          time: answer.created_at ? new Date(answer.created_at).toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          }) : "Just now",
+          avatar: answer.lawyer?.picture || notificationProfile,
+          lawyerId: answer.lawyer?.id,
+        }));
+        setLawyerResponses(responses);
+        
+        // Update selected question with latest data (without triggering useEffect)
+        const createdDate = questionData.created_at ? new Date(questionData.created_at) : new Date();
+        const formattedDate = createdDate.toLocaleDateString("en-US", {
+          month: "short",
+          day: "2-digit",
+          year: "numeric",
+        });
+        const formattedTime = createdDate.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+        
+        // Update selected question state without causing re-render loop
+        setSelectedQuestion(prev => ({
+          ...prev,
+          title: questionData.question || prev?.title,
+          date: `${formattedDate} - ${formattedTime}`,
+          views: questionData.views_count || prev?.views || 0,
+          answers: questionData.answers_count || prev?.answers || 0,
+          jurisdiction: questionData.jurisdiction ? {
+            id: questionData.jurisdiction.id,
+            name: questionData.jurisdiction.name || ""
+          } : prev?.jurisdiction,
+          rawData: {
+            ...prev?.rawData,
+            status: questionData.status || prev?.rawData?.status,
+          },
+        }));
+        
+        // Update in questions list
+        setQuestions(prevQuestions => 
+          prevQuestions.map((q) =>
+            q.id === questionId ? { ...q, answers: questionData.answers_count || q.answers || 0 } : q
+          )
+        );
+      } else {
+        toast.error(data.message || "Failed to load question details");
+      }
+    } catch (error) {
+      console.error("Error fetching question details:", error);
+      if (error.response?.status !== 429) { // Don't show error for rate limiting
+        toast.error("Failed to load question details");
+      }
+      // Use existing lawyer responses from localStorage if API fails
+      const responses = getLawyerResponsesForQuestion(questionId);
       setLawyerResponses(responses);
+    } finally {
+      setLoadingDetails(false);
+      fetchingRef.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // getLawyerResponsesForQuestion is stable, no need to include
+
+  // Fetch question details when selectedQuestion changes
+  useEffect(() => {
+    if (selectedQuestion && selectedQuestion.id && showDetail) {
+      const questionId = selectedQuestion.id;
+      // Only fetch if we haven't fetched this question yet and not currently fetching
+      if (!fetchedQuestionIds.current.has(questionId) && !fetchingRef.current) {
+        fetchQuestionDetails(questionId);
+      }
     } else {
       setLawyerResponses([]);
+      setQuestionDetails(null);
     }
-  }, [selectedQuestion]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedQuestion?.id, showDetail, fetchQuestionDetails]); // selectedQuestion object changes but we only care about ID
 
   const handleCardClick = (question) => {
+    // Reset fetched question IDs when clicking a new question
+    if (selectedQuestion?.id !== question.id) {
+      fetchedQuestionIds.current.clear();
+    }
     setSelectedQuestion(question);
     setShowDetail(true);
-    // Increment views when question is clicked
-    const updatedQuestions = questions.map((q) =>
-      q.id === question.id ? { ...q, views: (q.views || 0) + 1 } : q
-    );
-    setQuestions(updatedQuestions);
   };
 
   const handleAddQuestionClick = () => {
@@ -218,6 +405,7 @@ const List = () => {
       // Reset form
       setQuestionText("");
       setQuestionJurisdiction("");
+      setAttachments([]);
       // Clear form data from localStorage when closing
       try {
         localStorage.setItem("postQuestions_questionText", JSON.stringify(""));
@@ -228,58 +416,112 @@ const List = () => {
     }, 300); // Match animation duration
   };
 
-  const handlePostQuestion = () => {
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setAttachments(files);
+  };
+
+  const handlePostQuestion = async () => {
     if (!questionText.trim()) {
       toast.error("Please enter your question");
       return;
     }
 
-    const currentDate = new Date();
-    const formattedDate = currentDate.toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric",
-    });
-    const formattedTime = currentDate.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-
-    const newQuestion = {
-      id: Date.now(),
-      title: questionText.trim(),
-      date: `${formattedDate} - ${formattedTime}`,
-      views: 0,
-      answers: 0,
-      isHighlighted: questions.length === 0,
-      jurisdiction: questionJurisdiction || null,
-      timestamp: currentDate.toISOString(),
-    };
-
-    // Add new question to the beginning of the list
-    const updatedQuestions = [newQuestion, ...questions];
-    setQuestions(updatedQuestions);
-
-    // Also save to Dashboard's posted questions
-    try {
-      const postedQuestions = loadFromLocalStorage("postedQuestions", []);
-      const dashboardQuestion = {
-        id: newQuestion.id.toString(),
-        question: newQuestion.title,
-        jurisdiction: newQuestion.jurisdiction,
-        timestamp: newQuestion.timestamp,
-        date: formattedDate,
-        time: formattedTime,
-      };
-      postedQuestions.unshift(dashboardQuestion);
-      localStorage.setItem("postedQuestions", JSON.stringify(postedQuestions));
-    } catch (error) {
-      console.error("Error saving to dashboard questions:", error);
+    if (!questionJurisdiction) {
+      toast.error("Please select a jurisdiction");
+      return;
     }
 
-    toast.success("Question posted successfully!");
-    handleClosePostQuestion();
+    try {
+      setPostingQuestion(true);
+      
+      // Create FormData for file uploads
+      const formData = new FormData();
+      formData.append('question', questionText.trim());
+      formData.append('jurisdiction_id', questionJurisdiction);
+      
+      // Add attachments if any
+      if (attachments && attachments.length > 0) {
+        attachments.forEach((file) => {
+          formData.append('attachments[]', file);
+        });
+      }
+
+      const response = await ApiService.request({
+        method: "POST",
+        url: "addQuestion",
+        data: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      const data = response.data;
+      if (data.status) {
+        toast.success(data.message || "Question posted successfully!");
+        
+        // Reset form
+        setQuestionText("");
+        setQuestionJurisdiction("");
+        setAttachments([]);
+        
+        // Refresh questions list
+        const refreshResponse = await ApiService.request({
+          method: "GET",
+          url: "getMyQuestions",
+          data: searchQuery ? { search: searchQuery } : {},
+        });
+        const refreshData = refreshResponse.data;
+        if (refreshData.status && refreshData.data.questions) {
+          const apiQuestions = refreshData.data.questions.map((q, index) => {
+            const createdDate = q.created_at ? new Date(q.created_at) : new Date();
+            const formattedDate = createdDate.toLocaleDateString("en-US", {
+              month: "short",
+              day: "2-digit",
+              year: "numeric",
+            });
+            const formattedTime = createdDate.toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            });
+
+            return {
+              id: q.id,
+              title: q.question || "",
+              date: `${formattedDate} - ${formattedTime}`,
+              views: 0,
+              answers: q.answers_count || 0,
+              isHighlighted: index === 0,
+              jurisdiction: q.jurisdiction ? {
+                id: q.jurisdiction.id,
+                name: q.jurisdiction.name || ""
+              } : null,
+              timestamp: q.created_at,
+              rawData: {
+                ...q,
+                status: q.status || null,
+              },
+            };
+          });
+          setQuestions(apiQuestions);
+          setPagination(refreshData.data.pagination);
+        }
+        
+        handleClosePostQuestion();
+      } else {
+        toast.error(data.message || "Failed to post question");
+      }
+    } catch (error) {
+      console.error("Error posting question:", error);
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Failed to post question. Please try again.");
+      }
+    } finally {
+      setPostingQuestion(false);
+    }
   };
 
   return (
@@ -299,10 +541,22 @@ const List = () => {
               <input
                 type="text"
                 className="form-control form-control-lg rounded-pill portal-form-hover"
-                placeholder="Search"
+                placeholder="Search questions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 style={{ borderRadius: "12px", paddingLeft: "45px" }}
               />
               <i className="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-gray-600"></i>
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="btn btn-link position-absolute top-50 end-0 translate-middle-y me-2 p-0"
+                  onClick={() => setSearchQuery("")}
+                  style={{ border: "none", background: "none" }}
+                >
+                  <i className="bi bi-x-circle text-gray-600"></i>
+                </button>
+              )}
             </div>
           </div>
 
@@ -328,8 +582,15 @@ const List = () => {
 
         {/* Questions Grid */}
         <div className="container-fluid px-3 px-md-4">
-          <div className="row g-3 g-md-4">
-            {questions.length === 0 ? (
+          {loading ? (
+            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : (
+            <div className="row g-3 g-md-4">
+              {questions.length === 0 ? (
               <div className="col-12 d-flex align-items-center justify-content-center" style={{ minHeight: "400px" }}>
                 <div className="text-center p-5">
                   <div className="mb-4">
@@ -405,7 +666,8 @@ const List = () => {
               </div>
               ))
             )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -426,12 +688,116 @@ const List = () => {
           <div className="offcanvas-header border-bottom" style={{ borderTopLeftRadius: "15px", borderTopRightRadius: "15px" }}>
             <div className="d-flex justify-content-between align-items-center w-100">
               <div>
-                <small className="text-black">{selectedQuestion.date}</small>
+                <small className="text-black">
+                  {questionDetails?.created_at 
+                    ? (() => {
+                        const date = new Date(questionDetails.created_at);
+                        return date.toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "2-digit",
+                          year: "numeric",
+                        }) + " - " + date.toLocaleTimeString("en-US", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        });
+                      })()
+                    : selectedQuestion?.date || ""
+                  }
+                </small>
               </div>
               <div className="d-flex gap-2">
-                <button className="btn bg-black text-white btn-sm">
-                  Mark Closed
-                </button>
+                {questionDetails?.status === "Closed" || selectedQuestion?.rawData?.status === "Closed" ? (
+                  <span className="badge bg-secondary text-dark btn-sm d-flex align-items-center" style={{ height: "31px" }}>
+                    Closed
+                  </span>
+                ) : (
+                  <button 
+                    className="btn bg-black text-white btn-sm"
+                    disabled={closingQuestion}
+                    onClick={async () => {
+                    if (selectedQuestion && selectedQuestion.id) {
+                      try {
+                        setClosingQuestion(true);
+                        const response = await ApiService.request({
+                          method: "POST",
+                          url: "closeQuestion",
+                          data: { question_id: selectedQuestion.id }
+                        });
+                        const data = response.data;
+                        if (data.status) {
+                          toast.success(data.message || "Question closed successfully");
+                          // Update questionDetails status to Closed
+                          setQuestionDetails(prev => prev ? { ...prev, status: "Closed" } : null);
+                          // Refresh questions list
+                          const refreshResponse = await ApiService.request({
+                            method: "GET",
+                            url: "getMyQuestions",
+                            data: searchQuery ? { search: searchQuery } : {},
+                          });
+                          const refreshData = refreshResponse.data;
+                          if (refreshData.status && refreshData.data.questions) {
+                            const apiQuestions = refreshData.data.questions.map((q, index) => {
+                              const createdDate = q.created_at ? new Date(q.created_at) : new Date();
+                              const formattedDate = createdDate.toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "2-digit",
+                                year: "numeric",
+                              });
+                              const formattedTime = createdDate.toLocaleTimeString("en-US", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                              });
+
+                              return {
+                                id: q.id,
+                                title: q.question || "",
+                                date: `${formattedDate} - ${formattedTime}`,
+                                views: 0,
+                                answers: q.answers_count || 0,
+                                isHighlighted: index === 0,
+                                jurisdiction: q.jurisdiction ? {
+                                  id: q.jurisdiction.id,
+                                  name: q.jurisdiction.name || ""
+                                } : null,
+                                timestamp: q.created_at,
+                                rawData: {
+                                  ...q,
+                                  status: q.status || null,
+                                },
+                              };
+                            });
+                            setQuestions(apiQuestions);
+                            setShowDetail(false);
+                            setSelectedQuestion(null);
+                          }
+                        } else {
+                          toast.error(data.message || "Failed to close question");
+                        }
+                      } catch (error) {
+                        console.error("Error closing question:", error);
+                        if (error.response?.data?.message) {
+                          toast.error(error.response.data.message);
+                        } else {
+                          toast.error("Failed to close question");
+                        }
+                      } finally {
+                        setClosingQuestion(false);
+                      }
+                    }
+                  }}
+                >
+                  {closingQuestion ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                      Closing...
+                    </>
+                  ) : (
+                      "Mark Closed"
+                    )}
+                  </button>
+                )}
                 <button
                   type="button"
                   className="btn-close"
@@ -442,36 +808,83 @@ const List = () => {
           </div>
 
           <div className="offcanvas-body p-0" style={{ borderBottomLeftRadius: "15px", borderBottomRightRadius: "15px" }}>
-            {/* Question Details */}
-            <div className="p-4">
-              <h5 className="mb-3">{selectedQuestion.title}</h5>
-
-              <div className="d-flex align-items-center gap-4 mb-4">
-                <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-eye-fill text-gray-600"></i>
-                  <span className="text-black">
-                    Views: {selectedQuestion.views}
-                  </span>
-                </div>
-                <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-chat-dots-fill text-gray-600"></i>
-                  <span className="text-black">
-                    Ans: {selectedQuestion.answers}
-                  </span>
+            {loadingDetails ? (
+              <div className="d-flex justify-content-center align-items-center p-5">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
                 </div>
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Question Details */}
+                <div className="p-4">
+                  <h5 className="mb-3">{selectedQuestion?.title || questionDetails?.question || ""}</h5>
+
+                  {/* Show jurisdiction if available */}
+                  {questionDetails?.jurisdiction && (
+                    <div className="mb-3">
+                      <span className="badge bg-light text-dark">
+                        <i className="bi bi-geo-alt me-1"></i>
+                        {questionDetails.jurisdiction.name}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Show attachments if available */}
+                  {questionDetails?.attachments && questionDetails.attachments.length > 0 && (
+                    <div className="mb-3">
+                      <small className="text-muted d-block mb-2">Attachments:</small>
+                      <div className="d-flex flex-wrap gap-2">
+                        {questionDetails.attachments.map((attachment, index) => (
+                          <a
+                            key={index}
+                            href={attachment}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-outline-secondary"
+                          >
+                            <i className="bi bi-paperclip me-1"></i>
+                            Attachment {index + 1}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="d-flex align-items-center gap-4 mb-4">
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-eye-fill text-gray-600"></i>
+                      <span className="text-black">
+                        Views: {selectedQuestion?.views || questionDetails?.views_count || 0}
+                      </span>
+                    </div>
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-chat-dots-fill text-gray-600"></i>
+                      <span className="text-black">
+                        Ans: {selectedQuestion?.answers || questionDetails?.answers_count || 0}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Lawyers Respond Section */}
-            <div className="border-top">
-              <div className="p-4">
-                <h6 className="mb-4">Lawyers Respond</h6>
+            {!loadingDetails && (
+              <div className="border-top">
+                <div className="p-4">
+                  <h6 className="mb-4">Lawyers Respond</h6>
 
-                <div
-                  className="d-flex flex-column gap-3"
-                  // style={{ maxHeight: "400px", overflowY: "auto" }}
-                >
-                  {lawyerResponses.map((lawyer) => (
+                  {lawyerResponses.length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-muted">No lawyer responses yet</p>
+                    </div>
+                  ) : (
+                    <div
+                      className="d-flex flex-column gap-3"
+                      style={{ maxHeight: "400px", overflowY: "auto" }}
+                    >
+                      {lawyerResponses.map((lawyer) => (
                     <div
                       key={lawyer.id}
                       className="d-flex align-items-start justify-content-between border-bottom pb-3"
@@ -535,10 +948,12 @@ const List = () => {
                         </NavLink>
                       </div>
                     </div>
-                  ))}
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -598,37 +1013,88 @@ const List = () => {
 
             {/* Jurisdiction Dropdown */}
             <div className="mb-3">
-              <div className="position-relative">
-                <select
-                  className="form-select"
-                  value={questionJurisdiction}
-                  onChange={(e) => setQuestionJurisdiction(e.target.value)}
+              <div className="position-relative" ref={jurisdictionDropdownRef}>
+                <button
+                  type="button"
+                  className="form-select d-flex align-items-center justify-content-between"
+                  onClick={() => setShowJurisdictionDropdown(!showJurisdictionDropdown)}
+                  disabled={loadingJurisdictions}
                   style={{
                     width: "606px",
                     height: "79px",
                     border: "1px solid #C9C9C9",
                     borderRadius: "8px",
+                    backgroundColor: loadingJurisdictions ? "#f5f5f5" : "#fff",
+                    cursor: loadingJurisdictions ? "not-allowed" : "pointer",
+                    textAlign: "left",
+                    paddingLeft: "12px",
+                    paddingRight: "40px",
                   }}
                 >
-                  <option value="">Jurisdiction</option>
-                  <option value="us">United States</option>
-                  <option value="uk">United Kingdom</option>
-                  <option value="ca">Canada</option>
-                  <option value="au">Australia</option>
-                </select>
-                <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i>
+                  <span style={{ color: questionJurisdiction ? "#000" : "#6c757d" }}>
+                    {loadingJurisdictions 
+                      ? "Loading..." 
+                      : questionJurisdiction 
+                        ? jurisdictions.find(j => j.id.toString() === questionJurisdiction.toString())?.name || "Jurisdiction"
+                        : "Jurisdiction"
+                    }
+                  </span>
+                  <i className={`bi bi-chevron-${showJurisdictionDropdown ? "up" : "down"} position-absolute end-0 translate-middle-y me-3 text-gray-600`} style={{ top: "50%" }}></i>
+                </button>
+                
+                {showJurisdictionDropdown && !loadingJurisdictions && (
+                  <div 
+                    className="position-absolute bg-white border rounded shadow-lg"
+                    style={{ 
+                      zIndex: 1050, 
+                      width: "606px", 
+                      maxHeight: "400px", 
+                      overflowY: "auto",
+                      overflowX: "hidden",
+                      top: "100%",
+                      marginTop: "8px",
+                      bottom: "auto"
+                    }}
+                  >
+                    {jurisdictions.length > 0 ? (
+                      jurisdictions.map((jurisdiction) => (
+                        <button
+                          key={jurisdiction.id}
+                          type="button"
+                          className="btn btn-light w-100 text-start px-3 py-2 border-0"
+                          onClick={() => {
+                            setQuestionJurisdiction(jurisdiction.id.toString());
+                            setShowJurisdictionDropdown(false);
+                          }}
+                          style={{ 
+                            fontSize: "0.9rem",
+                            backgroundColor: questionJurisdiction === jurisdiction.id.toString() ? "#f0f0f0" : "#fff"
+                          }}
+                        >
+                          {jurisdiction.name}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="p-3 text-center text-muted">
+                        <small>No jurisdictions available</small>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
             {/* File Upload */}
             <div className="mb-3">
-              <div
+              <label
+                htmlFor="file-upload"
                 className="d-flex align-items-center justify-content-start border border-2 border-dashed rounded"
                 style={{
                   border: "1.5px dashed #C9C9C9",
                   width: "606px",
                   height: "80px",
                   borderRadius: "8px",
+                  cursor: "pointer",
                 }}
               >
                 <div
@@ -647,8 +1113,42 @@ const List = () => {
                   ></i>
                 </div>
 
-                <p className="text-muted mb-0">Attach Document</p>
-              </div>
+                <div>
+                  <p className="text-muted mb-0">Attach Document</p>
+                  {attachments.length > 0 && (
+                    <small className="text-success">
+                      {attachments.length} file(s) selected
+                    </small>
+                  )}
+                </div>
+              </label>
+              <input
+                type="file"
+                id="file-upload"
+                multiple
+                accept=".png,.jpg,.jpeg,.gif,.pdf,.doc,.docx"
+                onChange={handleFileChange}
+                style={{ display: "none" }}
+              />
+              {attachments.length > 0 && (
+                <div className="mt-2">
+                  {attachments.map((file, index) => (
+                    <div key={index} className="d-flex align-items-center justify-content-between bg-light p-2 mb-1 rounded">
+                      <small className="text-dark">{file.name}</small>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-link text-danger p-0"
+                        onClick={() => {
+                          const newAttachments = attachments.filter((_, i) => i !== index);
+                          setAttachments(newAttachments);
+                        }}
+                      >
+                        <i className="bi bi-x"></i>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* How it works Section */}
@@ -709,16 +1209,25 @@ const List = () => {
             <button
               className="btn text-white rounded-pill"
               onClick={handlePostQuestion}
+              disabled={postingQuestion}
               style={{
                 height: "63px",
                 fontSize: "20px",
                 fontWeight: "500",
-                backgroundColor: "#474747",
+                backgroundColor: postingQuestion ? "#999" : "#474747",
                 width: "606px",
                 marginTop: "25px",
+                cursor: postingQuestion ? "not-allowed" : "pointer",
               }}
             >
-              Post Your Legal Issues
+              {postingQuestion ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Posting...
+                </>
+              ) : (
+                "Post Your Legal Issues"
+              )}
             </button>
           </div>
         </div>

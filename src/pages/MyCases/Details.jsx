@@ -1,118 +1,188 @@
 import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import notificationProfile from "../../assets/images/notification-profile.png";
+import ApiService from "../../services/ApiService";
 import "../../assets/css/case-details-button.css";
 
 const Details = () => {
-  // Load data from localStorage
-  const loadFromLocalStorage = (key, defaultValue) => {
-    try {
-      const saved = localStorage.getItem(key);
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (error) {
-      console.error(`Error loading ${key} from localStorage:`, error);
-    }
-    return defaultValue;
-  };
-
-  const [searchTerm, setSearchTerm] = useState(
-    loadFromLocalStorage("myCases_searchTerm", "")
-  );
-  const [showCreateCase, setShowCreateCase] = useState(
-    loadFromLocalStorage("myCases_details_showCreateCase", false)
-  );
-
-  // Default case details with professional text
-  const defaultCaseDetails = {
-    caseId: "Case# 2548",
-    title: "Explain Your Case",
-    description:
-      "I am seeking legal representation for a complex criminal matter involving allegations of financial misconduct. The case involves multiple parties and requires expertise in both criminal defense and corporate law. I need an experienced attorney who can navigate the intricacies of UAE jurisdiction and provide strategic counsel throughout the legal proceedings. The matter is time-sensitive and requires immediate attention to protect my rights and interests.",
-    countryRegion: "UAE Jurisdiction",
-    legalConsultant: "Legal Advisor",
-    caseCategory: "Criminal Law",
-    subCategory: "Crimes Against Persons",
-    caseValue: "$1M",
-    caseBudget: "$2000",
-  };
-
-  const [caseDetails, setCaseDetails] = useState(
-    loadFromLocalStorage("myCases_caseDetails", defaultCaseDetails)
-  );
-
-  // Default lawyers data
-  const defaultLawyers = [
-    {
-      id: 1,
-      name: "Shamra Joseph",
-      role: "Corporate lawyer",
-      specialization: "Criminal Law, Tax Law+",
-      renewal: "Renew 21 September",
-      price: "1.99 USD",
-      avatar: notificationProfile,
-    },
-    {
-      id: 2,
-      name: "Shamra Joseph",
-      role: "Corporate lawyer",
-      specialization: "Criminal Law, Tax Law+",
-      renewal: "Renew 21 September",
-      price: "1.99 USD",
-      avatar: notificationProfile,
-    },
-    {
-      id: 3,
-      name: "Shamra Joseph",
-      role: "Corporate lawyer",
-      specialization: "Criminal Law, Tax Law+",
-      renewal: "Renew 21 September",
-      price: "1.99 USD",
-      avatar: notificationProfile,
-    },
-    {
-      id: 4,
-      name: "Shamra Joseph",
-      role: "Corporate lawyer",
-      specialization: "Criminal Law, Tax Law+",
-      renewal: "Renew 21 September",
-      price: "1.99 USD",
-      avatar: notificationProfile,
-    },
-  ];
-
-  const [lawyers, setLawyers] = useState(
-    loadFromLocalStorage("myCases_lawyers", defaultLawyers)
-  );
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [caseDetails, setCaseDetails] = useState(null);
+  const [lawyers, setLawyers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showCreateCase, setShowCreateCase] = useState(false);
+  
+  // Dropdown data states
+  const [jurisdictions, setJurisdictions] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [arbitrators, setArbitrators] = useState([]);
+  const [loadingDropdowns, setLoadingDropdowns] = useState(false);
 
   // Form states for Create Case offcanvas
   const [createCaseForm, setCreateCaseForm] = useState({
-    jurisdiction: loadFromLocalStorage("myCases_createCase_jurisdiction", ""),
-    legalConsultantType: loadFromLocalStorage("myCases_createCase_legalConsultantType", ""),
-    caseCategory: loadFromLocalStorage("myCases_createCase_caseCategory", ""),
-    subCategory: loadFromLocalStorage("myCases_createCase_subCategory", ""),
-    explainCase: loadFromLocalStorage("myCases_createCase_explainCase", ""),
-    acceptTerms: loadFromLocalStorage("myCases_createCase_acceptTerms", false),
+    jurisdiction: "",
+    legalConsultantType: "",
+    category: "",
+    subCategory: "",
+    explainCase: "",
+    acceptTerms: false,
+    caseBudget: "",
+    caseValue: "",
+    attachments: [],
   });
 
-  // Save all data to localStorage whenever it changes
+  // Fetch dropdown data
   useEffect(() => {
-    try {
-      localStorage.setItem("myCases_searchTerm", JSON.stringify(searchTerm));
-      localStorage.setItem("myCases_caseDetails", JSON.stringify(caseDetails));
-      localStorage.setItem("myCases_lawyers", JSON.stringify(lawyers));
-      localStorage.setItem("myCases_details_showCreateCase", JSON.stringify(showCreateCase));
-      localStorage.setItem("myCases_createCase_jurisdiction", JSON.stringify(createCaseForm.jurisdiction));
-      localStorage.setItem("myCases_createCase_legalConsultantType", JSON.stringify(createCaseForm.legalConsultantType));
-      localStorage.setItem("myCases_createCase_caseCategory", JSON.stringify(createCaseForm.caseCategory));
-      localStorage.setItem("myCases_createCase_subCategory", JSON.stringify(createCaseForm.subCategory));
-      localStorage.setItem("myCases_createCase_explainCase", JSON.stringify(createCaseForm.explainCase));
-      localStorage.setItem("myCases_createCase_acceptTerms", JSON.stringify(createCaseForm.acceptTerms));
-    } catch (error) {
-      console.error("Error saving MyCases data to localStorage:", error);
-    }
-  }, [searchTerm, caseDetails, lawyers, createCaseForm, showCreateCase]);
+    const fetchDropdownData = async () => {
+      try {
+        setLoadingDropdowns(true);
+        
+        // Fetch dropdown data (jurisdictions and arbitrators)
+        const dropdownResponse = await ApiService.request({
+          method: "GET",
+          url: "getDropdownData",
+        });
+        const dropdownData = dropdownResponse.data;
+        if (dropdownData.status && dropdownData.data) {
+          if (dropdownData.data.jurisdictions) {
+            setJurisdictions(dropdownData.data.jurisdictions);
+          }
+          if (dropdownData.data.arbitrators) {
+            setArbitrators(dropdownData.data.arbitrators);
+          }
+        }
+        
+        // Fetch categories
+        const categoriesResponse = await ApiService.request({
+          method: "GET",
+          url: "getCategories",
+        });
+        const categoriesData = categoriesResponse.data;
+        if (categoriesData.status && categoriesData.data) {
+          setCategories(categoriesData.data);
+        }
+      } catch (error) {
+        console.error("Error fetching dropdown data:", error);
+        toast.error("Failed to load form data");
+      } finally {
+        setLoadingDropdowns(false);
+      }
+    };
+
+    fetchDropdownData();
+  }, []);
+
+  // Fetch subcategories when category is selected
+  useEffect(() => {
+    const fetchSubCategories = async () => {
+      if (!createCaseForm.category) {
+        setSubCategories([]);
+        setCreateCaseForm(prev => ({ ...prev, subCategory: "" }));
+        return;
+      }
+
+      try {
+        const response = await ApiService.request({
+          method: "GET",
+          url: "getSubCategories",
+          data: { categories: JSON.stringify([createCaseForm.category]) }
+        });
+        const data = response.data;
+        if (data.status && data.data) {
+          setSubCategories(data.data);
+        } else {
+          setSubCategories([]);
+        }
+      } catch (error) {
+        console.error("Error fetching subcategories:", error);
+        setSubCategories([]);
+      }
+    };
+
+    fetchSubCategories();
+  }, [createCaseForm.category]);
+
+  // Fetch case details from API
+  useEffect(() => {
+    const fetchCaseDetails = async () => {
+      if (!id) {
+        navigate("/my-cases");
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await ApiService.request({
+          method: "GET",
+          url: "getCaseDetails",
+          data: { case_id: id }
+        });
+        
+        const data = response.data;
+        if (data.status && data.data) {
+          const caseData = data.data;
+          
+          // Transform case details
+          setCaseDetails({
+            id: caseData.id,
+            caseId: `Case# ${caseData.id}`,
+            title: "Case Details",
+            description: caseData.description || "",
+            countryRegion: caseData.jurisdictions?.map(j => j.name).join(", ") || "",
+            legalConsultant: caseData.type_legal_consultant || "",
+            caseCategory: caseData.categories?.[0]?.name || "",
+            subCategory: caseData.sub_categories?.[0]?.name || "",
+            caseValue: caseData.case_value ? `$${caseData.case_value}` : "",
+            caseBudget: caseData.case_budget ? `$${caseData.case_budget}` : "",
+            consultationType: caseData.consultation_type || [],
+            languages: caseData.languages || [],
+            attachments: caseData.attachments || [],
+            rawData: caseData,
+          });
+
+          // Transform lawyers/interests data
+          const interests = caseData.interests || [];
+          const transformedLawyers = interests.map((interest) => {
+            const lawyer = interest.lawyer;
+            if (!lawyer) return null;
+
+            // Get categories/subcategories
+            const categories = lawyer.categories?.map(c => c.name).join(", ") || "";
+            const subCategories = lawyer.sub_categories?.map(sc => sc.name).join(", ") || "";
+            const specialization = categories || subCategories || "Lawyer";
+
+            return {
+              id: lawyer.id,
+              name: lawyer.name || "",
+              role: categories || subCategories || "Lawyer",
+              specialization: specialization,
+              renewal: interest.created_at ? new Date(interest.created_at).toLocaleDateString() : "",
+              price: interest.price || "",
+              avatar: lawyer.picture || notificationProfile,
+              interestId: interest.id,
+              rawData: interest,
+            };
+          }).filter(Boolean);
+
+          setLawyers(transformedLawyers);
+        } else {
+          toast.error(data.message || "Failed to load case details");
+          navigate("/my-cases");
+        }
+      } catch (error) {
+        console.error("Error fetching case details:", error);
+        toast.error("Failed to load case details");
+        navigate("/my-cases");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCaseDetails();
+  }, [id, navigate]);
 
   const handleFormChange = (field, value) => {
     setCreateCaseForm((prev) => ({
@@ -121,7 +191,8 @@ const Details = () => {
     }));
   };
 
-  const handleSubmitCase = () => {
+  const handleSubmitCase = async () => {
+    // Validation
     if (!createCaseForm.acceptTerms) {
       toast.error("Please accept the Privacy policy & Terms & conditions");
       return;
@@ -131,36 +202,130 @@ const Details = () => {
       toast.error("Please provide a case description");
       return;
     }
+    if (!createCaseForm.jurisdiction) {
+      toast.error("Please select jurisdiction");
+      return;
+    }
+    if (!createCaseForm.legalConsultantType) {
+      toast.error("Please select type of legal consultant");
+      return;
+    }
+    if (!createCaseForm.category) {
+      toast.error("Please select category");
+      return;
+    }
+    if (!createCaseForm.subCategory) {
+      toast.error("Please select sub category");
+      return;
+    }
 
-    // Create new case
-    const newCaseId = `Case# ${Date.now()}`;
-    const newCase = {
-      caseId: newCaseId,
-      title: "Explain Your Case",
-      description: createCaseForm.explainCase,
-      countryRegion: createCaseForm.jurisdiction || "UAE Jurisdiction",
-      legalConsultant: createCaseForm.legalConsultantType || "Legal Advisor",
-      caseCategory: createCaseForm.caseCategory || "Criminal Law",
-      subCategory: createCaseForm.subCategory || "Crimes Against Persons",
-      caseValue: "$1M",
-      caseBudget: "$2000",
-    };
+    try {
+      const formData = new FormData();
+      formData.append('description', createCaseForm.explainCase.trim());
+      formData.append('jurisdictions', JSON.stringify([parseInt(createCaseForm.jurisdiction)]));
+      formData.append('type_legal_consultant', createCaseForm.legalConsultantType);
+      formData.append('categories', JSON.stringify([parseInt(createCaseForm.category)]));
+      formData.append('sub_categories', JSON.stringify([parseInt(createCaseForm.subCategory)]));
+      
+      // Set consultation_type as empty array if not provided
+      formData.append('consultation_type', JSON.stringify([]));
+      
+      if (createCaseForm.caseBudget) {
+        formData.append('case_budget', createCaseForm.caseBudget);
+      }
+      if (createCaseForm.caseValue) {
+        formData.append('case_value', createCaseForm.caseValue);
+      }
+      
+      // Add attachments if any
+      if (createCaseForm.attachments && createCaseForm.attachments.length > 0) {
+        createCaseForm.attachments.forEach((file) => {
+          formData.append('attachments[]', file);
+        });
+      }
 
-    setCaseDetails(newCase);
-    toast.success("Case created successfully!");
-    
-    // Reset form
-    setCreateCaseForm({
-      jurisdiction: "",
-      legalConsultantType: "",
-      caseCategory: "",
-      subCategory: "",
-      explainCase: "",
-      acceptTerms: false,
-    });
-    
-    setShowCreateCase(false);
+      const response = await ApiService.request({
+        method: "POST",
+        url: "createCase",
+        data: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      const data = response.data;
+      if (data.status) {
+        toast.success(data.message || "Case created successfully!");
+        setCreateCaseForm({
+          jurisdiction: "",
+          legalConsultantType: "",
+          category: "",
+          subCategory: "",
+          explainCase: "",
+          acceptTerms: false,
+          caseBudget: "",
+          caseValue: "",
+          attachments: [],
+        });
+        setShowCreateCase(false);
+        // Navigate to the new case details
+        if (data.data && data.data.id) {
+          navigate(`/my-cases/${data.data.id}`);
+        } else {
+          navigate("/my-cases");
+        }
+      } else {
+        toast.error(data.message || "Failed to create case");
+      }
+    } catch (error) {
+      console.error("Error creating case:", error);
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else if (error.response?.data?.errors) {
+        const errors = error.response.data.errors;
+        const firstError = Object.values(errors)[0];
+        toast.error(Array.isArray(firstError) ? firstError[0] : firstError);
+      } else {
+        toast.error("Failed to create case. Please try again.");
+      }
+    }
   };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 4) {
+      toast.error("You can upload maximum 4 files only");
+      return;
+    }
+    setCreateCaseForm(prev => ({ ...prev, attachments: files }));
+  };
+
+  if (loading) {
+    return (
+      <div className="container-fluid case-details--mukta-font">
+        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!caseDetails) {
+    return (
+      <div className="container-fluid case-details--mukta-font">
+        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+          <div className="text-center">
+            <h4 className="text-muted mb-2">Case Not Found</h4>
+            <button className="btn btn-primary" onClick={() => navigate("/my-cases")}>
+              Back to Cases
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container-fluid case-details--mukta-font">
@@ -171,32 +336,19 @@ const Details = () => {
       >
         <div className="col-12 px-0">
           <div className="d-flex gap-3 align-items-center">
-            {/* Search Bar */}
-            <div
-              className="position-relative flex-grow-1"
-              style={{ maxWidth: "400px" }}
+            {/* Back Button */}
+            <button
+              className="btn btn-outline-secondary rounded-pill d-flex align-items-center gap-2"
+              onClick={() => navigate("/my-cases")}
+              style={{ marginRight: "auto" }}
             >
-              <input
-                type="text"
-                className="form-control form-control-lg rounded-pill case-details-search-input portal-form-hover"
-                placeholder="Search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <i className="bi bi-search position-absolute top-50 translate-middle-y text-muted fs-4 ms-4"></i>
-            </div>
-
-            {/* Filter Button */}
-            {/* <button
-              className="btn btn-outline-secondary rounded-pill d-flex align-items-center gap-2 case-details-filter-btn portal-button-hover"
-            >
-              <i className="bi bi-funnel"></i>
-              Filter
-            </button> */}
+              <i className="bi bi-arrow-left"></i>
+              Back
+            </button>
 
             {/* Add New Case Button */}
             <button
-              className="btn rounded-pill px-4 py-2 d-flex justify-content-center align-items-center gap-2 case-details-add-case-btn portal-button-hover" style={{ marginLeft: "80px" }}
+              className="btn rounded-pill px-4 py-2 d-flex justify-content-center align-items-center gap-2 case-details-add-case-btn portal-button-hover"
               type="button"
               onClick={() => setShowCreateCase(true)}
             >
@@ -225,7 +377,7 @@ const Details = () => {
           >
             <div className="card-body p-0">
               <div className="d-flex justify-content-between align-items-center mb-3 p-4">
-                <h4 className="text-dark mb-0 case-details-explain-title">{caseDetails.title}</h4>
+                <h4 className="text-dark mb-0 case-details-explain-title">Case Details</h4>
                 <span
                   className="badge bg-light text-dark px-3 py-2 rounded-pill case-details-explain-badge portal-badge-hover"
                 >
@@ -379,7 +531,12 @@ const Details = () => {
               </div>
 
               {/* Lawyers List */}
-              {lawyers.map((lawyer, index) => (
+              {lawyers.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-muted">No lawyers have shown interest in this case yet.</p>
+                </div>
+              ) : (
+              lawyers.map((lawyer, index) => (
                 <div
                   key={lawyer.id}
                   className="card mb-3 border-0 shadow-sm case-details-lawyer-card case-lawyer-portal-hover"
@@ -435,7 +592,8 @@ const Details = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+              ))
+              )}
             </div>
           </div>
         </div>
@@ -480,6 +638,7 @@ const Details = () => {
                       className="form-select"
                       value={createCaseForm.jurisdiction}
                       onChange={(e) => handleFormChange("jurisdiction", e.target.value)}
+                      disabled={loadingDropdowns}
                       style={{
                         width: "100%",
                         height: "56px",
@@ -488,14 +647,13 @@ const Details = () => {
                       }}
                     >
                       <option value="">Select Jurisdiction</option>
-                      <option value="UAE Jurisdiction">UAE Jurisdiction</option>
-                      <option value="Saudi Arabia Jurisdiction">Saudi Arabia Jurisdiction</option>
-                      <option value="Kuwait Jurisdiction">Kuwait Jurisdiction</option>
-                      <option value="Qatar Jurisdiction">Qatar Jurisdiction</option>
-                      <option value="Bahrain Jurisdiction">Bahrain Jurisdiction</option>
-                      <option value="Oman Jurisdiction">Oman Jurisdiction</option>
+                      {jurisdictions.map((jurisdiction) => (
+                        <option key={jurisdiction.id} value={jurisdiction.id}>
+                          {jurisdiction.name}
+                        </option>
+                      ))}
                     </select>
-                    {/* <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i> */}
+                    <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i>
                   </div>
                 </div>
                 <div className="col-6">
@@ -504,6 +662,7 @@ const Details = () => {
                       className="form-select"
                       value={createCaseForm.legalConsultantType}
                       onChange={(e) => handleFormChange("legalConsultantType", e.target.value)}
+                      disabled={loadingDropdowns}
                       style={{
                         width: "100%",
                         height: "56px",
@@ -512,14 +671,13 @@ const Details = () => {
                       }}
                     >
                       <option value="">Type of legal consultant</option>
-                      <option value="Legal Advisor">Legal Advisor</option>
-                      <option value="Corporate Lawyer">Corporate Lawyer</option>
-                      <option value="Criminal Defense Attorney">Criminal Defense Attorney</option>
-                      <option value="Family Law Attorney">Family Law Attorney</option>
-                      <option value="Real Estate Lawyer">Real Estate Lawyer</option>
-                      <option value="Tax Attorney">Tax Attorney</option>
+                      {arbitrators.map((arbitrator) => (
+                        <option key={arbitrator.id} value={arbitrator.name}>
+                          {arbitrator.name}
+                        </option>
+                      ))}
                     </select>
-                    {/* <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i> */}
+                    <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i>
                   </div>
                 </div>
               </div>
@@ -530,8 +688,9 @@ const Details = () => {
                   <div className="position-relative">
                     <select
                       className="form-select"
-                      value={createCaseForm.caseCategory}
-                      onChange={(e) => handleFormChange("caseCategory", e.target.value)}
+                      value={createCaseForm.category}
+                      onChange={(e) => handleFormChange("category", e.target.value)}
+                      disabled={loadingDropdowns}
                       style={{
                         width: "100%",
                         height: "56px",
@@ -539,16 +698,14 @@ const Details = () => {
                         borderRadius: "12px",
                       }}
                     >
-                      <option value="">Select Case Category</option>
-                      <option value="Criminal Law">Criminal Law</option>
-                      <option value="Corporate Law">Corporate Law</option>
-                      <option value="Family Law">Family Law</option>
-                      <option value="Real Estate Law">Real Estate Law</option>
-                      <option value="Tax Law">Tax Law</option>
-                      <option value="Employment Law">Employment Law</option>
-                      <option value="Intellectual Property Law">Intellectual Property Law</option>
+                      <option value="">Select Category</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
                     </select>
-                    {/* <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i> */}
+                    <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i>
                   </div>
                 </div>
                 <div className="col-6">
@@ -557,6 +714,7 @@ const Details = () => {
                       className="form-select"
                       value={createCaseForm.subCategory}
                       onChange={(e) => handleFormChange("subCategory", e.target.value)}
+                      disabled={!createCaseForm.category || loadingDropdowns}
                       style={{
                         width: "100%",
                         height: "56px",
@@ -564,14 +722,14 @@ const Details = () => {
                         borderRadius: "12px",
                       }}
                     >
-                      <option value="">Select Sub Categories</option>
-                      <option value="Crimes Against Persons">Crimes Against Persons</option>
-                      <option value="Property Crimes">Property Crimes</option>
-                      <option value="White Collar Crimes">White Collar Crimes</option>
-                      <option value="Drug Crimes">Drug Crimes</option>
-                      <option value="Traffic Violations">Traffic Violations</option>
+                      <option value="">Select Sub Category</option>
+                      {subCategories.map((subCategory) => (
+                        <option key={subCategory.id} value={subCategory.id}>
+                          {subCategory.name}
+                        </option>
+                      ))}
                     </select>
-                    {/* <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i> */}
+                    <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i>
                   </div>
                 </div>
               </div>
@@ -593,35 +751,60 @@ const Details = () => {
                 ></textarea>
               </div>
 
+              {/* Case Budget & Case Value */}
+              <div className="row g-3 mb-3">
+                <div className="col-6">
+                  <input
+                    type="number"
+                    className="form-control"
+                    placeholder="Case Budget (USD)"
+                    value={createCaseForm.caseBudget}
+                    onChange={(e) => handleFormChange("caseBudget", e.target.value)}
+                    style={{
+                      height: "56px",
+                      border: "1px solid #C9C9C9",
+                      borderRadius: "12px",
+                    }}
+                  />
+                </div>
+                <div className="col-6">
+                  <input
+                    type="number"
+                    className="form-control"
+                    placeholder="Case Value (USD)"
+                    value={createCaseForm.caseValue}
+                    onChange={(e) => handleFormChange("caseValue", e.target.value)}
+                    style={{
+                      height: "56px",
+                      border: "1px solid #C9C9C9",
+                      borderRadius: "12px",
+                    }}
+                  />
+                </div>
+              </div>
+
               {/* Attach Document */}
               <div className="mb-3">
-                <div
-                  className="d-flex align-items-center justify-content-start border border-2 border-dashed rounded"
+                <label className="form-label">Attach Documents (Max 4 files, 2MB each)</label>
+                <input
+                  type="file"
+                  className="form-control"
+                  multiple
+                  accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                  onChange={handleFileChange}
                   style={{
-                    border: "1.5px dashed #C9C9C9",
-                    width: "100%",
-                    height: "80px",
+                    height: "56px",
+                    border: "1px solid #C9C9C9",
                     borderRadius: "12px",
                   }}
-                >
-                  <div
-                    className="p-3 mx-3 rounded-1"
-                    style={{
-                      backgroundColor: "#FDFDFD",
-                      border: "1px dashed #BEBEBE",
-                    }}
-                  >
-                    <i
-                      className="bi bi-paperclip fs-3 d-inline-block"
-                      style={{
-                        transform: "rotate(45deg)",
-                        display: "inline-block",
-                      }}
-                    ></i>
+                />
+                {createCaseForm.attachments.length > 0 && (
+                  <div className="mt-2">
+                    <small className="text-muted">
+                      {createCaseForm.attachments.length} file(s) selected
+                    </small>
                   </div>
-
-                  <p className="text-muted mb-0">Attach Document</p>
-                </div>
+                )}
               </div>
 
               {/* Accept Terms */}

@@ -1,8 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "./help-support.css";
 
 const HelpSupport = () => {
   const [openIndex, setOpenIndex] = useState(null);
+  const [showChatPopup, setShowChatPopup] = useState(false);
+  const [showContactSupportPopup, setShowContactSupportPopup] = useState(false);
+  const [contactSupportTab, setContactSupportTab] = useState("email"); // email, chat, phone
+  const [isClosing, setIsClosing] = useState(false);
+  const [isContactSupportClosing, setIsContactSupportClosing] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      text: "Hello! How can I help you today?",
+      sender: "support",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+  ]);
+  const [newMessage, setNewMessage] = useState("");
+  const messagesEndRef = useRef(null);
 
   const faqs = [
     {
@@ -92,6 +107,73 @@ const HelpSupport = () => {
     }
   };
 
+  const handleChatIconClick = () => {
+    setShowChatPopup(true);
+  };
+
+  const handleCloseChat = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setShowChatPopup(false);
+      setIsClosing(false);
+    }, 300);
+  };
+
+  const handleContactSupportClick = () => {
+    setShowContactSupportPopup(true);
+    setContactSupportTab("email"); // Default to email tab
+  };
+
+  const handleCloseContactSupport = () => {
+    setIsContactSupportClosing(true);
+    setTimeout(() => {
+      setShowContactSupportPopup(false);
+      setIsContactSupportClosing(false);
+      setContactSupportTab("email");
+    }, 300);
+  };
+
+  const handleTabChange = (tab) => {
+    setContactSupportTab(tab);
+    // If chat tab is selected, also open the chat popup
+    if (tab === "chat") {
+      setShowChatPopup(true);
+    }
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (newMessage.trim()) {
+      const userMessage = {
+        id: messages.length + 1,
+        text: newMessage,
+        sender: "user",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages([...messages, userMessage]);
+      setNewMessage("");
+      
+      // Simulate support response after 1 second
+      setTimeout(() => {
+        const supportMessage = {
+          id: messages.length + 2,
+          text: "Thank you for your message. Our support team will get back to you shortly.",
+          sender: "support",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setMessages(prev => [...prev, supportMessage]);
+      }, 1000);
+    }
+  };
+
   return (
     <div className="help-support-container">
       <div className="container-fluid help-support-wrapper">
@@ -166,20 +248,364 @@ const HelpSupport = () => {
         <div className="row mt-5" data-aos="fade-up" data-aos-delay="800">
           <div className="col-12 col-md-8 offset-md-2">
             <div className="contact-support-card">
-              <div className="contact-support-icon">
-                <i className="bi bi-envelope-fill"></i>
+              <div className="d-flex justify-content-center align-items-center gap-5 mb-4">
+                <div className="contact-support-icon" style={{ cursor: "pointer" }}>
+                  <i className="bi bi-envelope-fill"></i>
+                </div>
+                <div 
+                  className="contact-support-icon" 
+                  style={{ cursor: "pointer" }}
+                  onClick={handleChatIconClick}
+                >
+                  <i className="bi bi-chat-dots-fill"></i>
+                </div>
+                <div className="contact-support-icon" style={{ cursor: "pointer" }}>
+                  <i className="bi bi-telephone-fill"></i>
+                </div>
               </div>
               <h3 className="contact-support-title">Still need help?</h3>
               <p className="contact-support-text">
                 If you can't find the answer you're looking for, our support team is here to help.
               </p>
-              <button className="contact-support-button">
+              <button 
+                className="contact-support-button"
+                onClick={handleContactSupportClick}
+              >
                 Contact Support
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Chat Support Offcanvas */}
+      {showChatPopup && (
+        <div
+          className="offcanvas offcanvas-end show"
+          tabIndex="-1"
+          style={{
+            position: "fixed",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            visibility: "visible",
+            width: "633px",
+            transition: "all 0.3s ease-out",
+            borderRadius: "13px",
+            margin: "20px",
+            zIndex: 1045,
+            transform: isClosing ? "translateX(100%)" : "translateX(0)",
+            animation: isClosing ? "slideOutToRight 0.3s ease-in" : "slideInFromRight 0.3s ease-out",
+            backgroundColor: "#fff",
+          }}
+        >
+          <div className="offcanvas-header border-bottom" style={{ borderTopLeftRadius: "15px", borderTopRightRadius: "15px" }}>
+            <div className="d-flex justify-content-between align-items-center w-100">
+              <div>
+                <h5 className="mb-0 fw-bold">Chat Support</h5>
+                <small className="text-muted">We're here to help</small>
+              </div>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={handleCloseChat}
+              ></button>
+            </div>
+          </div>
+
+          <div className="offcanvas-body p-0 d-flex flex-column" style={{ borderBottomLeftRadius: "15px", borderBottomRightRadius: "15px", height: "calc(100% - 80px)" }}>
+            {/* Messages Area */}
+            <div className="flex-grow-1 p-4" style={{ overflowY: "auto", maxHeight: "calc(100vh - 250px)" }}>
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`d-flex mb-3 ${
+                    message.sender === "user" ? "justify-content-end" : "justify-content-start"
+                  }`}
+                >
+                  <div
+                    className={`p-3 rounded-3 ${
+                      message.sender === "user"
+                        ? "bg-black text-white"
+                        : "bg-light text-dark"
+                    }`}
+                    style={{
+                      maxWidth: "70%",
+                      wordWrap: "break-word",
+                    }}
+                  >
+                    <p className="mb-1" style={{ fontSize: "14px" }}>
+                      {message.text}
+                    </p>
+                    <small
+                      className={`${
+                        message.sender === "user" ? "text-white-50" : "text-muted"
+                      }`}
+                      style={{ fontSize: "11px" }}
+                    >
+                      {message.timestamp}
+                    </small>
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Message Input Area */}
+            <div className="border-top p-3" style={{ backgroundColor: "#f8f9fa" }}>
+              <form onSubmit={handleSendMessage} className="d-flex gap-2">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Type your message..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  style={{
+                    borderRadius: "25px",
+                    border: "1px solid #C9C9C9",
+                    padding: "10px 20px",
+                  }}
+                />
+                <button
+                  type="submit"
+                  className="btn bg-black text-white rounded-pill"
+                  style={{
+                    width: "50px",
+                    height: "50px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: 0,
+                  }}
+                  disabled={!newMessage.trim()}
+                >
+                  <i className="bi bi-send-fill"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Backdrop for Chat Popup */}
+      {showChatPopup && (
+        <div
+          className="offcanvas-backdrop fade show"
+          onClick={handleCloseChat}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            zIndex: 1040,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0,0,0,0.2)",
+            transition: "all 0.3s ease-out",
+          }}
+        ></div>
+      )}
+
+      {/* Contact Support Popup */}
+      {showContactSupportPopup && (
+        <div
+          className="offcanvas offcanvas-end show"
+          tabIndex="-1"
+          style={{
+            position: "fixed",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            visibility: "visible",
+            width: "633px",
+            transition: "all 0.3s ease-out",
+            borderRadius: "13px",
+            margin: "20px",
+            zIndex: 1045,
+            transform: isContactSupportClosing ? "translateX(100%)" : "translateX(0)",
+            animation: isContactSupportClosing ? "slideOutToRight 0.3s ease-in" : "slideInFromRight 0.3s ease-out",
+            backgroundColor: "#fff",
+          }}
+        >
+          <div className="offcanvas-header border-bottom" style={{ borderTopLeftRadius: "15px", borderTopRightRadius: "15px" }}>
+            <div className="d-flex justify-content-between align-items-center w-100">
+              <h5 className="mb-0 fw-bold">Contact Support</h5>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={handleCloseContactSupport}
+              ></button>
+            </div>
+          </div>
+
+          <div className="offcanvas-body p-4" style={{ borderBottomLeftRadius: "15px", borderBottomRightRadius: "15px" }}>
+            {/* Tabs */}
+            <div className="d-flex gap-2 mb-4" style={{ borderBottom: "2px solid #e9ecef" }}>
+              <button
+                className={`btn flex-grow-1 rounded-0 border-0 pb-3 ${
+                  contactSupportTab === "email"
+                    ? "border-bottom border-3 border-black fw-bold text-black"
+                    : "text-muted"
+                }`}
+                onClick={() => handleTabChange("email")}
+                style={{
+                  borderRadius: "0",
+                  background: "transparent",
+                }}
+              >
+                <i className="bi bi-envelope-fill me-2"></i>
+                Email
+              </button>
+              <button
+                className={`btn flex-grow-1 rounded-0 border-0 pb-3 ${
+                  contactSupportTab === "chat"
+                    ? "border-bottom border-3 border-black fw-bold text-black"
+                    : "text-muted"
+                }`}
+                onClick={() => handleTabChange("chat")}
+                style={{
+                  borderRadius: "0",
+                  background: "transparent",
+                }}
+              >
+                <i className="bi bi-chat-dots-fill me-2"></i>
+                Chat
+              </button>
+              <button
+                className={`btn flex-grow-1 rounded-0 border-0 pb-3 ${
+                  contactSupportTab === "phone"
+                    ? "border-bottom border-3 border-black fw-bold text-black"
+                    : "text-muted"
+                }`}
+                onClick={() => handleTabChange("phone")}
+                style={{
+                  borderRadius: "0",
+                  background: "transparent",
+                }}
+              >
+                <i className="bi bi-telephone-fill me-2"></i>
+                Phone
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            {contactSupportTab === "email" && (
+              <div className="contact-tab-content">
+                <h6 className="fw-bold mb-3">Send us an Email</h6>
+                <p className="text-muted mb-4">
+                  Fill out the form below and we'll get back to you as soon as possible.
+                </p>
+                <form>
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">Your Email</label>
+                    <input
+                      type="email"
+                      className="form-control form-control-lg"
+                      placeholder="your.email@example.com"
+                      style={{
+                        border: "1px solid #C9C9C9",
+                        borderRadius: "8px",
+                        height: "60px",
+                      }}
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">Subject</label>
+                    <input
+                      type="text"
+                      className="form-control form-control-lg"
+                      placeholder="What can we help you with?"
+                      style={{
+                        border: "1px solid #C9C9C9",
+                        borderRadius: "8px",
+                        height: "60px",
+                      }}
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">Message</label>
+                    <textarea
+                      className="form-control form-control-lg"
+                      placeholder="Tell us more about your inquiry..."
+                      rows="5"
+                      style={{
+                        border: "1px solid #C9C9C9",
+                        borderRadius: "8px",
+                        resize: "none",
+                      }}
+                    ></textarea>
+                  </div>
+                  <button
+                    type="submit"
+                    className="btn bg-black text-white rounded-pill w-100 py-3"
+                  >
+                    Send Email
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {contactSupportTab === "chat" && (
+              <div className="contact-tab-content">
+                <h6 className="fw-bold mb-3">Start a Chat</h6>
+                <p className="text-muted mb-4">
+                  Click the button below to start chatting with our support team.
+                </p>
+                <button
+                  className="btn bg-black text-white rounded-pill w-100 py-3"
+                  onClick={() => {
+                    setShowChatPopup(true);
+                    handleCloseContactSupport();
+                  }}
+                >
+                  <i className="bi bi-chat-dots-fill me-2"></i>
+                  Open Chat
+                </button>
+              </div>
+            )}
+
+            {contactSupportTab === "phone" && (
+              <div className="contact-tab-content">
+                <h6 className="fw-bold mb-3">Call Us</h6>
+                <p className="text-muted mb-4">
+                  Reach out to our support team directly via phone.
+                </p>
+                <div className="text-center mb-4">
+                  <div className="mb-3">
+                    <i className="bi bi-telephone-fill fs-1 text-black"></i>
+                  </div>
+                  <h4 className="fw-bold mb-2">+1 (555) 123-4567</h4>
+                  <p className="text-muted mb-4">Available 24/7</p>
+                </div>
+                <a
+                  href="tel:+15551234567"
+                  className="btn bg-black text-white rounded-pill w-100 py-3"
+                >
+                  <i className="bi bi-telephone-fill me-2"></i>
+                  Call Now
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Backdrop for Contact Support Popup */}
+      {showContactSupportPopup && (
+        <div
+          className="offcanvas-backdrop fade show"
+          onClick={handleCloseContactSupport}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            zIndex: 1040,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0,0,0,0.2)",
+            transition: "all 0.3s ease-out",
+          }}
+        ></div>
+      )}
     </div>
   );
 };

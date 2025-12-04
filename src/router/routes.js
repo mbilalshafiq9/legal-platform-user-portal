@@ -42,6 +42,7 @@ import WebsiteList from '../pages/websites/List';
 import EmployeesList from '../pages/Employees/List';
 import EmployeeDetails from '../pages/Employees/Details';
 import HelpSupport from '../pages/HelpSupport/List';
+import TrackMyTicket from '../pages/TrackMyTicket/List';
 
 
 const routes = [
@@ -209,6 +210,12 @@ const routes = [
     {
         path: '/help-support',
         component: HelpSupport,
+        meta: { requiresAuth: true, hideHeader: false }
+    },
+
+    {
+        path: '/track-my-ticket',
+        component: TrackMyTicket,
         meta: { requiresAuth: true, hideHeader: false }
     },
     

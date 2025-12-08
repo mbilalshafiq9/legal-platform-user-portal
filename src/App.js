@@ -12,6 +12,7 @@ import './assets/css/style.bundle.css';
 import './assets/css/mobile-sidebar-animations.css';
 import './assets/css/mobile-popups.css';
 import './assets/css/circular-plus-icons.css';
+import './assets/css/airbnb-dropdown.css';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 

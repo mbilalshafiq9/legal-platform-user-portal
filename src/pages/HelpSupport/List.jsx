@@ -18,6 +18,9 @@ const HelpSupport = () => {
   ]);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef(null);
+  const [issueType, setIssueType] = useState("");
+  const [description, setDescription] = useState("");
+  const [attachment, setAttachment] = useState(null);
 
   const faqs = [
     {
@@ -108,7 +111,8 @@ const HelpSupport = () => {
   };
 
   const handleChatIconClick = () => {
-    setShowChatPopup(true);
+    setShowContactSupportPopup(true);
+    setContactSupportTab("chat");
   };
 
   const handleCloseChat = () => {
@@ -124,6 +128,16 @@ const HelpSupport = () => {
     setContactSupportTab("email"); // Default to email tab
   };
 
+  const handleEmailIconClick = () => {
+    setShowContactSupportPopup(true);
+    setContactSupportTab("email");
+  };
+
+  const handlePhoneIconClick = () => {
+    setShowContactSupportPopup(true);
+    setContactSupportTab("phone");
+  };
+
   const handleCloseContactSupport = () => {
     setIsContactSupportClosing(true);
     setTimeout(() => {
@@ -135,10 +149,6 @@ const HelpSupport = () => {
 
   const handleTabChange = (tab) => {
     setContactSupportTab(tab);
-    // If chat tab is selected, also open the chat popup
-    if (tab === "chat") {
-      setShowChatPopup(true);
-    }
   };
 
   const scrollToBottom = () => {
@@ -191,7 +201,7 @@ const HelpSupport = () => {
 
         {/* Search Section */}
         <div className="row mb-5" data-aos="fade-up" data-aos-delay="100">
-          <div className="col-12 col-md-8 offset-md-2">
+          <div className="col-12 col-md-10 offset-md-1">
             <div className="help-search-container">
               <i className="bi bi-search help-search-icon"></i>
               <input
@@ -245,11 +255,15 @@ const HelpSupport = () => {
         </div>
 
         {/* Contact Support Section */}
-        <div className="row mt-5" data-aos="fade-up" data-aos-delay="800">
+        <div className="row mt-5" data-aos="fade-up">
           <div className="col-12 col-md-8 offset-md-2">
-            <div className="contact-support-card">
-              <div className="d-flex justify-content-center align-items-center gap-5 mb-4">
-                <div className="contact-support-icon" style={{ cursor: "pointer" }}>
+                <div className="contact-support-card">
+              <div className="d-flex justify-content-center align-items-center gap-5">
+                <div 
+                  className="contact-support-icon" 
+                  style={{ cursor: "pointer" }}
+                  onClick={handleEmailIconClick}
+                >
                   <i className="bi bi-envelope-fill"></i>
                 </div>
                 <div 
@@ -259,7 +273,11 @@ const HelpSupport = () => {
                 >
                   <i className="bi bi-chat-dots-fill"></i>
                 </div>
-                <div className="contact-support-icon" style={{ cursor: "pointer" }}>
+                <div 
+                  className="contact-support-icon" 
+                  style={{ cursor: "pointer" }}
+                  onClick={handlePhoneIconClick}
+                >
                   <i className="bi bi-telephone-fill"></i>
                 </div>
               </div>
@@ -310,8 +328,8 @@ const HelpSupport = () => {
                 className="btn-close"
                 onClick={handleCloseChat}
               ></button>
-            </div>
-          </div>
+                </div>
+              </div>
 
           <div className="offcanvas-body p-0 d-flex flex-column" style={{ borderBottomLeftRadius: "15px", borderBottomRightRadius: "15px", height: "calc(100% - 80px)" }}>
             {/* Messages Area */}
@@ -437,9 +455,12 @@ const HelpSupport = () => {
             </div>
           </div>
 
-          <div className="offcanvas-body p-4" style={{ borderBottomLeftRadius: "15px", borderBottomRightRadius: "15px" }}>
+          <div 
+            className={`offcanvas-body ${contactSupportTab === "chat" ? "p-0 d-flex flex-column" : "p-4"}`}
+            style={{ borderBottomLeftRadius: "15px", borderBottomRightRadius: "15px", height: contactSupportTab === "chat" ? "calc(100% - 80px)" : "auto" }}
+          >
             {/* Tabs */}
-            <div className="d-flex gap-2 mb-4" style={{ borderBottom: "2px solid #e9ecef" }}>
+            <div className={`d-flex gap-2 ${contactSupportTab === "chat" ? "px-4 pt-4 mb-0" : "mb-4"}`} style={{ borderBottom: "2px solid #e9ecef" }}>
               <button
                 className={`btn flex-grow-1 rounded-0 border-0 pb-3 ${
                   contactSupportTab === "email"
@@ -452,7 +473,10 @@ const HelpSupport = () => {
                   background: "transparent",
                 }}
               >
-                <i className="bi bi-envelope-fill me-2"></i>
+                <i 
+                  className="bi bi-envelope-fill me-2"
+                  style={{ color: contactSupportTab === "email" ? "#000000" : "" }}
+                ></i>
                 Email
               </button>
               <button
@@ -467,8 +491,11 @@ const HelpSupport = () => {
                   background: "transparent",
                 }}
               >
-                <i className="bi bi-chat-dots-fill me-2"></i>
-                Chat
+                <i 
+                  className="bi bi-chat-dots-fill me-2"
+                  style={{ color: contactSupportTab === "chat" ? "#000000" : "" }}
+                ></i>
+                Report Ticket
               </button>
               <button
                 className={`btn flex-grow-1 rounded-0 border-0 pb-3 ${
@@ -482,14 +509,17 @@ const HelpSupport = () => {
                   background: "transparent",
                 }}
               >
-                <i className="bi bi-telephone-fill me-2"></i>
+                <i 
+                  className="bi bi-telephone-fill me-2"
+                  style={{ color: contactSupportTab === "phone" ? "#000000" : "" }}
+                ></i>
                 Phone
               </button>
-            </div>
+              </div>
 
             {/* Tab Content */}
             {contactSupportTab === "email" && (
-              <div className="contact-tab-content">
+              <div className="contact-tab-content px-4 pb-4">
                 <h6 className="fw-bold mb-3">Send us an Email</h6>
                 <p className="text-muted mb-4">
                   Fill out the form below and we'll get back to you as soon as possible.
@@ -545,26 +575,107 @@ const HelpSupport = () => {
             )}
 
             {contactSupportTab === "chat" && (
-              <div className="contact-tab-content">
-                <h6 className="fw-bold mb-3">Start a Chat</h6>
-                <p className="text-muted mb-4">
-                  Click the button below to start chatting with our support team.
-                </p>
-                <button
-                  className="btn bg-black text-white rounded-pill w-100 py-3"
-                  onClick={() => {
-                    setShowChatPopup(true);
-                    handleCloseContactSupport();
-                  }}
-                >
-                  <i className="bi bi-chat-dots-fill me-2"></i>
-                  Open Chat
-                </button>
+              <div className="contact-tab-content px-4 pb-4">
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  // Handle form submission
+                  console.log({ issueType, description, attachment });
+                }}>
+                  {/* Issue Type */}
+                  <div className="my-5">
+                    <label className="form-label fw-semibold mb-2">Issue type</label>
+                    <select
+                      className="form-control form-control-lg"
+                      value={issueType}
+                      onChange={(e) => setIssueType(e.target.value)}
+                      style={{
+                        border: "1px solid #C9C9C9",
+                        borderRadius: "8px",
+                        height: "60px",
+                        padding: "0 15px",
+                        appearance: "none",
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                        backgroundRepeat: "no-repeat",
+                        backgroundPosition: "right 15px center",
+                        paddingRight: "40px",
+                      }}
+                    >
+                      <option value="">i.e Booking</option>
+                      <option value="booking">Booking</option>
+                      <option value="payment">Payment</option>
+                      <option value="technical">Technical</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  {/* Description */}
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold mb-2">Description</label>
+                    <textarea
+                      className="form-control form-control-lg"
+                      placeholder="Describe issue."
+                      rows="5"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      style={{
+                        border: "1px solid #C9C9C9",
+                        borderRadius: "8px",
+                        resize: "vertical",
+                        padding: "15px",
+                      }}
+                    ></textarea>
+                  </div>
+
+                  {/* Attachment */}
+                  <div className="mb-4">
+                    <label className="form-label fw-semibold mb-2">Attachment</label>
+                    <div
+                      className="form-control form-control-lg d-flex align-items-center justify-content-center"
+                      style={{
+                        border: "1px solid #C9C9C9",
+                        borderRadius: "8px",
+                        height: "60px",
+                        cursor: "pointer",
+                        backgroundColor: "#fff",
+                      }}
+                      onClick={() => document.getElementById('attachment-input').click()}
+                    >
+                      <i className="bi bi-upload me-2" style={{ fontSize: "1.2rem" }}></i>
+                      <span className="text-muted">Browse attachment</span>
+                      <input
+                        type="file"
+                        id="attachment-input"
+                        className="d-none"
+                        onChange={(e) => setAttachment(e.target.files[0])}
+                      />
+                    </div>
+                    {attachment && (
+                      <small className="text-muted mt-2 d-block">
+                        Selected: {attachment.name}
+                      </small>
+                    )}
+                  </div>
+
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    className="btn w-100 py-5 contact-support-submit-btn"
+                    style={{
+                      backgroundColor: "#000",
+                      color: "#ffffff",
+                      borderRadius: "8px",
+                      fontWeight: "600",
+                      fontSize: "1rem",
+                    }}
+                  >
+                    Submit
+                  </button>
+                </form>
               </div>
             )}
 
             {contactSupportTab === "phone" && (
-              <div className="contact-tab-content">
+              <div className="contact-tab-content px-4 pb-4">
                 <h6 className="fw-bold mb-3">Call Us</h6>
                 <p className="text-muted mb-4">
                   Reach out to our support team directly via phone.

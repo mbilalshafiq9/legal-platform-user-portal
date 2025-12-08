@@ -2,17 +2,21 @@ import React, { useState, useEffect } from "react";
 import AuthService from "../services/AuthService";
 import { useNavigate, NavLink } from "react-router-dom";
 import { Dropdown } from "primereact/dropdown";
+import Lottie from "lottie-react";
 
 import notificationProfile from "../assets/images/notification-profile.png";
 
 import postYourLegal from "../assets/images/postYourLegal.png";
 import hireLawyer from "../assets/images/hireLawyer.png";
 import createNewCase from "../assets/images/createNewCase.png";
+import successAnimation from "../assets/images/Succes.json";
+import profileIconAnimation from "../assets/images/profile-icon.json";
 
 import { toast } from "react-toastify";
 import ApiService from "../services/ApiService";
 import "../assets/css/dashboard-hover-fixes.css";
 import "../assets/css/siri-border-animation.css";
+import "../assets/css/welcome-message.css";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -20,6 +24,10 @@ const Dashboard = () => {
   const [showPostQuestion, setShowPostQuestion] = useState(false);
   const [showCreateCase, setShowCreateCase] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
+  const [displayedText, setDisplayedText] = useState("");
+  const [user, setUser] = useState(null);
 
 
   // Select states
@@ -28,6 +36,7 @@ const Dashboard = () => {
   const [createCaseJurisdiction, setCreateCaseJurisdiction] = useState(null);
   const [createCaseConsultantType, setCreateCaseConsultantType] =
     useState(null);
+  const [postQuestionText, setPostQuestionText] = useState("");
   const [createCaseLawType, setCreateCaseLawType] = useState(null);
   const [createCaseSubCategory, setCreateCaseSubCategory] = useState(null);
 
@@ -68,8 +77,77 @@ const Dashboard = () => {
     setTimeout(() => {
       setShowPostQuestion(false);
       setIsClosing(false);
+      // Reset form
+      setPostQuestionText("");
+      setPostQuestionJurisdiction(null);
     }, 300); // Match animation duration
   };
+
+  const handlePostQuestion = () => {
+    if (!postQuestionText.trim()) {
+      toast.error("Please enter your question");
+      return;
+    }
+
+    // Show success animation
+    setShowSuccessAnimation(true);
+    
+    // Auto-close animation and popup after 3 seconds (user can also close manually)
+    setTimeout(() => {
+      setShowSuccessAnimation(false);
+      handleClosePostQuestion();
+    }, 3000);
+  };
+
+  // Check if user just logged in and show welcome message
+  useEffect(() => {
+    const currentUser = AuthService.getCurrentUser();
+    if (currentUser) {
+      setUser(currentUser);
+      // Check if user just logged in (check localStorage flag set during login)
+      const shouldShowWelcome = localStorage.getItem('showWelcomeMessage');
+      if (shouldShowWelcome === 'true') {
+        // Clear the flag so it doesn't show again until next login
+        localStorage.removeItem('showWelcomeMessage');
+        sessionStorage.setItem('hasSeenWelcome', 'true');
+        
+        setShowWelcomeMessage(true);
+        
+        // Typewriter effect for the welcome message
+        const fullText = `Welcome back ${currentUser.name || 'User'}`;
+        // Start with first character immediately
+        setDisplayedText(fullText.substring(0, 1));
+        let currentIndex = 1;
+        let typeInterval = null;
+        let hideTimeout = null;
+        
+        // Small delay before starting typewriter effect
+        setTimeout(() => {
+          typeInterval = setInterval(() => {
+            if (currentIndex < fullText.length) {
+              setDisplayedText(fullText.substring(0, currentIndex + 1));
+              currentIndex++;
+            } else {
+              if (typeInterval) {
+                clearInterval(typeInterval);
+                typeInterval = null;
+              }
+            }
+          }, 50); // Speed of typing
+        }, 100);
+
+        // Auto-hide after exactly 3 seconds
+        hideTimeout = setTimeout(() => {
+          setShowWelcomeMessage(false);
+        }, 3000);
+
+        return () => {
+          if (typeInterval) clearInterval(typeInterval);
+          if (hideTimeout) clearTimeout(hideTimeout);
+        };
+      }
+    }
+  }, []);
 
   return (
     <div className="d-flex flex-column flex-column-fluid header-main dashboard--inter-font">
@@ -78,6 +156,25 @@ const Dashboard = () => {
           id="kt_app_content_container"
           className="app-container container-fluid"
         >
+          {/* Animated Welcome Message */}
+          {showWelcomeMessage && (
+            <div className="welcome-message-container">
+              <div className="welcome-message-box">
+                <div className="welcome-message-icon">
+                  <Lottie
+                    animationData={profileIconAnimation}
+                    loop={true}
+                    autoplay={true}
+                    style={{ width: "32px", height: "32px" }}
+                  />
+                </div>
+                <span className="welcome-message-text">
+                  {displayedText}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Main Content Row */}
           <div className="row">
             {/* Left Column - Main Content */}
@@ -774,6 +871,8 @@ const Dashboard = () => {
             <textarea
               className="form-control"
               placeholder="Explain Your Question"
+              value={postQuestionText}
+              onChange={(e) => setPostQuestionText(e.target.value)}
               style={{
                 resize: "none",
                 width: "606px",
@@ -885,7 +984,7 @@ const Dashboard = () => {
                 <small className="text-muted">1 Question post only</small>
               </div>
               <div
-                className="text-end px-4 h-100 d-flex flex-column justify-content-center"
+                className="text-end px-5 h-100 d-flex flex-column justify-content-center"
                 style={{ borderLeft: "1px solid #D3D3D3" }}
               >
                 <div className="fw-bold">USD</div>
@@ -897,6 +996,7 @@ const Dashboard = () => {
           {/* Submit Button */}
           <button
             className="btn text-white rounded-pill"
+            onClick={handlePostQuestion}
             style={{
               height: "63px",
               fontSize: "20px",
@@ -918,6 +1018,137 @@ const Dashboard = () => {
           className="offcanvas-backdrop fade show dashboard-backdrop"
           onClick={() => setShowPostQuestion(false)}
         ></div>
+      )}
+
+      {/* Success Animation Modal */}
+      {showSuccessAnimation && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+            animation: "fadeIn 0.3s ease-out",
+          }}
+          onClick={() => {
+            setShowSuccessAnimation(false);
+            handleClosePostQuestion();
+          }}
+        >
+          <div
+            className="success-animation-modal"
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: "20px",
+              padding: "3rem 2.5rem 2rem 2.5rem",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
+              maxWidth: "450px",
+              width: "90%",
+              animation: "fadeIn 0.3s ease-out",
+              position: "relative",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button - Top Right */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowSuccessAnimation(false);
+                handleClosePostQuestion();
+              }}
+              style={{
+                position: "absolute",
+                top: "20px",
+                right: "20px",
+                background: "transparent",
+                border: "none",
+                fontSize: "24px",
+                cursor: "pointer",
+                color: "#000",
+                width: "32px",
+                height: "32px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "50%",
+                transition: "all 0.2s ease",
+                zIndex: 10,
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = "#f5f5f5";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = "transparent";
+              }}
+            >
+              <i className="bi bi-x-lg"></i>
+            </button>
+
+            {/* Animation */}
+            <div style={{ marginBottom: "1.5rem" }}>
+              <Lottie
+                animationData={successAnimation}
+                loop={false}
+                autoplay={true}
+                style={{ width: "200px", height: "200px" }}
+              />
+            </div>
+
+            {/* Success Message */}
+            <h4
+              className="fw-bold success-animation-text mb-4"
+              style={{
+                color: "#212529",
+                fontSize: "20px",
+                textAlign: "center",
+                lineHeight: "1.4",
+              }}
+            >
+              Question Posted Successfully!
+            </h4>
+
+            {/* Action Button */}
+            <button
+              type="button"
+              className="btn text-white w-100"
+              onClick={() => {
+                setShowSuccessAnimation(false);
+                handleClosePostQuestion();
+              }}
+              style={{
+                height: "50px",
+                borderRadius: "12px",
+                fontSize: "16px",
+                fontWeight: "600",
+                backgroundColor: "#000",
+                border: "none",
+                transition: "all 0.3s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = "#333";
+                e.target.style.transform = "translateY(-2px)";
+                e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = "#000";
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "none";
+              }}
+            >
+              Got it
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

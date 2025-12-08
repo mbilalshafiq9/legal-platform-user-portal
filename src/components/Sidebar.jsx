@@ -377,7 +377,7 @@ const Sidebar = () => {
                 <div className="menu-item">
                   <NavLink
                     to="/help-support"
-                    className="menu-link"
+                    className="menu-link portal-nav-hover"
                     onClick={hideSidebar}
                   >
                     <span className="menu-bullet">
@@ -389,12 +389,12 @@ const Sidebar = () => {
                 <div className="menu-item">
                   <NavLink
                     to="/track-my-ticket"
-                    className="menu-link"
+                    className="menu-link portal-nav-hover"
                     onClick={hideSidebar}
                   >
                     <span className="menu-bullet">
                       <span className="bullet bullet-dot"></span>
-                    </span>
+              </span>
                     <span className="menu-title fs-6">Track My Ticket</span>
                   </NavLink>
                 </div>

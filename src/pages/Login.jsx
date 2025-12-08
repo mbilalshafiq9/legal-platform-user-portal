@@ -160,6 +160,10 @@ const Login = () => {
       // Save user to localStorage (using 'admin' key to match existing AuthService)
       localStorage.setItem("admin", JSON.stringify(user));
       localStorage.setItem("isAuthenticated", "true");
+      
+      // Set flag to show welcome message on dashboard
+      localStorage.setItem("showWelcomeMessage", "true");
+      sessionStorage.removeItem("hasSeenWelcome");
 
       // Save login credentials to localStorage
       const loginCredentials = {

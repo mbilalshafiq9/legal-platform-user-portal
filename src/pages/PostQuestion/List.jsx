@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { toast } from "react-toastify";
+import Lottie from "lottie-react";
 import notificationProfile from "../../assets/images/notification-profile.png";
 import NoQuestion from "../../assets/images/NoQuestion.png";
+import successAnimation from "../../assets/images/Succes.json";
 import "../../assets/css/siri-border-animation.css";
 
 const List = () => {
@@ -116,6 +118,7 @@ const List = () => {
   const [showDetail, setShowDetail] = useState(savedShowDetail);
   const [showPostQuestion, setShowPostQuestion] = useState(savedShowPostQuestion);
   const [isClosing, setIsClosing] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
   // Form states
   const [questionText, setQuestionText] = useState(savedQuestionText);
@@ -278,8 +281,14 @@ const List = () => {
       console.error("Error saving to dashboard questions:", error);
     }
 
-    toast.success("Question posted successfully!");
-    handleClosePostQuestion();
+    // Show success animation
+    setShowSuccessAnimation(true);
+    
+    // Auto-close animation and popup after 3 seconds (user can also close manually)
+    setTimeout(() => {
+      setShowSuccessAnimation(false);
+      handleClosePostQuestion();
+    }, 3000);
   };
 
   return (
@@ -696,7 +705,7 @@ const List = () => {
                   <small className="text-muted">1 Question post only</small>
                 </div>
                 <div
-                  className="text-end px-4 h-100 d-flex flex-column justify-content-center"
+                  className="text-end px-5 h-100 d-flex flex-column justify-content-center"
                   style={{ borderLeft: "1px solid #D3D3D3" }}
                 >
                   <div className="fw-bold">USD</div>
@@ -758,6 +767,137 @@ const List = () => {
             backgroundColor: "rgba(0,0,0,1)",
           }}
         ></div>
+      )}
+
+      {/* Success Animation Modal */}
+      {showSuccessAnimation && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+            animation: "fadeIn 0.3s ease-out",
+          }}
+          onClick={() => {
+            setShowSuccessAnimation(false);
+            handleClosePostQuestion();
+          }}
+        >
+          <div
+            className="success-animation-modal"
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: "20px",
+              padding: "3rem 2.5rem 2rem 2.5rem",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
+              maxWidth: "450px",
+              width: "90%",
+              animation: "fadeIn 0.3s ease-out",
+              position: "relative",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button - Top Right */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowSuccessAnimation(false);
+                handleClosePostQuestion();
+              }}
+              style={{
+                position: "absolute",
+                top: "20px",
+                right: "20px",
+                background: "transparent",
+                border: "none",
+                fontSize: "24px",
+                cursor: "pointer",
+                color: "#000",
+                width: "32px",
+                height: "32px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "50%",
+                transition: "all 0.2s ease",
+                zIndex: 10,
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = "#f5f5f5";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = "transparent";
+              }}
+            >
+              <i className="bi bi-x-lg"></i>
+            </button>
+
+            {/* Animation */}
+            <div style={{ marginBottom: "1.5rem" }}>
+              <Lottie
+                animationData={successAnimation}
+                loop={false}
+                autoplay={true}
+                style={{ width: "200px", height: "200px" }}
+              />
+            </div>
+
+            {/* Success Message */}
+            <h4
+              className="fw-bold success-animation-text mb-4"
+              style={{
+                color: "#212529",
+                fontSize: "20px",
+                textAlign: "center",
+                lineHeight: "1.4",
+              }}
+            >
+              Question Posted Successfully!
+            </h4>
+
+            {/* Action Button */}
+            <button
+              type="button"
+              className="btn text-white w-100"
+              onClick={() => {
+                setShowSuccessAnimation(false);
+                handleClosePostQuestion();
+              }}
+              style={{
+                height: "50px",
+                borderRadius: "12px",
+                fontSize: "16px",
+                fontWeight: "600",
+                backgroundColor: "#000",
+                border: "none",
+                transition: "all 0.3s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = "#333";
+                e.target.style.transform = "translateY(-2px)";
+                e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = "#000";
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "none";
+              }}
+            >
+              Got it
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

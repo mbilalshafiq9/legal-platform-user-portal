@@ -61847,7 +61847,7 @@ body.sidebar-open {
 }
 
 .app-sidebar .menu .menu-item .menu-link.active {
-    background-color: #212121 !important;
+    background-color: #262626 !important;
     color: white !important;
     transition: color .2s ease;
     border-top-left-radius: 8px;

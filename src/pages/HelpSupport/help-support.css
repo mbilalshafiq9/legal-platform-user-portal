@@ -272,7 +272,7 @@
 .contact-support-card {
   background: linear-gradient(135deg, #000000 0%, #333333 100%);
   border-radius: 20px;
-  padding: 3rem 2rem;
+  padding: 1rem 2rem;
   text-align: center;
   color: #ffffff;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -456,9 +456,92 @@ body.dark-mode .faq-answer-text {
   color: #cccccc !important;
 }
 
+body.dark-mode .contact-support-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+  color: #212529 !important;
+}
+
+body.dark-mode .contact-support-title {
+  color: #212529 !important;
+}
+
+body.dark-mode .contact-support-text {
+  color: #495057 !important;
+}
+
+body.dark-mode .contact-support-icon {
+  color: #212529 !important;
+  background-color: rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 body.dark-mode .contact-support-icon:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.25);
+  background-color: rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+  color: #000000 !important;
+  transform: translateY(-6px) scale(1.2) !important;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+}
+
+body.dark-mode .contact-support-icon:hover i {
+  transform: scale(1.15) !important;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+  color: #000000 !important;
+}
+
+body.dark-mode .contact-support-button {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .contact-support-button:hover {
+  background-color: #212529 !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Contact Support Submit Button Hover Effects */
+.contact-support-submit-btn {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.contact-support-submit-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.contact-support-submit-btn:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.contact-support-submit-btn:hover {
+  background-color: #212529 !important;
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.contact-support-submit-btn:active {
+  transform: translateY(0) scale(0.99);
+}
+
+/* Dark Mode Submit Button */
+body.dark-mode .contact-support-submit-btn {
+  background-color: #000000 !important;
+}
+
+body.dark-mode .contact-support-submit-btn:hover {
+  background-color: #1a1a1a !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 /* Responsive Design */

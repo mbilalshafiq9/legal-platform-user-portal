@@ -26,7 +26,10 @@ class AuthService {
     localStorage.removeItem('admin');
     localStorage.removeItem('permissions');
     localStorage.removeItem('isAuthenticated');
-    window.location.href = '/legal-platform-portal/login';
+    localStorage.removeItem('showWelcomeMessage');
+    sessionStorage.removeItem('hasSeenWelcome');
+    const basePath = process.env.REACT_APP_BASE_PATH || '/legal-platform-portal-demo';
+    window.location.href = `${basePath}/login`;
   }
   
   isAuthenticated() {

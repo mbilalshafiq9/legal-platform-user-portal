@@ -25,6 +25,9 @@ const Dashboard = () => {
   const [showCreateCase, setShowCreateCase] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
+  const [displayedText, setDisplayedText] = useState("");
 
   // Dashboard data states
   const [userInfo, setUserInfo] = useState({ name: "", location: "" });
@@ -86,6 +89,49 @@ const Dashboard = () => {
       setIsClosing(false);
       setShowPostQuestionJurisdictionDropdown(false);
     }, 300); // Match animation duration
+  };
+
+  const handlePostQuestion = async () => {
+    if (!postQuestionText.trim()) {
+      toast.error("Please enter your question");
+      return;
+    }
+
+    if (!postQuestionJurisdiction) {
+      toast.error("Please select a jurisdiction");
+      return;
+    }
+
+    try {
+      const response = await ApiService.request({
+        method: "POST",
+        url: "addQuestion",
+        data: {
+          question: postQuestionText,
+          jurisdiction_id: postQuestionJurisdiction,
+        },
+      });
+
+      const data = response.data;
+      if (data.status) {
+        // Show success animation
+        setShowSuccessAnimation(true);
+        // Reset form
+        setPostQuestionText("");
+        setPostQuestionJurisdiction(null);
+        // Close the offcanvas after a delay
+        setTimeout(() => {
+          setShowPostQuestion(false);
+        }, 300);
+        // Refresh dashboard data
+        // You can add a function to refresh the dashboard data here
+      } else {
+        toast.error(data.message || "Failed to post question");
+      }
+    } catch (error) {
+      console.error("Error posting question:", error);
+      toast.error("Failed to post question. Please try again.");
+    }
   };
 
   // Fetch dashboard data

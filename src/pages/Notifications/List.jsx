@@ -161,11 +161,6 @@ const List = () => {
     fetchNotifications();
   }, []);
 
-  // Refresh AOS animations when notifications change
-  useEffect(() => {
-    AOS.refresh();
-  }, [notifications]);
-
   return (
     <div className="d-flex flex-column flex-column-fluid notification-header">
       <div id="kt_app_content" className="app-content flex-column-fluid">

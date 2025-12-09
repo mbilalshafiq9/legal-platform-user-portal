@@ -35,6 +35,7 @@ const List = () => {
   const [showDetail, setShowDetail] = useState(savedShowDetail);
   const [showPostQuestion, setShowPostQuestion] = useState(savedShowPostQuestion);
   const [isClosing, setIsClosing] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
   // Form states
   const [questionText, setQuestionText] = useState(savedQuestionText);
@@ -1254,7 +1255,7 @@ const List = () => {
                   <small className="text-muted">1 Question post only</small>
                 </div>
                 <div
-                  className="text-end px-4 h-100 d-flex flex-column justify-content-center"
+                  className="text-end px-5 h-100 d-flex flex-column justify-content-center"
                   style={{ borderLeft: "1px solid #D3D3D3" }}
                 >
                   <div className="fw-bold">USD</div>

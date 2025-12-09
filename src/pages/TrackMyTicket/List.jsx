@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./track-my-ticket.css";
 
 const TrackMyTicket = () => {
   const [selectedFilter, setSelectedFilter] = useState("All Tickets");
+  const [openDropdownId, setOpenDropdownId] = useState(null);
 
   // Sample ticket data
   const tickets = [
@@ -34,6 +35,29 @@ const TrackMyTicket = () => {
     }
     return "badge bg-secondary text-white";
   };
+
+  const toggleDropdown = (ticketId) => {
+    setOpenDropdownId(openDropdownId === ticketId ? null : ticketId);
+  };
+
+  const handleActionClick = (action, ticket) => {
+    console.log(`Action: ${action} for ticket: ${ticket.refNumber}`);
+    setOpenDropdownId(null);
+    // Add your action handlers here
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.action-dropdown-container')) {
+        setOpenDropdownId(null);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
 
   return (
     <div className="track-ticket-container">
@@ -194,34 +218,109 @@ const TrackMyTicket = () => {
                             </span>
                           </td>
                           <td>
-                            <button
-                              className="btn btn-sm btn-light"
-                              type="button"
-                              data-bs-toggle="dropdown"
-                              aria-expanded="false"
-                            >
-                              <i className="bi bi-three-dots-vertical"></i>
-                            </button>
-                            <ul className="dropdown-menu">
-                              <li>
-                                <a className="dropdown-item" href="#">
-                                  View Details
-                                </a>
-                              </li>
-                              <li>
-                                <a className="dropdown-item" href="#">
-                                  Edit
-                                </a>
-                              </li>
-                              <li>
-                                <hr className="dropdown-divider" />
-                              </li>
-                              <li>
-                                <a className="dropdown-item text-danger" href="#">
-                                  Delete
-                                </a>
-                              </li>
-                            </ul>
+                            <div className="action-dropdown-container position-relative">
+                              <button
+                                className="btn btn-sm btn-light"
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleDropdown(ticket.id);
+                                }}
+                                style={{
+                                  border: "1px solid #e9ecef",
+                                  borderRadius: "6px",
+                                  padding: "4px 8px",
+                                }}
+                              >
+                                <i className="bi bi-three-dots-vertical"></i>
+                              </button>
+                              {openDropdownId === ticket.id && (
+                                <ul 
+                                  className="dropdown-menu show"
+                                  style={{
+                                    position: "absolute",
+                                    right: 0,
+                                    top: "100%",
+                                    marginTop: "4px",
+                                    zIndex: 1000,
+                                    minWidth: "160px",
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                                    border: "1px solid #e9ecef",
+                                    borderRadius: "8px",
+                                  }}
+                                >
+                                  <li>
+                                    <a 
+                                      className="dropdown-item" 
+                                      href="#"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        handleActionClick("view", ticket);
+                                      }}
+                                    >
+                                      <i className="bi bi-eye me-2"></i>
+                                      View Details
+                                    </a>
+                                  </li>
+                                  <li>
+                                    <a 
+                                      className="dropdown-item" 
+                                      href="#"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        handleActionClick("edit", ticket);
+                                      }}
+                                    >
+                                      <i className="bi bi-pencil me-2"></i>
+                                      Edit
+                                    </a>
+                                  </li>
+                                  {ticket.status === "OPEN" && (
+                                    <li>
+                                      <a 
+                                        className="dropdown-item" 
+                                        href="#"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          handleActionClick("close", ticket);
+                                        }}
+                                      >
+                                        <i className="bi bi-check-circle me-2"></i>
+                                        Close Ticket
+                                      </a>
+                                    </li>
+                                  )}
+                                  {ticket.status === "RESOLVED" && (
+                                    <li>
+                                      <a 
+                                        className="dropdown-item" 
+                                        href="#"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          handleActionClick("reopen", ticket);
+                                        }}
+                                      >
+                                        <i className="bi bi-arrow-counterclockwise me-2"></i>
+                                        Reopen
+                                      </a>
+                                    </li>
+                                  )}
+                                  <li>
+                                    <a 
+                                      className="dropdown-item text-danger" 
+                                      href="#"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        handleActionClick("delete", ticket);
+                                      }}
+                                    >
+                                      <i className="bi bi-trash me-2"></i>
+                                      Delete
+                                    </a>
+                                  </li>
+                                </ul>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}

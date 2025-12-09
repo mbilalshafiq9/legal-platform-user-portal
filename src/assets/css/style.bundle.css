@@ -61847,7 +61847,7 @@ body.sidebar-open {
 }
 
 .app-sidebar .menu .menu-item .menu-link.active {
-    background-color: #212121 !important;
+    background-color: #262626 !important;
     color: white !important;
     transition: color .2s ease;
     border-top-left-radius: 8px;
@@ -62418,15 +62418,15 @@ body.sidebar-open {
 }
 
 .app-sidebar.collapsed .menu-title {
-  font-size: 9px !important;
-  line-height: 1.1 !important;
-  text-align: center !important;
-  word-break: break-word !important;
-  max-width: 50px !important;
-  display: block !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
+  display: none !important;
+}
+
+.app-sidebar.collapsed .menu-arrow {
+  display: none !important;
+}
+
+.app-sidebar.collapsed .menu-sub {
+  display: none !important;
 }
 
 /* Ensure sidebar is always visible */
@@ -63505,8 +63505,74 @@ html {
     transform: translateX(5px);
     margin-left: 7px;
     padding: 10px;
+}
+
+/* Notification Page Card Hover Effects */
+.notification-page-card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    border: 1px solid transparent !important;
+    overflow: hidden;
+}
+
+.notification-page-card-hover:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15) !important;
+    background-color: #ffffff !important;
+    border-color: #e0e0e0 !important;
+}
+
+.notification-page-card-hover:hover .card-body {
+    background-color: #ffffff !important;
+}
+
+.notification-page-card-hover:hover .text-dark,
+.notification-page-card-hover:hover h6 {
+    color: #000000 !important;
+    font-weight: 600;
     transition: all 0.3s ease;
 }
+
+.notification-page-card-hover:hover .text-muted {
+    color: #495057 !important;
+    transition: all 0.3s ease;
+}
+
+.notification-page-card-hover:hover img {
+    transform: scale(1.1);
+    transition: transform 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.notification-page-card-hover .position-relative {
+    transition: transform 0.3s ease;
+}
+
+/* Dark mode notification hover effects */
+body.dark-mode .notification-page-card-hover {
+    background-color: #2d2d2d !important;
+    border-color: transparent !important;
+}
+
+body.dark-mode .notification-page-card-hover:hover {
+    background-color: #ffffff !important;
+    border-color: #e0e0e0 !important;
+    box-shadow: 0 12px 30px rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark-mode .notification-page-card-hover:hover .card-body {
+    background-color: #ffffff !important;
+}
+
+body.dark-mode .notification-page-card-hover:hover .text-dark,
+body.dark-mode .notification-page-card-hover:hover h6 {
+    color: #000000 !important;
+}
+
+body.dark-mode .notification-page-card-hover:hover .text-muted {
+    color: #495057 !important;
+}
+
 .notification-item-hover:hover p,
 .notification-item-hover:hover span {
     color: white !important;

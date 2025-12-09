@@ -1,0 +1,445 @@
+/* Airbnb-style Dropdown Design */
+
+/* Main dropdown container */
+.airbnb-dropdown-container {
+  position: relative;
+  width: 100%;
+}
+
+/* Dropdown button/trigger */
+.airbnb-dropdown-trigger {
+  width: 100%;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid #b0b0b0;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #222222;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+  min-height: 56px;
+}
+
+.airbnb-dropdown-trigger:hover {
+  border-color: #222222;
+}
+
+.airbnb-dropdown-trigger:focus,
+.airbnb-dropdown-trigger.active {
+  border-color: #222222;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  outline: none;
+}
+
+.airbnb-dropdown-trigger .placeholder {
+  color: #717171;
+}
+
+.airbnb-dropdown-trigger .chevron {
+  color: #222222;
+  transition: transform 0.2s ease;
+}
+
+.airbnb-dropdown-trigger.active .chevron {
+  transform: rotate(180deg);
+}
+
+/* Dropdown menu */
+.airbnb-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 0;
+  margin: 0;
+  list-style: none;
+  animation: dropdownFadeIn 0.2s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dropdown menu item */
+.airbnb-dropdown-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background-color 0.15s ease;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-size: 14px;
+  color: #222222;
+}
+
+.airbnb-dropdown-item:hover {
+  background-color: #f7f7f7;
+}
+
+.airbnb-dropdown-item.selected {
+  background-color: #f7f7f7;
+  font-weight: 600;
+}
+
+.airbnb-dropdown-item:active {
+  background-color: #ebebeb;
+}
+
+/* Dropdown item icon */
+.airbnb-dropdown-item-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.airbnb-dropdown-item-icon svg,
+.airbnb-dropdown-item-icon i {
+  width: 20px;
+  height: 20px;
+  color: #222222;
+}
+
+/* Dropdown item content */
+.airbnb-dropdown-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.airbnb-dropdown-item-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #222222;
+  line-height: 1.4;
+}
+
+.airbnb-dropdown-item-description {
+  font-size: 12px;
+  color: #717171;
+  line-height: 1.4;
+}
+
+/* Scrollbar styling for dropdown */
+.airbnb-dropdown-menu::-webkit-scrollbar {
+  width: 8px;
+}
+
+.airbnb-dropdown-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.airbnb-dropdown-menu::-webkit-scrollbar-thumb {
+  background: #b0b0b0;
+  border-radius: 4px;
+}
+
+.airbnb-dropdown-menu::-webkit-scrollbar-thumb:hover {
+  background: #717171;
+}
+
+/* Dark mode support */
+body.dark-mode .airbnb-dropdown-trigger {
+  background: #1a1a1a;
+  border-color: #404040;
+  color: #ffffff;
+}
+
+body.dark-mode .airbnb-dropdown-trigger:hover {
+  border-color: #717171;
+}
+
+body.dark-mode .airbnb-dropdown-trigger .placeholder {
+  color: #b0b0b0;
+}
+
+body.dark-mode .airbnb-dropdown-menu {
+  background: #1a1a1a;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .airbnb-dropdown-item {
+  color: #ffffff;
+}
+
+body.dark-mode .airbnb-dropdown-item:hover {
+  background-color: #2d2d2d;
+}
+
+body.dark-mode .airbnb-dropdown-item.selected {
+  background-color: #2d2d2d;
+}
+
+body.dark-mode .airbnb-dropdown-item-description {
+  color: #b0b0b0;
+}
+
+/* PrimeReact Dropdown override */
+.p-dropdown {
+  width: 100%;
+  border-radius: 12px !important;
+  border: 1px solid #b0b0b0 !important;
+  min-height: 56px;
+}
+
+.p-dropdown:not(.p-disabled):hover {
+  border-color: #222222 !important;
+}
+
+.p-dropdown:not(.p-disabled).p-focus {
+  border-color: #222222 !important;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.p-dropdown-panel {
+  border-radius: 12px !important;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.12) !important;
+  border: none !important;
+  margin-top: 8px !important;
+}
+
+.p-dropdown-items-wrapper {
+  padding: 8px 0 !important;
+}
+
+.p-dropdown-item {
+  padding: 12px 16px !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.p-dropdown-item:hover {
+  background-color: #f7f7f7 !important;
+}
+
+.p-dropdown-item.p-highlight {
+  background-color: #f7f7f7 !important;
+  color: #222222 !important;
+}
+
+body.dark-mode .p-dropdown {
+  background: #1a1a1a !important;
+  border-color: #404040 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .p-dropdown:not(.p-disabled):hover {
+  border-color: #717171 !important;
+}
+
+body.dark-mode .p-dropdown-panel {
+  background: #1a1a1a !important;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.dark-mode .p-dropdown-item {
+  color: #ffffff !important;
+}
+
+body.dark-mode .p-dropdown-item:hover {
+  background-color: #2d2d2d !important;
+}
+
+body.dark-mode .p-dropdown-item.p-highlight {
+  background-color: #2d2d2d !important;
+  color: #ffffff !important;
+}
+
+/* Native select styling */
+select.form-select.airbnb-style,
+select.form-select {
+  width: 100%;
+  padding: 14px 40px 14px 16px;
+  background: #ffffff;
+  border: 1px solid #b0b0b0;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #222222;
+  min-height: 56px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23222222' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+  transition: all 0.2s ease;
+}
+
+select.form-select:hover {
+  border-color: #222222;
+}
+
+select.form-select:focus {
+  border-color: #222222;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  outline: none;
+}
+
+body.dark-mode select.form-select {
+  background: #1a1a1a;
+  border-color: #404040;
+  color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23ffffff' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+}
+
+body.dark-mode select.form-select:hover {
+  border-color: #717171;
+}
+
+/* Custom dropdown for specific use cases */
+.custom-airbnb-dropdown {
+  position: relative;
+}
+
+.custom-airbnb-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px 0;
+  animation: dropdownFadeIn 0.2s ease-out;
+}
+
+/* Bootstrap Dropdown Styling */
+.dropdown-menu {
+  border-radius: 12px !important;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.12) !important;
+  border: none !important;
+  padding: 8px 0 !important;
+  margin-top: 8px !important;
+  animation: dropdownFadeIn 0.2s ease-out !important;
+}
+
+.dropdown-item {
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  color: #222222 !important;
+  transition: background-color 0.15s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.dropdown-item:hover {
+  background-color: #f7f7f7 !important;
+  color: #222222 !important;
+}
+
+.dropdown-item:active {
+  background-color: #ebebeb !important;
+  color: #222222 !important;
+}
+
+.dropdown-item i {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropdown-toggle {
+  border-radius: 12px !important;
+  border: 1px solid #b0b0b0 !important;
+  padding: 14px 16px !important;
+  min-height: 56px !important;
+  font-size: 14px !important;
+  color: #222222 !important;
+  background: #ffffff !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.dropdown-toggle:hover {
+  border-color: #222222 !important;
+  background: #ffffff !important;
+  color: #222222 !important;
+}
+
+.dropdown-toggle:focus {
+  border-color: #222222 !important;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dropdown-toggle::after {
+  margin-left: 12px !important;
+  border-top: 5px solid #222222 !important;
+  border-right: 5px solid transparent !important;
+  border-bottom: 0 !important;
+  border-left: 5px solid transparent !important;
+  transition: transform 0.2s ease !important;
+}
+
+.dropdown-toggle[aria-expanded="true"]::after {
+  transform: rotate(180deg) !important;
+}
+
+/* Dark mode for Bootstrap dropdowns */
+body.dark-mode .dropdown-menu {
+  background: #1a1a1a !important;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.dark-mode .dropdown-item {
+  color: #ffffff !important;
+}
+
+body.dark-mode .dropdown-item:hover {
+  background-color: #2d2d2d !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .dropdown-item:active {
+  background-color: #404040 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .dropdown-toggle {
+  background: #1a1a1a !important;
+  border-color: #404040 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .dropdown-toggle:hover {
+  border-color: #717171 !important;
+  background: #1a1a1a !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .dropdown-toggle::after {
+  border-top-color: #ffffff !important;
+}
+

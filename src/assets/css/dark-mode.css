@@ -172,6 +172,24 @@ body.dark-mode .profile-dropdown .text-muted {
   color: #aaaaaa !important;
 }
 
+/* Dark mode hover effects for profile dropdown buttons */
+body.dark-mode .profile-dropdown .btn-transparent {
+  color: #aaaaaa !important;
+}
+
+body.dark-mode .profile-dropdown .btn-transparent:hover {
+  color: #ffffff !important;
+  background-color: #3d3d3d !important;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  font-weight: 500 !important;
+}
+
+body.dark-mode .profile-dropdown .btn-transparent:active {
+  transform: translateX(2px);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+}
+
 /* Notification item hover effects in dark mode */
 body.dark-mode .notification-item {
   transition: all 0.2s ease;
@@ -572,6 +590,92 @@ body.dark-mode .recent-posted-question-card:hover span {
 body.dark-mode .post-question-list-header {
   background-color: #2d2d2d !important;
 }
+
+/* Success Animation Modal - Dark Mode */
+body.dark-mode .success-animation-modal {
+  background-color: #2d2d2d !important;
+  border: 1px solid #404040 !important;
+}
+
+body.dark-mode .success-animation-text {
+  color: #ffffff !important;
+}
+
+/* Close button in dark mode */
+body.dark-mode .success-animation-modal button[type="button"]:first-of-type {
+  color: #ffffff !important;
+}
+
+body.dark-mode .success-animation-modal button[type="button"]:first-of-type:hover {
+  background-color: #3d3d3d !important;
+}
+
+/* Logout Modal - Dark Mode */
+body.dark-mode .modal-content {
+  background-color: #2d2d2d !important;
+  border-color: #404040 !important;
+}
+
+body.dark-mode .modal-content h4,
+body.dark-mode .modal-content h5 {
+  color: #ffffff !important;
+}
+
+body.dark-mode .modal-content p {
+  color: #aaaaaa !important;
+}
+
+body.dark-mode .modal-content button[type="button"]:first-of-type {
+  color: #ffffff !important;
+}
+
+body.dark-mode .modal-content button[type="button"]:first-of-type:hover {
+  background-color: #3d3d3d !important;
+}
+
+/* Logout Modal Button Hover - Ensure text stays white */
+.logout-modal-button {
+  color: #ffffff !important;
+}
+
+.logout-modal-button:hover {
+  color: #ffffff !important;
+}
+
+body.dark-mode .logout-modal-button {
+  color: #ffffff !important;
+  background-color: #000 !important;
+}
+
+body.dark-mode .logout-modal-button:hover {
+  color: #ffffff !important;
+  background-color: #333 !important;
+}
+
+/* Logout Modal Close Button Hover */
+.logout-modal-close-btn:hover {
+  background-color: #f5f5f5 !important;
+}
+
+.logout-modal-close-btn:hover i {
+  color: #000 !important;
+}
+
+body.dark-mode .logout-modal-close-btn {
+  color: #ffffff !important;
+}
+
+body.dark-mode .logout-modal-close-btn i {
+  color: #ffffff !important;
+}
+
+body.dark-mode .logout-modal-close-btn:hover {
+  background-color: #3d3d3d !important;
+}
+
+body.dark-mode .logout-modal-close-btn:hover i {
+  color: #ffffff !important;
+}
 /* Dark mode MyLawyers/List.jsx fixes */
 body.dark-mode .my-lawyers-tabs-container .btn {
   color: #ffffff !important;
@@ -582,6 +686,11 @@ body.dark-mode .my-lawyers-tabs-container .btn.border-bottom-3px {
 }
 
 body.dark-mode .my-lawyers-tabs-container .btn:hover {
+  color: #ffffff !important;
+}
+
+/* Chat/My Lawyers top tabs */
+body.dark-mode .my-lawyers-main-tab {
   color: #ffffff !important;
 }
 
@@ -596,6 +705,7 @@ body.dark-mode .my-lawyers-main-tab.active {
 body.dark-mode .my-lawyers-main-tab:not(.active) {
   font-weight: 400 !important;
   opacity: 0.6 !important;
+  color: #ffffff !important;
 }
 
 /* Dark mode chat cards background */
@@ -772,6 +882,28 @@ body.dark-mode .my-lawyers-chat-unread-badge.bg-black {
 body.dark-mode .my-lawyers-chat-unread-badge.bg-success {
   background-color: #ffffff !important;
   color: #000000 !important;
+}
+
+/* Active card chat unread badge - white background with black text */
+body.dark-mode .my-lawyers-contact-card-active .my-lawyers-chat-unread-badge.bg-white {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+body.dark-mode .my-lawyers-contact-card-active .my-lawyers-chat-unread-badge.bg-success {
+  background-color: #28a745 !important;
+  color: #ffffff !important;
+}
+
+/* Active card chat unread badge hover state */
+body.dark-mode .my-lawyers-contact-card-active:hover .my-lawyers-chat-unread-badge.bg-white {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+body.dark-mode .my-lawyers-contact-card-active:hover .my-lawyers-chat-unread-badge.bg-success {
+  background-color: #28a745 !important;
+  color: #ffffff !important;
 }
 
 /* Dark mode lawyer unread badge - black background with white text */

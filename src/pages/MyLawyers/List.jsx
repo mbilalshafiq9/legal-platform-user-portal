@@ -788,10 +788,14 @@ const List = () => {
                               </p>
                               {item.unread > 0 && (
                                 <span
-                                  className={`badge text-white rounded-pill my-lawyers-chat-unread-badge ${
-                                    item.unread === 3
-                                      ? "bg-success"
-                                      : "bg-black"
+                                  className={`badge rounded-pill my-lawyers-chat-unread-badge ${
+                                    selectedContact?.id === item.id
+                                      ? item.unread === 3
+                                        ? "bg-success text-white"
+                                        : "bg-white text-black"
+                                      : item.unread === 3
+                                      ? "bg-success text-white"
+                                      : "bg-black text-white"
                                   }`}
                                   style={{
                                     minWidth: "20px",

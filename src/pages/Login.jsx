@@ -17,7 +17,7 @@ const Login = () => {
   // Load saved credentials from localStorage
   const loadSavedCredentials = () => {
     try {
-      const saved = localStorage.getItem("loginCredentials");
+      const saved = localStorage.getItem("loggedUser");
       if (saved) {
         const credentials = JSON.parse(saved);
         return credentials;
@@ -32,10 +32,12 @@ const Login = () => {
   
   const [email, setEmail] = useState(savedCredentials?.email || "");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
   const [isLoader, setIsLoader] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [showOtpInput, setShowOtpInput] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(
     localStorage.getItem("darkMode") === "true" || false
   );
@@ -115,69 +117,67 @@ const Login = () => {
   }, [isDarkMode]);
 
 
-  // Auto-advance slider - COMMENTED OUT FOR VIDEO BACKGROUND
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     setCurrentSlide((prevSlide) =>
-  //       prevSlide === sliderData.length - 1 ? 0 : prevSlide + 1
-  //     );
-  //   }, 4000); // Change slide every 4 seconds
-
-  //   return () => clearInterval(interval);
-  // }, [sliderData.length]);
-
-  // Handle dot click - COMMENTED OUT FOR VIDEO BACKGROUND
-  // const handleDotClick = (index) => {
-  //   setCurrentSlide(index);
-  // };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     
-    // Validate email and password are provided
-    if (!email.trim() || !password.trim()) {
-      toast.error("Please enter both email and password");
+    // Validate email is provided
+    if (!email.trim()) {
+      toast.error("Please enter your email address");
       return;
     }
 
+    // If OTP input is shown, verify OTP
+    if (showOtpInput) {
+      if (!otp.trim()) {
+        toast.error("Please enter the OTP code");
+        return;
+      }
+
+      setIsLoader(true);
+      try {
+        const response = await AuthService.verifyOTP(email, otp);
+        
+        if (response.status && response.data) {
+          // Save login credentials to localStorage
+          var loggedUser = response.data.user;
+
+          loggedUser.auth_token = response.data.auth_token;
+          loggedUser.lastLogin = new Date().toISOString();
+
+          localStorage.setItem("loggedUser", JSON.stringify(loggedUser));
+
+          toast.success("Login successful!");
+          navigate("/dashboard");
+        } else {
+          toast.error(response.message || "Invalid OTP. Please try again.");
+        }
+      } catch (error) {
+        console.error("OTP verification failed:", error);
+        const errorMessage = error.response?.data?.message || "OTP verification failed. Please try again.";
+        toast.error(errorMessage);
+      } finally {
+        setIsLoader(false);
+      }
+      return;
+    }
+
+    // Step 1: Send OTP to email
     setIsLoader(true);
-
-    // Temporary authentication: Accept any email and password
-    // This will be replaced with API integration later
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Create a temporary user object
-      const user = {
-        id: Date.now(),
-        email: email,
-        name: email.split('@')[0] || 'User',
-        auth_token: 'temp_token_' + Date.now(),
-        isAuthenticated: true
-      };
-
-      // Save user to localStorage (using 'admin' key to match existing AuthService)
-      localStorage.setItem("admin", JSON.stringify(user));
-      localStorage.setItem("isAuthenticated", "true");
+      const language = localStorage.getItem('admin_lang') || 'en';
+      const response = await AuthService.userLogin(email, language);
       
-      // Set flag to show welcome message on dashboard
-      localStorage.setItem("showWelcomeMessage", "true");
-      sessionStorage.removeItem("hasSeenWelcome");
-
-      // Save login credentials to localStorage
-      const loginCredentials = {
-        email: email,
-        password: password,
-        lastLogin: new Date().toISOString()
-      };
-      localStorage.setItem("loginCredentials", JSON.stringify(loginCredentials));
-
-      toast.success("Login successful!");
-      navigate("/dashboard");
+      if (response.status) {
+        toast.success(response.message || "OTP sent to your email. Please check your inbox.");
+        setShowOtpInput(true);
+      } else {
+        toast.error(response.message || "Failed to send OTP. Please try again.");
+      }
     } catch (error) {
       console.error("Login failed:", error);
-      toast.error("Login failed. Please try again.");
+      const errorMessage = error.response?.data?.message || "Login failed. Please try again.";
+      toast.error(errorMessage);
     } finally {
       setIsLoader(false);
     }
@@ -280,22 +280,65 @@ const Login = () => {
               />
             </div>
 
-            {/* Password Field */}
-            <div className="form-group" data-aos="fade-up" data-aos-delay="600">
-              <label className="form-label" style={{ fontSize: "18px" }}>Password</label>
-              <div className="password-container">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="form-input rounded-pill login-page-inp"
-                  placeholder="Password"
-                  autoComplete="off"
-                  style={{ width: "398px", height: "67px", fontSize: "18px", paddingLeft: "30px", paddingRight: "30px" }}
-                />
+            {/* Password Field - Hidden when OTP input is shown */}
+            {/* {!showOtpInput && (
+              <div className="form-group" data-aos="fade-up" data-aos-delay="600">
+                <label className="form-label" style={{ fontSize: "18px" }}>Password</label>
+                <div className="password-container">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="form-input rounded-pill login-page-inp"
+                    placeholder="Password (Optional)"
+                    autoComplete="off"
+                    style={{ width: "398px", height: "67px", fontSize: "18px", paddingLeft: "30px", paddingRight: "30px" }}
+                  />
+                </div>
               </div>
-            </div>
+            )} */}
+
+            {/* OTP Field - Shown after email is submitted */}
+            {showOtpInput && (
+              <div className="form-group" data-aos="fade-up" data-aos-delay="600">
+                <label className="form-label" style={{ fontSize: "18px" }}>Enter OTP</label>
+                <div className="password-container">
+                  <input
+                    type="text"
+                    required
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    className="form-input rounded-pill login-page-inp"
+                    placeholder="Enter 4-digit OTP"
+                    autoComplete="off"
+                    maxLength={4}
+                    style={{ width: "398px", height: "67px", fontSize: "18px", paddingLeft: "30px", paddingRight: "30px", textAlign: "center", letterSpacing: "8px" }}
+                  />
+                </div>
+                <div style={{ marginTop: "10px", fontSize: "14px", color: "#666" }}>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsLoader(true);
+                      try {
+                        const language = localStorage.getItem('admin_lang') || 'en';
+                        const response = await AuthService.userLogin(email, language);
+                        if (response.status) {
+                          toast.success(response.message || "OTP resent to your email.");
+                        }
+                      } catch (error) {
+                        toast.error("Failed to resend OTP. Please try again.");
+                      } finally {
+                        setIsLoader(false);
+                      }
+                    }}
+                    style={{ background: "none", border: "none", color: "#007bff", textDecoration: "underline", cursor: "pointer" }}
+                  >
+                    Resend OTP
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Terms and Conditions Checkbox */}
             <div className="form-group" data-aos="fade-up" data-aos-delay="650">
@@ -327,16 +370,31 @@ const Login = () => {
             {/* Login Button */}
             <button type="submit" disabled={isLoader || !agreeToTerms} className="login-button rounded-pill d-flex align-items-center justify-content-center position-relative" style={{ width: "398px", height: "67px", fontSize: "18px", opacity: agreeToTerms ? 1 : 0.6 }} data-aos="fade-up" data-aos-delay="700">
               {isLoader ? (
-                <Loader size="20" text="Signing" color="white" />
+                <Loader size="20" text={showOtpInput ? "Verifying" : "Sending"} color="white" />
               ) : (
                 <>
-                  <span className="login-text">Login</span>
+                  <span className="login-text">{showOtpInput ? "Verify OTP" : "Login"}</span>
                   <span className="login-button-arrow rounded-pill bg-white d-flex justify-content-center align-items-center position-absolute" style={{ width: "29px", height: "29px", right: "15px" }}> 
                     <i className="bi bi-arrow-right text-black fs-6"></i> 
                   </span>
                 </>
               )}
             </button>
+
+            {/* Back to Email Button - Shown when OTP input is visible */}
+            {showOtpInput && (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOtpInput(false);
+                  setOtp("");
+                }}
+                className="btn btn-link"
+                style={{ width: "398px", marginTop: "10px", color: "#666", textDecoration: "none" }}
+              >
+                ← Back to Email
+              </button>
+            )}
 
             {/* Google Login Button */}
             <button type="button" className="google-button rounded-pill login-btn-google" disabled={!agreeToTerms} style={{ width: "398px", height: "67px", fontSize: "18px", opacity: agreeToTerms ? 1 : 0.6 }} data-aos="fade-up" data-aos-delay="800">

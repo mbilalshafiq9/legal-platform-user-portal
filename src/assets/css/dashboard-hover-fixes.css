@@ -100,3 +100,34 @@
   display: block !important;
   margin: 0 auto !important;
 }
+
+/* PrimeReact Dropdown Panel - Open upward with scroll */
+.dashboard-dropdown-panel {
+  max-height: 400px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Ensure dropdown opens upward when near bottom of viewport */
+.p-dropdown-panel.dashboard-dropdown-panel {
+  transform-origin: bottom center !important;
+}
+
+/* Custom scrollbar styling for dropdown panels */
+.dashboard-dropdown-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dashboard-dropdown-panel::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.dashboard-dropdown-panel::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.dashboard-dropdown-panel::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

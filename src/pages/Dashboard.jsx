@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import AuthService from "../services/AuthService";
 import { useNavigate, NavLink } from "react-router-dom";
 import { Dropdown } from "primereact/dropdown";
@@ -24,21 +24,28 @@ const Dashboard = () => {
   const [showPostQuestion, setShowPostQuestion] = useState(false);
   const [showCreateCase, setShowCreateCase] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
-  const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
-  const [displayedText, setDisplayedText] = useState("");
-  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  // Dashboard data states
+  const [userInfo, setUserInfo] = useState({ name: "", location: "" });
+  const [recentQuestion, setRecentQuestion] = useState(null);
+  const [lawyerResponses, setLawyerResponses] = useState([]);
+  const [activeLawyers, setActiveLawyers] = useState([]);
+  const [inactiveLawyers, setInactiveLawyers] = useState([]);
+  const [cases, setCases] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
   // Select states
   const [postQuestionJurisdiction, setPostQuestionJurisdiction] =
     useState(null);
+  const [showPostQuestionJurisdictionDropdown, setShowPostQuestionJurisdictionDropdown] = useState(false);
   const [createCaseJurisdiction, setCreateCaseJurisdiction] = useState(null);
   const [createCaseConsultantType, setCreateCaseConsultantType] =
     useState(null);
   const [postQuestionText, setPostQuestionText] = useState("");
   const [createCaseLawType, setCreateCaseLawType] = useState(null);
   const [createCaseSubCategory, setCreateCaseSubCategory] = useState(null);
+  const postQuestionJurisdictionRef = useRef(null);
 
   // Select options
   const jurisdictionOptions = [
@@ -77,77 +84,77 @@ const Dashboard = () => {
     setTimeout(() => {
       setShowPostQuestion(false);
       setIsClosing(false);
-      // Reset form
-      setPostQuestionText("");
-      setPostQuestionJurisdiction(null);
+      setShowPostQuestionJurisdictionDropdown(false);
     }, 300); // Match animation duration
   };
 
-  const handlePostQuestion = () => {
-    if (!postQuestionText.trim()) {
-      toast.error("Please enter your question");
-      return;
-    }
-
-    // Show success animation
-    setShowSuccessAnimation(true);
-    
-    // Auto-close animation and popup after 3 seconds (user can also close manually)
-    setTimeout(() => {
-      setShowSuccessAnimation(false);
-      handleClosePostQuestion();
-    }, 3000);
-  };
-
-  // Check if user just logged in and show welcome message
+  // Fetch dashboard data
   useEffect(() => {
-    const currentUser = AuthService.getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
-      // Check if user just logged in (check localStorage flag set during login)
-      const shouldShowWelcome = localStorage.getItem('showWelcomeMessage');
-      if (shouldShowWelcome === 'true') {
-        // Clear the flag so it doesn't show again until next login
-        localStorage.removeItem('showWelcomeMessage');
-        sessionStorage.setItem('hasSeenWelcome', 'true');
-        
-        setShowWelcomeMessage(true);
-        
-        // Typewriter effect for the welcome message
-        const fullText = `Welcome back ${currentUser.name || 'User'}`;
-        // Start with first character immediately
-        setDisplayedText(fullText.substring(0, 1));
-        let currentIndex = 1;
-        let typeInterval = null;
-        let hideTimeout = null;
-        
-        // Small delay before starting typewriter effect
-        setTimeout(() => {
-          typeInterval = setInterval(() => {
-            if (currentIndex < fullText.length) {
-              setDisplayedText(fullText.substring(0, currentIndex + 1));
-              currentIndex++;
-            } else {
-              if (typeInterval) {
-                clearInterval(typeInterval);
-                typeInterval = null;
-              }
-            }
-          }, 50); // Speed of typing
-        }, 100);
-
-        // Auto-hide after exactly 3 seconds
-        hideTimeout = setTimeout(() => {
-          setShowWelcomeMessage(false);
-        }, 3000);
-
-        return () => {
-          if (typeInterval) clearInterval(typeInterval);
-          if (hideTimeout) clearTimeout(hideTimeout);
-        };
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const response = await ApiService.request({
+          method: "GET",
+          url: "getBusinessDashboard",
+        });
+        const data = response.data;
+        if (data.status) {
+          setUserInfo(data.data.user_info || { name: "", location: "" });
+          setRecentQuestion(data.data.recent_question || null);
+          setLawyerResponses(data.data.lawyer_responses || []);
+          setActiveLawyers(data.data.active_lawyers || []);
+          setInactiveLawyers(data.data.inactive_lawyers || []);
+          setCases(data.data.cases || []);
+          setNotifications(data.data.notifications || []);
+        } else {
+          toast.error(data.message || "Failed to load dashboard data");
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        toast.error("Failed to load dashboard data");
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    fetchDashboardData();
   }, []);
+
+  // Close post question jurisdiction dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (postQuestionJurisdictionRef.current && !postQuestionJurisdictionRef.current.contains(event.target)) {
+        setShowPostQuestionJurisdictionDropdown(false);
+      }
+    };
+
+    if (showPostQuestionJurisdictionDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showPostQuestionJurisdictionDropdown]);
+
+  if (loading) {
+    return (
+      <div className="d-flex flex-column flex-column-fluid header-main dashboard--inter-font">
+        <div id="kt_app_content" className="app-content flex-column-fluid">
+          <div
+            id="kt_app_content_container"
+            className="app-container container-fluid"
+          >
+            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "50vh" }}>
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="d-flex flex-column flex-column-fluid header-main dashboard--inter-font">
@@ -182,10 +189,10 @@ const Dashboard = () => {
               {/* Welcome Header */}
               <div className="mb-6" data-aos="fade-up">
                 <h1 className="text-black mb-2 dashboard-welcome-title">
-                  Welcome Back! Noon
+                  Welcome Back! {userInfo.name || "User"}
                 </h1>
                 <p className="text-gray-600 mb-4 dashboard-welcome-subtitle">
-                  Dubai internet city UAE
+                  {userInfo.location || "Location not available"}
                 </p>
               </div>
 
@@ -317,29 +324,35 @@ const Dashboard = () => {
                       <h1 className="fw-bold text-dark mb-4">
                         Recent Posted Question
                       </h1>
-                      <p className="text-gray-700 mb-4">
-                        Sed ut perspiciatis unde omnis iste natus error sit
-                        voluptatem accusantium doloremque laudantium, totam rem
-                        aperiam, eaque ipsa quae ab illo inventore veritatis.
-                      </p>
-                      <div className="d-flex flex-wrap align-items-center gap-3 mb-3">
-                        <div className="d-flex align-items-center">
-                          <i className="bi bi-eye-fill text-black me-2"></i>
-                          <span className="text-black">Views: 260</span>
-                        </div>
-                        <div className="d-flex align-items-center">
-                          <i className="bi bi-chat-dots-fill text-black me-2"></i>
-                          <span className="text-black">Ans: 60</span>
-                        </div>
-                      </div>
-                      <div
-                        className="d-flex align-items-center justify-content-center bg-light rounded-pill py-2 px-3 dashboard-date-pill"
-                        style={{ width: "40%" }}
-                      >
-                        <span className="text-black dashboard-date-text">
-                          Jan 05 - 2025 - 10:25 AM
-                        </span>
-                      </div>
+                      {recentQuestion ? (
+                        <>
+                          <p className="text-gray-700 mb-4">
+                            {recentQuestion.question}
+                          </p>
+                          <div className="d-flex flex-wrap align-items-center gap-3 mb-3">
+                            <div className="d-flex align-items-center">
+                              <i className="bi bi-eye-fill text-black me-2"></i>
+                              <span className="text-black">Views: {recentQuestion.views_count || 0}</span>
+                            </div>
+                            <div className="d-flex align-items-center">
+                              <i className="bi bi-chat-dots-fill text-black me-2"></i>
+                              <span className="text-black">Ans: {recentQuestion.answers_count || 0}</span>
+                            </div>
+                          </div>
+                          {recentQuestion.created_at && (
+                            <div
+                              className="d-flex align-items-center justify-content-center bg-light rounded-pill py-2 px-3 dashboard-date-pill"
+                              style={{ width: "40%" }}
+                            >
+                              <span className="text-black dashboard-date-text">
+                                {recentQuestion.created_at}
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-gray-600">No questions posted yet</p>
+                      )}
                     </div>
 
                     {/* Lawyer Respond Section */}
@@ -356,59 +369,32 @@ const Dashboard = () => {
                         </a>
                       </div>
 
-                      <div className="d-flex align-items-start mb-4">
-                        <div className="symbol symbol-50px me-3 flex-shrink-0">
-                          <img
-                            src={notificationProfile}
-                            alt="Jackline Dim"
-                            className="rounded-circle"
-                          />
-                        </div>
-                        <div className="flex-grow-1">
-                          <h6 className="fw-bold text-dark mb-1">
-                            Jackline Dim
-                          </h6>
-                          <p className="text-gray-600 mb-0 small">
-                            Lorem ipsum dolor sit amet.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="d-flex align-items-start mb-4">
-                        <div className="symbol symbol-50px me-3 flex-shrink-0">
-                          <img
-                            src={notificationProfile}
-                            alt="Maxwell Clarck"
-                            className="rounded-circle"
-                          />
-                        </div>
-                        <div className="flex-grow-1">
-                          <h6 className="fw-bold text-dark mb-1">
-                            Maxwell Clarck
-                          </h6>
-                          <p className="text-gray-600 mb-0 small">
-                            Lorem ipsum dolor sit amet.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="d-flex align-items-start">
-                        <div className="symbol symbol-50px me-3 flex-shrink-0">
-                          <img
-                            src={notificationProfile}
-                            alt="Jackline Dim"
-                            className="rounded-circle"
-                          />
-                        </div>
-                        <div className="flex-grow-1">
-                          <h6 className="fw-bold text-dark mb-1">
-                            Jackline Dim
-                          </h6>
-                          <p className="text-gray-600 mb-0 small">
-                            Lorem ipsum dolor sit amet.
-                          </p>
-                        </div>
-                      </div>
+                      {lawyerResponses.length > 0 ? (
+                        lawyerResponses.slice(0, 3).map((lawyer, index, array) => (
+                          <div key={lawyer.id || index} className={`d-flex align-items-start ${index < array.length - 1 ? 'mb-4' : ''}`}>
+                            <div className="symbol symbol-50px me-3 flex-shrink-0">
+                              <img
+                                src={lawyer.picture || notificationProfile}
+                                alt={lawyer.name}
+                                className="rounded-circle"
+                                onError={(e) => {
+                                  e.target.src = notificationProfile;
+                                }}
+                              />
+                            </div>
+                            <div className="flex-grow-1">
+                              <h6 className="fw-bold text-dark mb-1">
+                                {lawyer.name}
+                              </h6>
+                              <p className="text-gray-600 mb-0 small">
+                                {lawyer.answer || "Answered your question"}
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-600">No lawyer responses yet</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -460,9 +446,10 @@ const Dashboard = () => {
                     </div>
 
                   {/* Lawyers List */}
-                  {[1, 2].map((_, index) => (
+                  {(activeTab === "active" ? activeLawyers : inactiveLawyers).length > 0 ? (
+                    (activeTab === "active" ? activeLawyers : inactiveLawyers).map((lawyer, index) => (
                     <div
-                      key={index}
+                      key={lawyer.id || index}
                       className="card mb-3 border-0 shadow-sm lawyer-card-hover"
                       data-aos="fade-up"
                       data-aos-delay={`${500 + index * 100}`}
@@ -473,47 +460,53 @@ const Dashboard = () => {
                           <div className="col-md-4 col-sm-12 mb-2 mb-md-0">
                             <div className="d-flex align-items-center">
                               <img
-                                src={notificationProfile}
-                                alt="Shamra Joseph"
+                                src={lawyer.lawyer_picture || notificationProfile}
+                                alt={lawyer.lawyer_name}
                                 className="rounded-circle me-3"
                                 width="48"
                                 height="48"
+                                onError={(e) => {
+                                  e.target.src = notificationProfile;
+                                }}
                               />
                               <div>
                                 <h6 className="fw-bold text-dark mb-0">
-                                  Shamra Joseph
+                                  {lawyer.lawyer_name}
                                 </h6>
                                 <small className="text-muted">
-                                  Corporate lawyer
+                                  {lawyer.practice_areas || "Lawyer"}
                                 </small>
                               </div>
                             </div>
                           </div>
 
-                          {/* Practice Areas */}
-                          <div className="col-md-3 col-sm-6 mb-2 mb-md-0">
-                            <div className="text-muted small">
-                              Criminal Law, Tax Law+
+                            {/* Practice Areas */}
+                            <div className="col-md-3 col-sm-6 mb-2 mb-md-0">
+                              <div className="text-muted small">
+                                {lawyer.practice_areas || "N/A"}
+                              </div>
                             </div>
-                          </div>
 
-                          {/* Renewal Date */}
-                          <div className="col-md-3 col-sm-6 mb-2 mb-md-0">
-                            <div className="text-muted small">
-                              Renew 21 September
+                            {/* Renewal Date */}
+                            <div className="col-md-3 col-sm-6 mb-2 mb-md-0">
+                              <div className="text-muted small">
+                                {lawyer.renewal_date ? `Renew ${lawyer.renewal_date}` : "N/A"}
+                              </div>
                             </div>
-                          </div>
 
-                          {/* Price */}
-                          <div className="col-md-2 col-sm-12 text-md-end">
-                            <div className="fw-semibold text-dark">
-                              1.99 USD
+                            {/* Price */}
+                            <div className="col-md-2 col-sm-12 text-md-end">
+                              <div className="fw-semibold text-dark">
+                                {lawyer.price ? `${lawyer.price.toFixed(2)} ${lawyer.currency || 'USD'}` : "N/A"}
+                              </div>
                             </div>
-                          </div>
                         </div>
                       </div>
                     </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-gray-600">No {activeTab === "active" ? "active" : "inactive"} lawyers found</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -538,68 +531,32 @@ const Dashboard = () => {
                     </NavLink>
                   </div>
 
-                  <div
-                    className="card mb-3 my-cases-row-hover"
-                    data-aos="fade-up"
-                    data-aos-delay="700"
-                  >
-                    <div className="card-body p-3">
-                      <div className="d-flex justify-content-between align-items-start mb-2">
-                        <h6 className="fw-bold text-dark mb-0">
-                          Crimes Against Persons
-                        </h6>
-                        <span className="badge bg-black text-white dashboard-case-badge">
-                          Case# 2548
-                        </span>
+                  {cases.length > 0 ? (
+                    cases.slice(0, 3).map((caseItem, index) => (
+                      <div
+                        key={caseItem.id || index}
+                        className="card mb-3 my-cases-row-hover"
+                        data-aos="fade-up"
+                        data-aos-delay={`${700 + index * 100}`}
+                      >
+                        <div className="card-body p-3">
+                          <div className="d-flex justify-content-between align-items-start mb-2">
+                            <h6 className="fw-bold text-dark mb-0">
+                              {caseItem.title}
+                            </h6>
+                            <span className="badge bg-black text-white dashboard-case-badge">
+                              {caseItem.case_number}
+                            </span>
+                          </div>
+                          <p className="text-gray-600 mb-0 small">
+                            {caseItem.description || "No description available"}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-gray-600 mb-0 small">
-                        Sed ut perspiciatis unde omnis iste natus error sit
-                        voluptatem ipsum accusantium doloremque laudantium.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div
-                    className="card mb-3 my-cases-row-hover"
-                    data-aos="fade-up"
-                    data-aos-delay="800"
-                  >
-                    <div className="card-body p-3">
-                      <div className="d-flex justify-content-between align-items-start mb-2">
-                        <h6 className="fw-bold text-dark mb-0">
-                          Crimes Against Persons
-                        </h6>
-                        <span className="badge bg-black text-white dashboard-case-badge">
-                          Case# 2548
-                        </span>
-                      </div>
-                      <p className="text-gray-600 mb-0 small">
-                        Sed ut perspiciatis unde omnis iste natus error sit
-                        voluptatem ipsum accusantium doloremque laudantium.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div
-                    className="card mb-3 my-cases-row-hover"
-                    data-aos="fade-up"
-                    data-aos-delay="900"
-                  >
-                    <div className="card-body p-3">
-                      <div className="d-flex justify-content-between align-items-start mb-2">
-                        <h6 className="fw-bold text-dark mb-0">
-                          Crimes Against Persons
-                        </h6>
-                        <span className="badge bg-black text-white dashboard-case-badge">
-                          Case# 2548
-                        </span>
-                      </div>
-                      <p className="text-gray-600 mb-0 small">
-                        Sed ut perspiciatis unde omnis iste natus error sit
-                        voluptatem ipsum accusantium doloremque laudantium.
-                      </p>
-                    </div>
-                  </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-600">No cases found</p>
+                  )}
                 </div>
               </div>
 
@@ -622,89 +579,35 @@ const Dashboard = () => {
                     </NavLink>
                   </div>
 
-                  <div
-                    className="d-flex align-items-start mb-4 notification-item-hover"
-                    data-aos="fade-up"
-                    data-aos-delay="1100"
-                  >
-                    <div className="symbol symbol-40px me-3 flex-shrink-0">
-                      <img
-                        src={notificationProfile}
-                        alt="Notification"
-                        className="rounded-circle"
-                      />
-                    </div>
-                    <div className="flex-grow-1">
-                      <p className="text-gray-600 mb-2 small">
-                        Sed ut perspiciatis unde omnis iste natus error sit
-                        volupta accusantium doloremque laudantium, totam rem.
-                      </p>
-                      <span className="text-gray-500 small">1 hour</span>
-                    </div>
-                  </div>
-
-                  <div
-                    className="d-flex align-items-start mb-4 notification-item-hover"
-                    data-aos="fade-up"
-                    data-aos-delay="1200"
-                  >
-                    <div className="symbol symbol-40px me-3 flex-shrink-0">
-                      <img
-                        src={notificationProfile}
-                        alt="Notification"
-                        className="rounded-circle"
-                      />
-                    </div>
-                    <div className="flex-grow-1">
-                      <p className="text-gray-600 mb-2 small">
-                        Sed ut perspiciatis unde omnis iste natus error sit
-                        volupta accusantium doloremque laudantium, totam rem.
-                      </p>
-                      <span className="text-gray-500 small">2 hours</span>
-                    </div>
-                  </div>
-
-                  <div
-                    className="d-flex align-items-start mb-4 notification-item-hover"
-                    data-aos="fade-up"
-                    data-aos-delay="1300"
-                  >
-                    <div className="symbol symbol-40px me-3 flex-shrink-0">
-                      <img
-                        src={notificationProfile}
-                        alt="Notification"
-                        className="rounded-circle"
-                      />
-                    </div>
-                    <div className="flex-grow-1">
-                      <p className="text-gray-600 mb-2 small">
-                        Sed ut perspiciatis unde omnis iste natus error sit
-                        volupta accusantium doloremque laudantium, totam rem.
-                      </p>
-                      <span className="text-gray-500 small">3 hours</span>
-                    </div>
-                  </div>
-
-                  <div
-                    className="d-flex align-items-start notification-item-hover"
-                    data-aos="fade-up"
-                    data-aos-delay="1400"
-                  >
-                    <div className="symbol symbol-40px me-3 flex-shrink-0">
-                      <img
-                        src={notificationProfile}
-                        alt="Notification"
-                        className="rounded-circle"
-                      />
-                    </div>
-                    <div className="flex-grow-1">
-                      <p className="text-gray-600 mb-2 small">
-                        Sed ut perspiciatis unde omnis iste natus error sit
-                        volupta accusantium doloremque laudantium, totam rem.
-                      </p>
-                      <span className="text-gray-500 small">4 hours</span>
-                    </div>
-                  </div>
+                  {notifications.length > 0 ? (
+                    notifications.slice(0, 4).map((notification, index, array) => (
+                      <div
+                        key={notification.id || index}
+                        className={`d-flex align-items-start ${index < array.length - 1 ? 'mb-4' : ''} notification-item-hover`}
+                        data-aos="fade-up"
+                        data-aos-delay={`${1100 + index * 100}`}
+                      >
+                        <div className="symbol symbol-40px me-3 flex-shrink-0">
+                          <img
+                            src={notification.picture || notificationProfile}
+                            alt="Notification"
+                            className="rounded-circle"
+                            onError={(e) => {
+                              e.target.src = notificationProfile;
+                            }}
+                          />
+                        </div>
+                        <div className="flex-grow-1">
+                          <p className="text-gray-600 mb-2 small">
+                            {notification.message || "No message"}
+                          </p>
+                          <span className="text-gray-500 small">{notification.time_ago || "Just now"}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-600">No notifications</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -741,6 +644,8 @@ const Dashboard = () => {
                     placeholder="Select Jurisdiction"
                     className="w-100"
                     style={{ height: "60px" }}
+                    panelClassName="dashboard-dropdown-panel"
+                    scrollHeight="400px"
                   />
                 </div>
                 <div className="col-12 col-md-6">
@@ -751,6 +656,8 @@ const Dashboard = () => {
                     placeholder="Type of legal consultant"
                     className="w-100"
                     style={{ height: "60px" }}
+                    panelClassName="dashboard-dropdown-panel"
+                    scrollHeight="400px"
                   />
                 </div>
               </div>
@@ -765,6 +672,8 @@ const Dashboard = () => {
                     placeholder="Criminal Law"
                     className="w-100"
                     style={{ height: "60px" }}
+                    panelClassName="dashboard-dropdown-panel"
+                    scrollHeight="400px"
                   />
                 </div>
                 <div className="col-12 col-md-6">
@@ -775,6 +684,8 @@ const Dashboard = () => {
                     placeholder="Select Sub Categories"
                     className="w-100"
                     style={{ height: "60px" }}
+                    panelClassName="dashboard-dropdown-panel"
+                    scrollHeight="400px"
                   />
                 </div>
               </div>
@@ -888,23 +799,65 @@ const Dashboard = () => {
 
           {/* Jurisdiction Dropdown */}
           <div className="mb-3">
-            <div className="position-relative">
-              <select
-                className="form-select"
+            <div className="position-relative" ref={postQuestionJurisdictionRef}>
+              <button
+                type="button"
+                className="form-select d-flex align-items-center justify-content-between"
+                onClick={() => setShowPostQuestionJurisdictionDropdown(!showPostQuestionJurisdictionDropdown)}
                 style={{
                   width: "606px",
                   height: "79px",
                   border: "1px solid #C9C9C9",
                   borderRadius: "8px",
+                  backgroundColor: "#fff",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  paddingLeft: "12px",
+                  paddingRight: "40px",
                 }}
               >
-                <option>Jurisdiction</option>
-                <option>United States</option>
-                <option>United Kingdom</option>
-                <option>Canada</option>
-                <option>Australia</option>
-              </select>
-              <i className="bi bi-chevron-down position-absolute top-50 end-0 translate-middle-y me-3 text-gray-600"></i>
+                <span style={{ color: postQuestionJurisdiction ? "#000" : "#6c757d" }}>
+                  {postQuestionJurisdiction 
+                    ? jurisdictionOptions.find(j => j.value === postQuestionJurisdiction)?.label || "Jurisdiction"
+                    : "Jurisdiction"
+                  }
+                </span>
+                <i className={`bi bi-chevron-${showPostQuestionJurisdictionDropdown ? "up" : "down"} position-absolute end-0 translate-middle-y me-3 text-gray-600`} style={{ top: "50%" }}></i>
+              </button>
+              
+              {showPostQuestionJurisdictionDropdown && (
+                <div 
+                  className="position-absolute bg-white border rounded shadow-lg"
+                  style={{ 
+                    zIndex: 1050, 
+                    width: "606px", 
+                    maxHeight: "400px", 
+                    overflowY: "auto",
+                    overflowX: "hidden",
+                    top: "100%",
+                    marginTop: "8px",
+                    bottom: "auto"
+                  }}
+                >
+                  {jurisdictionOptions.map((jurisdiction) => (
+                    <button
+                      key={jurisdiction.value}
+                      type="button"
+                      className="btn btn-light w-100 text-start px-3 py-2 border-0"
+                      onClick={() => {
+                        setPostQuestionJurisdiction(jurisdiction.value);
+                        setShowPostQuestionJurisdictionDropdown(false);
+                      }}
+                      style={{ 
+                        fontSize: "0.9rem",
+                        backgroundColor: postQuestionJurisdiction === jurisdiction.value ? "#f0f0f0" : "#fff"
+                      }}
+                    >
+                      {jurisdiction.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

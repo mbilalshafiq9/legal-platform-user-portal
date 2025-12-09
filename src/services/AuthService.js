@@ -7,6 +7,49 @@ class AuthService {
     this.router = router; // Store the router instance
   }
 
+  // User login - sends OTP to email
+  async userLogin(email, language = 'en') {
+    try {
+      const response = await ApiService.request({
+        method: 'POST',
+        url: 'login',
+        data: { email, language },
+      });
+
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Verify OTP and get auth token
+  async verifyOTP(email, otp) {
+    try {
+      const response = await ApiService.request({
+        method: 'POST',
+        url: 'verifyOTP',
+        data: { email, otp },
+      });
+
+      if (response.data && response.data.status && response.data.data) {
+        // Save user and auth token to localStorage
+        var loggedUser = response.data.data.user;
+        loggedUser.auth_token = response.data.data.auth_token;
+        loggedUser.lastLogin = new Date().toISOString();
+        
+        localStorage.setItem('loggedUser', JSON.stringify(loggedUser));
+        localStorage.setItem('isAuthenticated', 'true');
+        
+        return response.data;
+      }
+      
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Legacy admin login method (keeping for backward compatibility)
   async login(email, password) {
     try {
       const response = await ApiService.request({
@@ -17,29 +60,36 @@ class AuthService {
 
       return response.data;
     } catch (error) {
-      // Handle the error, you might want to show a toast notification or similar
       throw error;
     }
   }
 
   logout() {
-    localStorage.removeItem('admin');
-    localStorage.removeItem('permissions');
     localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('showWelcomeMessage');
-    sessionStorage.removeItem('hasSeenWelcome');
-    const basePath = process.env.REACT_APP_BASE_PATH || '/legal-platform-portal-demo';
-    window.location.href = `${basePath}/login`;
+    localStorage.removeItem('loggedUser');
+    window.location.href = process.env.REACT_APP_BASE_PATH + '/login';
   }
   
   isAuthenticated() {
     const user = this.getCurrentUser();
     const authStatus = localStorage.getItem('isAuthenticated');
-    return !!(user && authStatus);
+    return !!(user && authStatus && user.auth_token);
   }
 
   getCurrentUser() {
-    return JSON.parse(localStorage.getItem('admin'));
+    const userStr = localStorage.getItem('loggedUser');
+    if (!userStr) return null;
+    try {
+      return JSON.parse(userStr);
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      return null;
+    }
+  }
+
+  getAuthToken() {
+    const user = this.getCurrentUser();
+    return user ? user.auth_token : null;
   }
 }
 

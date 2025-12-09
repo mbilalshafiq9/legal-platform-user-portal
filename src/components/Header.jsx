@@ -5,7 +5,6 @@ import blank from "../assets/images/notification-profile.png";
 import ApiService from "../services/ApiService";
 import { toast } from "react-toastify";
 import moment from "moment";
-import circle from "../assets/images/yellow-circle.png";
 import { NavLink } from "react-router-dom";
 import LogoutModal from "./LogoutModal";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,42 +15,16 @@ import "../assets/css/dark-mode-animations.css";
 const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [user] = useState(
-    JSON.parse(localStorage.getItem("admin")) || {
-      name: "Super Administrator",
-      email: "admin@emiratihub.com",
-    }
-  );
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      message:
-        "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.",
-      time: "1 hour",
-      avatar: blank,
-    },
-    {
-      id: 2,
-      message:
-        "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.",
-      time: "2 hours",
-      avatar: blank,
-    },
-    {
-      id: 3,
-      message:
-        "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.",
-      time: "3 hours",
-      avatar: blank,
-    },
-    {
-      id: 4,
-      message:
-        "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.",
-      time: "4 hours",
-      avatar: blank,
-    },
-  ]);
+  const [user] = useState(   JSON.parse(localStorage.getItem("loggedUser")) || null );
+  
+  // Get user picture with fallback
+  const getUserPicture = (user) => {
+    return user?.picture || blank;
+  };
+ 
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [showNotificationDropdown, setShowNotificationDropdown] =
     useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -155,6 +128,7 @@ const Header = () => {
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
+      
       if (profileDropdownTimeoutRef.current) {
         clearTimeout(profileDropdownTimeoutRef.current);
       }
@@ -196,30 +170,80 @@ const Header = () => {
   };
 
   useEffect(() => {
-    // getNotifications();
-    
+    if(!user){
+      navigate("/login");
+    } else {
+      // Fetch notifications on mount
+      getNotifications();
+    }
     // Apply dark mode on component mount
     if (isDarkMode) {
       document.body.classList.add("dark-mode");
     } else {
       document.body.classList.remove("dark-mode");
     }
-  }, [isDarkMode]);
+  }, [isDarkMode, user]);
 
   const getNotifications = async () => {
     try {
+      setLoadingNotifications(true);
       const response = await ApiService.request({
         method: "GET",
         url: "getNotifications",
       });
       const data = response.data;
-      if (data.status) {
-        setNotifications(data.data);
+      if (data.status && data.data.notifications) {
+        // Transform notifications to match component format
+        const transformedNotifications = data.data.notifications.slice(0, 10).map((notification) => {
+          const createdAt = notification.created_at ? new Date(notification.created_at) : new Date();
+          const now = new Date();
+          const diffInMs = now - createdAt;
+          const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+          const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+          const diffInDays = Math.floor(diffInHours / 24);
+
+          let timeAgo = "";
+          if (diffInDays > 0) {
+            timeAgo = `${diffInDays} day${diffInDays > 1 ? 's' : ''}`;
+          } else if (diffInHours > 0) {
+            timeAgo = `${diffInHours} hour${diffInHours > 1 ? 's' : ''}`;
+          } else if (diffInMinutes > 0) {
+            timeAgo = `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''}`;
+          } else {
+            timeAgo = "Just now";
+          }
+
+          // Extract picture from data field if it exists
+          let picture = blank;
+          if (notification.data && typeof notification.data === 'object') {
+            picture = notification.data.picture || blank;
+          }
+
+          return {
+            id: notification.id,
+            message: notification.message || "",
+            time: timeAgo,
+            avatar: picture,
+            read_at: notification.read_at,
+            created_at: notification.created_at,
+          };
+        });
+
+        setNotifications(transformedNotifications);
+        
+        // Calculate unread count (notifications without read_at)
+        const unread = transformedNotifications.filter(n => !n.read_at).length;
+        setUnreadCount(unread);
       } else {
-        toast.error(data.message);
+        setNotifications([]);
+        setUnreadCount(0);
       }
     } catch (error) {
-      console.log(error);
+      console.error("Error fetching notifications:", error);
+      setNotifications([]);
+      setUnreadCount(0);
+    } finally {
+      setLoadingNotifications(false);
     }
   };
 
@@ -232,11 +256,13 @@ const Header = () => {
       const data = response.data;
       if (data.status) {
         setNotifications([]);
+        setUnreadCount(0);
       } else {
         toast.error(data.message);
       }
     } catch (error) {
-      console.log(error);
+      console.error("Error clearing notifications:", error);
+      toast.error("Failed to clear notifications");
     }
   };
 
@@ -259,34 +285,74 @@ const Header = () => {
         className="notification-list"
         style={{ maxHeight: "200px", overflowY: "auto" }}
       >
-        {notifications.map((notification, index) => (
-          <div
-            key={notification.id}
-            className="notification-item p-2 border-bottom"
-          >
-            <div className="d-flex align-items-start">
-              <div className="symbol symbol-30px me-2">
-                <img
-                  src={notification.avatar}
-                  alt="Notification"
-                  className="rounded-circle"
-                  style={{ width: "30px", height: "30px", objectFit: "cover" }}
-                />
-              </div>
-              <div className="flex-grow-1">
-                <p
-                  className="text-dark mb-1 fs-8"
-                  style={{ lineHeight: "1.3", fontSize: "12px" }}
-                >
-                  {notification.message}
-                </p>
-                <small className="text-muted fs-9" style={{ fontSize: "10px" }}>
-                  {notification.time}
-                </small>
-              </div>
+        {loadingNotifications ? (
+          <div className="d-flex justify-content-center align-items-center p-3">
+            <div className="spinner-border spinner-border-sm text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
             </div>
           </div>
-        ))}
+        ) : notifications.length > 0 ? (
+          notifications.map((notification, index) => (
+            <div
+              key={notification.id}
+              className={`notification-item p-2 border-bottom ${!notification.read_at ? 'bg-light' : ''}`}
+              style={{ cursor: 'pointer' }}
+              onClick={async () => {
+                // Mark as read if not already read
+                if (!notification.read_at) {
+                  try {
+                    await ApiService.request({
+                      method: "POST",
+                      url: "markasReadNotification",
+                      data: { notification_id: notification.id }
+                    });
+                    // Update local state
+                    setNotifications(prev => 
+                      prev.map(n => 
+                        n.id === notification.id 
+                          ? { ...n, read_at: new Date().toISOString() }
+                          : n
+                      )
+                    );
+                    // Update unread count
+                    setUnreadCount(prev => Math.max(0, prev - 1));
+                  } catch (error) {
+                    console.error("Error marking notification as read:", error);
+                  }
+                }
+              }}
+            >
+              <div className="d-flex align-items-start">
+                <div className="symbol symbol-30px me-2">
+                  <img
+                    src={notification.avatar}
+                    alt="Notification"
+                    className="rounded-circle"
+                    style={{ width: "30px", height: "30px", objectFit: "cover" }}
+                    onError={(e) => {
+                      e.target.src = blank;
+                    }}
+                  />
+                </div>
+                <div className="flex-grow-1">
+                  <p
+                    className={`mb-1 fs-8 ${!notification.read_at ? 'fw-bold' : 'text-dark'}`}
+                    style={{ lineHeight: "1.3", fontSize: "12px" }}
+                  >
+                    {notification.message}
+                  </p>
+                  <small className="text-muted fs-9" style={{ fontSize: "10px" }}>
+                    {notification.time}
+                  </small>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="p-3 text-center text-muted">
+            <small>No notifications</small>
+          </div>
+        )}
       </div>
       <div className="p-2 text-center border-top">
         <NavLink
@@ -319,7 +385,10 @@ const Header = () => {
         <div className="d-flex align-items-center mb-3">
           <div className="symbol symbol-50px me-3">
             <img
-              src={blank}
+              src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
               alt="Profile"
               className="rounded-circle"
               style={{ width: "50px", height: "50px", objectFit: "cover" }}
@@ -406,12 +475,12 @@ const Header = () => {
               onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell text-gray-600 fs-4"></i>
-              {notifications.length > 0 && (
+              {unreadCount > 0 && (
                 <span
                   className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
                   style={{ fontSize: "0.6rem" }}
                 >
-                  {notifications.length}
+                  {unreadCount}
                 </span>
               )}
               {showNotificationDropdown && <NotificationDropdown />}
@@ -423,7 +492,10 @@ const Header = () => {
             >
               <div className="symbol-label text-white rounded-circle cursor-pointer">
                 <img
-                  src={blank}
+                  src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                   className="w-40px h-40px rounded-circle"
                   alt="Profile"
                 />
@@ -483,12 +555,12 @@ const Header = () => {
               onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell text-gray-600 fs-4"></i>
-              {notifications.length > 0 && (
+              {unreadCount > 0 && (
                 <span
                   className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
                   style={{ fontSize: "0.6rem" }}
                 >
-                  {notifications.length}
+                  {unreadCount}
                 </span>
               )}
               {showNotificationDropdown && <NotificationDropdown />}
@@ -500,7 +572,10 @@ const Header = () => {
             >
               <div className="symbol-label bg-warning text-white rounded-circle cursor-pointer">
                 <img
-                  src={blank}
+                  src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                   className="w-40px h-40px rounded-circle"
                   alt="Profile"
                 />
@@ -560,12 +635,12 @@ const Header = () => {
               onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell text-gray-600 fs-4"></i>
-              {notifications.length > 0 && (
+              {unreadCount > 0 && (
                 <span
                   className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
                   style={{ fontSize: "0.6rem" }}
                 >
-                  {notifications.length}
+                  {unreadCount}
                 </span>
               )}
               {showNotificationDropdown && <NotificationDropdown />}
@@ -577,7 +652,10 @@ const Header = () => {
             >
               <div className="symbol-label bg-warning text-white rounded-circle cursor-pointer">
                 <img
-                  src={blank}
+                  src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                   className="w-40px h-40px rounded-circle"
                   alt="Profile"
                 />
@@ -637,12 +715,12 @@ const Header = () => {
               onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell text-gray-600 fs-4"></i>
-              {notifications.length > 0 && (
+              {unreadCount > 0 && (
                 <span
                   className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
                   style={{ fontSize: "0.6rem" }}
                 >
-                  {notifications.length}
+                  {unreadCount}
                 </span>
               )}
               {showNotificationDropdown && <NotificationDropdown />}
@@ -653,7 +731,10 @@ const Header = () => {
               onMouseLeave={handleProfileDropdownLeave}
             >
               <img
-                src={blank}
+                src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                 className="w-40px h-40px rounded-circle cursor-pointer"
                 alt="Profile"
               />
@@ -714,12 +795,12 @@ const Header = () => {
               onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell text-gray-600 fs-4"></i>
-              {notifications.length > 0 && (
+              {unreadCount > 0 && (
                 <span
                   className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
                   style={{ fontSize: "0.6rem" }}
                 >
-                  {notifications.length}
+                  {unreadCount}
                 </span>
               )}
               {showNotificationDropdown && <NotificationDropdown />}
@@ -730,7 +811,10 @@ const Header = () => {
               onMouseLeave={handleProfileDropdownLeave}
             >
               <img
-                src={blank}
+                src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                 className="w-40px h-40px rounded-circle cursor-pointer"
                 alt="Profile"
               />
@@ -781,14 +865,21 @@ const Header = () => {
               </AnimatePresence>
             </motion.div>
             
-            <div className="modern-icon-container position-relative">
+            <div
+              className="modern-icon-container position-relative"
+              onMouseEnter={handleNotificationDropdownEnter}
+              onMouseLeave={handleNotificationDropdownLeave}
+            >
               <i className="bi bi-bell text-gray-600 fs-4"></i>
-              <span
-                className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
-                style={{ fontSize: "0.6rem" }}
-              >
-                3
-              </span>
+              {unreadCount > 0 && (
+                <span
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
+                  style={{ fontSize: "0.6rem" }}
+                >
+                  {unreadCount}
+                </span>
+              )}
+              {showNotificationDropdown && <NotificationDropdown />}
             </div>
             <div 
               className="modern-icon-container position-relative"
@@ -796,7 +887,10 @@ const Header = () => {
               onMouseLeave={handleProfileDropdownLeave}
             >
               <img
-                src={blank}
+                src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                 className="w-40px h-40px rounded-circle cursor-pointer"
                 alt="Profile"
               />
@@ -853,12 +947,12 @@ const Header = () => {
               onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell text-gray-600 fs-4"></i>
-              {notifications.length > 0 && (
+              {unreadCount > 0 && (
                 <span
                   className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
                   style={{ fontSize: "0.6rem" }}
                 >
-                  {notifications.length}
+                  {unreadCount}
                 </span>
               )}
               {showNotificationDropdown && <NotificationDropdown />}
@@ -869,7 +963,10 @@ const Header = () => {
               onMouseLeave={handleProfileDropdownLeave}
             >
               <img
-                src={blank}
+                src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                 className="w-40px h-40px rounded-circle cursor-pointer"
                 alt="Profile"
               />
@@ -928,12 +1025,12 @@ const Header = () => {
               onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell text-gray-600 fs-4"></i>
-              {notifications.length > 0 && (
+              {unreadCount > 0 && (
                 <span
                   className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
                   style={{ fontSize: "0.6rem" }}
                 >
-                  {notifications.length}
+                  {unreadCount}
                 </span>
               )}
               {showNotificationDropdown && <NotificationDropdown />}
@@ -944,7 +1041,10 @@ const Header = () => {
               onMouseLeave={handleProfileDropdownLeave}
             >
               <img
-                src={blank}
+                src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                 className="w-40px h-40px rounded-circle cursor-pointer"
                 alt="Profile"
               />
@@ -1003,12 +1103,12 @@ const Header = () => {
               onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell text-gray-600 fs-4"></i>
-              {notifications.length > 0 && (
+              {unreadCount > 0 && (
                 <span
                   className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-black"
                   style={{ fontSize: "0.6rem" }}
                 >
-                  {notifications.length}
+                  {unreadCount}
                 </span>
               )}
               {showNotificationDropdown && <NotificationDropdown />}
@@ -1019,7 +1119,10 @@ const Header = () => {
               onMouseLeave={handleProfileDropdownLeave}
             >
               <img
-                src={blank}
+                src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                 className="w-40px h-40px rounded-circle cursor-pointer"
                 alt="Profile"
               />
@@ -1095,8 +1198,8 @@ const Header = () => {
               onMouseLeave={handleNotificationDropdownLeave}
             >
               <i className="bi bi-bell modern-icon"></i>
-              {notifications.length > 0 && (
-                <span className="modern-notification-indicator"></span>
+              {unreadCount > 0 && (
+                <span className="modern-notification-indicator">{unreadCount > 9 ? '9+' : unreadCount}</span>
               )}
               {showNotificationDropdown && <NotificationDropdown />}
             </div>
@@ -1108,7 +1211,14 @@ const Header = () => {
               onMouseLeave={handleProfileDropdownLeave}
             >
               <div className="cursor-pointer symbol symbol-35px symbol-md-40px profile-dropdown">
-                <img src={blank} alt="user" className="modern-profile-image" />
+                <img 
+                  src={getUserPicture(user)} 
+                  alt="user" 
+                  className="modern-profile-image"
+                  onError={(e) => {
+                    e.target.src = blank;
+                  }}
+                />
               </div>
               {showProfileDropdown && <ProfileDropdown />}
             </div>

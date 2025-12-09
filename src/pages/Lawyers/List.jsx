@@ -1,25 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { Dropdown } from "primereact/dropdown";
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import notificationProfile from "../../assets/images/lawyerImg.png";
 import lawyersImg from "../../assets/images/Lawyers.png";
 import NoLawyer from "../../assets/images/NoLawyer.png";
-
-// Import all profile images for slider
-import profile1 from "../../assets/images/profiles/profile1.jpeg";
-import profile2 from "../../assets/images/profiles/profile2.jpeg";
-import profile3 from "../../assets/images/profiles/profile3.jpeg";
-import profile4 from "../../assets/images/profiles/profile4.jpeg";
-import profile5 from "../../assets/images/profiles/profile5.jpeg";
-import profile6 from "../../assets/images/profiles/profile6.jpeg";
-import profile7 from "../../assets/images/profiles/profile7.jpeg";
-import profile8 from "../../assets/images/profiles/profile8.jpeg";
-import profile9 from "../../assets/images/profiles/profile9.jpeg";
-import profile10 from "../../assets/images/profiles/profile10.jpeg";
-import profile11 from "../../assets/images/profiles/profile11.jpeg";
-import profile12 from "../../assets/images/profiles/profile12.jpeg";
-import profile13 from "../../assets/images/profiles/profile13.jpeg";
-import profile14 from "../../assets/images/profiles/profile14.jpeg";
-import profile15 from "../../assets/images/profiles/profile15.jpeg";
+import ApiService from "../../services/ApiService";
+import { toast } from "react-toastify";
+import PaymentModal from "../../components/PaymentModal";
 
 const List = () => {
   // Load data from localStorage
@@ -47,50 +33,172 @@ const List = () => {
   );
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showJurisdictionDropdown, setShowJurisdictionDropdown] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [activeDropdownType, setActiveDropdownType] = useState(null); // 'category' or 'jurisdiction'
+  const [lawyers, setLawyers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState([]);
+  const [jurisdictions, setJurisdictions] = useState([]);
+  const [loadingDropdowns, setLoadingDropdowns] = useState(false);
+  const searchTimeoutRef = useRef(null);
+  const categoryButtonRef = useRef(null);
+  const jurisdictionButtonRef = useRef(null);
   const [showLawyerDetail, setShowLawyerDetail] = useState(
     loadFromLocalStorage("lawyers_showLawyerDetail", false)
   );
   const [selectedLawyer, setSelectedLawyer] = useState(
     loadFromLocalStorage("lawyers_selectedLawyer", null)
   );
+  const [lawyerDetails, setLawyerDetails] = useState(null);
+  const [myService, setMyService] = useState(null);
+  const [loadingLawyerDetails, setLoadingLawyerDetails] = useState(false);
+  const [cancellingService, setCancellingService] = useState(false);
   const [imageLoadingStates, setImageLoadingStates] = useState({});
   const [currentSlideIndex, setCurrentSlideIndex] = useState(
     loadFromLocalStorage("lawyers_currentSlideIndex", 0)
   );
   
-  // Profile images array for slider
-  const profileImages = [
-    profile1, profile2, profile3, profile4, profile5,
-    profile6, profile7, profile8, profile9, profile10,
-    profile11, profile12, profile13, profile14, profile15
-  ];
-  const pricingOptions = [
-    { label: "$275 / One Time Service", value: "one-time" },
-    { label: "$150 / Hourly Consultation", value: "hourly" },
-  ];
-  const [selectedPricingOption, setSelectedPricingOption] = useState(
-    loadFromLocalStorage("lawyers_selectedPricingOption", "one-time")
-  );
-  const [showPricingOptions, setShowPricingOptions] = useState(
-    loadFromLocalStorage("lawyers_showPricingOptions", false)
-  );
+  const [pricingOptions, setPricingOptions] = useState([]);
+  const [selectedPricingOption, setSelectedPricingOption] = useState(null);
+  const [showPricingOptions, setShowPricingOptions] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
 
-  const currentPricingLabel =
-    pricingOptions.find((option) => option.value === selectedPricingOption)
-      ?.label || pricingOptions[0].label;
-
-  const handleLawyerClick = (lawyer) => {
+  const handleLawyerClick = async (lawyer) => {
     setSelectedLawyer(lawyer);
     setShowLawyerDetail(true);
     setCurrentSlideIndex(0); // Reset slider to first image when opening
+    setLawyerDetails(null); // Clear previous details
+    setMyService(null); // Clear previous service
+    // Fetch detailed lawyer information
+    const lawyerId = lawyer.id || lawyer.rawData?.id;
+    if (lawyerId) {
+      await fetchLawyerDetails(lawyerId);
+    }
+  };
+
+  const fetchLawyerDetails = async (lawyerId) => {
+    if (!lawyerId) return;
+    
+    try {
+      setLoadingLawyerDetails(true);
+      const response = await ApiService.request({
+        method: "GET",
+        url: "getLawyerDetails",
+        data: { lawyer_id: lawyerId }
+      });
+      
+      const data = response.data;
+      if (data.status && data.data) {
+        setLawyerDetails(data.data);
+        setMyService(data.my_service || null);
+        
+        // Update pricing options based on API data
+        const lawyer = data.data;
+        const options = [];
+        
+        // Add weekly pricing as "One Time Service" if available
+        if (lawyer.weekly_price) {
+          options.push({
+            label: `$${lawyer.weekly_price} / One Time Service`,
+            value: "one-time"
+          });
+        }
+        
+        // Add monthly pricing if available
+        if (lawyer.monthly_price) {
+          options.push({
+            label: `$${lawyer.monthly_price} / Monthly`,
+            value: "monthly"
+          });
+        }
+        
+        // Add consult_fee as one-time service if weekly_price not available
+        if (!lawyer.weekly_price && lawyer.consult_fee) {
+          options.push({
+            label: `$${lawyer.consult_fee} / One Time Service`,
+            value: "one-time"
+          });
+        }
+        
+        setPricingOptions(options);
+        
+        // Set default to monthly if available, otherwise first option
+        const defaultOption = options.find(opt => opt.value === "monthly") || options[0];
+        if (defaultOption) {
+          setSelectedPricingOption(defaultOption.value);
+        } else {
+          setSelectedPricingOption(null);
+        }
+        
+        // Reset slide index when new lawyer details are loaded
+        setCurrentSlideIndex(0);
+      } else {
+        console.error("Failed to fetch lawyer details:", data.message);
+        toast.error(data.message || "Failed to load lawyer details");
+      }
+    } catch (error) {
+      console.error("Error fetching lawyer details:", error);
+      toast.error("Failed to load lawyer details");
+    } finally {
+      setLoadingLawyerDetails(false);
+    }
+  };
+
+  const handleCancelService = async () => {
+    if (!myService || !myService.id) {
+      toast.error("Service information not available");
+      return;
+    }
+
+    if (!window.confirm("Are you sure you want to cancel this subscription?")) {
+      return;
+    }
+
+    try {
+      setCancellingService(true);
+      const response = await ApiService.request({
+        method: "POST",
+        url: "cancelService",
+        data: { user_service_id: myService.id }
+      });
+
+      const data = response.data;
+      if (data.status && data.data) {
+        // Update myService with cancelled status
+        setMyService(prev => ({
+          ...prev,
+          status: 'Cancelled',
+          cancel_renewal: 1
+        }));
+        toast.success(data.message || "Service cancelled successfully");
+      } else {
+        toast.error(data.message || "Failed to cancel service");
+      }
+    } catch (error) {
+      console.error("Error cancelling service:", error);
+      toast.error("Failed to cancel service. Please try again.");
+    } finally {
+      setCancellingService(false);
+    }
   };
 
   const nextSlide = () => {
-    setCurrentSlideIndex((prev) => (prev + 1) % profileImages.length);
+    const lawyerImages = lawyerDetails?.images || [];
+    const imagesToShow = lawyerImages.length > 0 ? lawyerImages : 
+                        (lawyerDetails?.picture ? [lawyerDetails.picture] : []);
+    if (imagesToShow.length > 1) {
+      setCurrentSlideIndex((prev) => (prev + 1) % imagesToShow.length);
+    }
   };
 
   const prevSlide = () => {
-    setCurrentSlideIndex((prev) => (prev - 1 + profileImages.length) % profileImages.length);
+    const lawyerImages = lawyerDetails?.images || [];
+    const imagesToShow = lawyerImages.length > 0 ? lawyerImages : 
+                        (lawyerDetails?.picture ? [lawyerDetails.picture] : []);
+    if (imagesToShow.length > 1) {
+      setCurrentSlideIndex((prev) => (prev - 1 + imagesToShow.length) % imagesToShow.length);
+    }
   };
 
   const goToSlide = (index) => {
@@ -111,238 +219,162 @@ const List = () => {
     }));
   };
 
-  // Default company lawyers data
-  const defaultCompanyLawyers = [
-    {
-      id: 1,
-      type: "Company",
-      firmName: "Sofia Lawyer",
-      rating: 4.5,
-      location: "Dubai, United Arab Emirates",
-      specialization: "Commercial Law + Jurisdiction: UAE+",
-      image: lawyersImg,
-      category: "Commercial Law",
-      jurisdiction: "UAE",
-      description: "Sophia grant is a distinguished attorney with over a decade of experience in providing comprehensive legal services to clients across various industries."
-    },
-    {
-      id: 2,
-      type: "Company",
-      firmName: "Al-Rashid & Associates",
-      rating: 4.8,
-      location: "Abu Dhabi, UAE",
-      specialization: "Corporate Law + Jurisdiction: UAE+",
-      image: lawyersImg,
-      category: "Corporate Law",
-      jurisdiction: "UAE",
-      description: "Premier corporate law firm with expertise in mergers, acquisitions, and corporate governance. Serving businesses of all sizes."
-    },
-    {
-      id: 3,
-      type: "Company",
-      firmName: "Dubai Legal Partners",
-      rating: 4.3,
-      location: "Dubai, UAE",
-      specialization: "Real Estate Law + Jurisdiction: UAE+",
-      image: lawyersImg,
-      category: "Real Estate Law",
-      jurisdiction: "UAE",
-      description: "Specialized real estate law firm handling property transactions and development projects throughout the UAE."
-    },
-    {
-      id: 7,
-      type: "Company",
-      firmName: "Gulf Legal Solutions",
-      rating: 4.6,
-      location: "Sharjah, UAE",
-      specialization: "Tax Law + Jurisdiction: UAE+",
-      image: lawyersImg,
-      category: "Tax Law",
-      jurisdiction: "UAE",
-      description: "Expert tax law firm providing comprehensive tax planning and compliance services for individuals and businesses."
-    },
-    {
-      id: 8,
-      type: "Company",
-      firmName: "Arabian Legal Group",
-      rating: 4.7,
-      location: "Dubai, UAE",
-      specialization: "Intellectual Property Law + Jurisdiction: UAE+",
-      image: lawyersImg,
-      category: "Intellectual Property Law",
-      jurisdiction: "UAE",
-      description: "Leading IP law firm specializing in patents, trademarks, copyrights, and trade secret protection."
-    },
-    {
-      id: 9,
-      type: "Company",
-      firmName: "Emirates Corporate Law",
-      rating: 4.4,
-      location: "Abu Dhabi, UAE",
-      specialization: "Employment Law + Jurisdiction: UAE+",
-      image: lawyersImg,
-      category: "Employment Law",
-      jurisdiction: "UAE",
-      description: "Dedicated employment law practice helping employers and employees navigate workplace legal matters."
-    }
-  ];
-
-  // Default individual lawyers data
-  const defaultIndividualLawyers = [
-    {
-      id: 4,
-      type: "Individual",
-      name: "Dr. Sarah Ahmed",
-      title: "Senior Partner",
-      rating: 4.9,
-      location: "Dubai, UAE",
-      specialization: "Criminal Defense + Jurisdiction: UAE+",
-      image: lawyersImg,
-      category: "Criminal Law",
-      jurisdiction: "UAE",
-      description: "Experienced criminal defense attorney with 15+ years of practice in UAE courts. Known for strategic defense and client advocacy."
-    },
-    {
-      id: 5,
-      type: "Individual",
-      name: "Mohammed Al-Zahra",
-      title: "Senior Associate",
-      rating: 4.6,
-      location: "Abu Dhabi, UAE",
-      specialization: "Family Law + Jurisdiction: UAE+",
-      image: lawyersImg,
-      category: "Family Law",
-      jurisdiction: "UAE",
-      description: "Dedicated family law practitioner specializing in divorce, custody, and inheritance matters with a compassionate approach."
-    },
-    {
-      id: 6,
-      type: "Individual",
-      name: "Emily Johnson",
-      title: "Partner",
-      rating: 4.7,
-      location: "Dubai, UAE",
-      specialization: "Immigration Law + Jurisdiction: UAE+",
-      image: lawyersImg,
-      category: "Immigration Law",
-      jurisdiction: "UAE",
-      description: "Expert immigration lawyer helping clients with visa applications and residency matters. Fluent in multiple languages."
-    },
-    {
-      id: 10,
-      type: "Individual",
-      name: "Ahmed Hassan",
-      title: "Senior Counsel",
-      rating: 4.8,
-      location: "Dubai, UAE",
-      specialization: "Commercial Litigation + Jurisdiction: UAE+",
-      image: lawyersImg,
-      category: "Commercial Law",
-      jurisdiction: "UAE",
-      description: "Seasoned commercial litigator with extensive experience in complex business disputes and contract negotiations."
-    },
-    {
-      id: 11,
-      type: "Individual",
-      name: "Fatima Al-Mansoori",
-      title: "Principal Attorney",
-      rating: 4.9,
-      location: "Abu Dhabi, UAE",
-      specialization: "Corporate Law + Jurisdiction: UAE+",
-      image: lawyersImg,
-      category: "Corporate Law",
-      jurisdiction: "UAE",
-      description: "Corporate law expert specializing in M&A transactions, corporate restructuring, and regulatory compliance."
-    },
-    {
-      id: 12,
-      type: "Individual",
-      name: "James Wilson",
-      title: "Partner",
-      rating: 4.5,
-      location: "Dubai, UAE",
-      specialization: "Real Estate Law + Jurisdiction: UAE+",
-      image: lawyersImg,
-      category: "Real Estate Law",
-      jurisdiction: "UAE",
-      description: "Real estate attorney with deep knowledge of property law, development projects, and commercial leasing."
-    },
-    {
-      id: 13,
-      type: "Individual",
-      name: "Layla Mohammed",
-      title: "Senior Associate",
-      rating: 4.7,
-      location: "Sharjah, UAE",
-      specialization: "Tax Law + Jurisdiction: UAE+",
-      image: lawyersImg,
-      category: "Tax Law",
-      jurisdiction: "UAE",
-      description: "Tax law specialist providing strategic tax planning and dispute resolution services for high-net-worth individuals."
-    },
-    {
-      id: 14,
-      type: "Individual",
-      name: "Robert Chen",
-      title: "Counsel",
-      rating: 4.6,
-      location: "Dubai, UAE",
-      specialization: "Intellectual Property Law + Jurisdiction: UAE+",
-      image: lawyersImg,
-      category: "Intellectual Property Law",
-      jurisdiction: "UAE",
-      description: "IP attorney with expertise in patent prosecution, trademark registration, and IP litigation across various industries."
-    }
-  ];
-
-  // Load lawyers from localStorage or use defaults
-  const [companyLawyers, setCompanyLawyers] = useState(
-    loadFromLocalStorage("lawyers_companyLawyers", defaultCompanyLawyers)
-  );
-
-  const [individualLawyers, setIndividualLawyers] = useState(
-    loadFromLocalStorage("lawyers_individualLawyers", defaultIndividualLawyers)
-  );
-
-  const categories = ["Commercial Law", "Corporate Law", "Criminal Law", "Family Law", "Real Estate Law", "Immigration Law", "Tax Law"];
-  const jurisdictions = ["UAE", "Saudi Arabia", "Qatar", "Kuwait", "Bahrain", "Oman"];
 
   const filters = ["Company", "Individual", "Categories", "Jurisdiction"];
 
-  // Get current data based on selected filter
-  const getCurrentData = () => {
-    let data = [];
-    
-    if (selectedFilter === "Company") {
-      data = companyLawyers;
-    } else if (selectedFilter === "Individual") {
-      data = individualLawyers;
-    } else if (selectedFilter === "Categories") {
-      // Show all lawyers from both company and individual, filtered by category
-      data = [...companyLawyers, ...individualLawyers];
-      if (selectedCategory) {
-        data = data.filter(lawyer => lawyer.category === selectedCategory);
+  // Fetch dropdown data (categories and jurisdictions)
+  useEffect(() => {
+    const fetchDropdownData = async () => {
+      try {
+        setLoadingDropdowns(true);
+        
+        // Fetch jurisdictions from getDropdownData
+        const dropdownResponse = await ApiService.request({
+          method: "GET",
+          url: "getDropdownData",
+        });
+        const dropdownData = dropdownResponse.data;
+        console.log("Dropdown Data Response:", dropdownData); // Debug log
+        
+        if (dropdownData.status && dropdownData.data) {
+          if (dropdownData.data.jurisdictions) {
+            setJurisdictions(dropdownData.data.jurisdictions);
+            console.log("Jurisdictions loaded:", dropdownData.data.jurisdictions.length); // Debug log
+          }
+        }
+        
+        // Fetch categories separately
+        const categoriesResponse = await ApiService.request({
+          method: "GET",
+          url: "getCategories",
+        });
+        const categoriesData = categoriesResponse.data;
+        console.log("Categories Response:", categoriesData); // Debug log
+        
+        if (categoriesData.status && categoriesData.data) {
+          setCategories(categoriesData.data);
+          console.log("Categories loaded:", categoriesData.data.length); // Debug log
+        }
+      } catch (error) {
+        console.error("Error fetching dropdown data:", error);
+      } finally {
+        setLoadingDropdowns(false);
       }
-    } else if (selectedFilter === "Jurisdiction") {
-      // Show all lawyers from both company and individual, filtered by jurisdiction
-      data = [...companyLawyers, ...individualLawyers];
-      if (selectedJurisdiction) {
-        data = data.filter(lawyer => lawyer.jurisdiction === selectedJurisdiction);
-      }
+    };
+
+    fetchDropdownData();
+  }, []);
+
+  // Fetch lawyers from API
+  useEffect(() => {
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
 
-    // Apply search filter
-    if (searchTerm) {
-      data = data.filter(lawyer => {
-        const searchableText = selectedFilter === "Individual" 
-          ? `${lawyer.name} ${lawyer.title} ${lawyer.specialization} ${lawyer.location}`
-          : `${lawyer.firmName} ${lawyer.specialization} ${lawyer.location}`;
-        return searchableText.toLowerCase().includes(searchTerm.toLowerCase());
-      });
-    }
+    // Set new timeout for debounced search
+    searchTimeoutRef.current = setTimeout(() => {
+      const fetchLawyers = async () => {
+        try {
+          setLoading(true);
+          
+          const requestData = {};
 
-    return data;
-  };
+          // Only add search if there's a search term
+          // API returns empty results if search is empty string
+          if (searchTerm && searchTerm.trim()) {
+            requestData.search = searchTerm.trim();
+          }
+
+          // Add category filter
+          if (selectedCategory && selectedFilter === "Categories") {
+            const categoryObj = categories.find(cat => cat.name === selectedCategory || cat.id === selectedCategory);
+            if (categoryObj) {
+              requestData.categories = JSON.stringify([categoryObj.id]);
+            }
+          }
+
+          // Add jurisdiction filter
+          if (selectedJurisdiction && selectedFilter === "Jurisdiction") {
+            const jurisdictionObj = jurisdictions.find(j => j.name === selectedJurisdiction || j.id === selectedJurisdiction);
+            if (jurisdictionObj) {
+              requestData.jurisdictions = JSON.stringify([jurisdictionObj.id]);
+            }
+          }
+
+          // Set add=1 to get all lawyers (not filtered by jurisdiction requirement)
+          requestData.add = 1;
+          
+          console.log("Filter Lawyers Request:", requestData); // Debug log
+
+          const response = await ApiService.request({
+            method: "POST",
+            url: "filterLawyers",
+            data: requestData,
+          });
+
+          const data = response.data;
+          console.log("Filter Lawyers API Response:", data); // Debug log
+          
+          if (data.status && data.data && data.data.lawyers) {
+            // Transform API data to match component format
+            let transformedLawyers = data.data.lawyers.map((lawyer) => {
+              const lawyerCategories = lawyer.categories || [];
+              const lawyerJurisdictions = lawyer.jurisdictions || [];
+              const primaryCategory = lawyerCategories[0];
+              const primaryJurisdiction = lawyerJurisdictions[0];
+
+              return {
+                id: lawyer.id,
+                type: lawyer.company_id ? "Company" : "Individual",
+                name: lawyer.name || "",
+                firmName: lawyer.company_name || lawyer.name || "",
+                title: lawyer.title || "Legal Expert",
+                rating: parseFloat(lawyer.rating) || 0,
+                location: `${lawyer.city || ""}${lawyer.city && lawyer.country ? ", " : ""}${lawyer.country || ""}`.trim() || "Location not available",
+                specialization: `${primaryCategory?.name || ""}${primaryCategory && primaryJurisdiction ? " + Jurisdiction: " : primaryJurisdiction ? "Jurisdiction: " : ""}${primaryJurisdiction?.name || ""}${primaryJurisdiction ? "+" : ""}`,
+                image: lawyer.picture || lawyersImg,
+                category: primaryCategory?.name || "",
+                jurisdiction: primaryJurisdiction?.name || "",
+                description: lawyer.about || "",
+                categories: lawyerCategories,
+                jurisdictions: lawyerJurisdictions,
+                rawData: lawyer,
+              };
+            });
+
+            console.log("Transformed Lawyers:", transformedLawyers); // Debug log
+
+            // Apply Company/Individual filter client-side
+            if (selectedFilter === "Company") {
+              transformedLawyers = transformedLawyers.filter(lawyer => lawyer.type === "Company");
+            } else if (selectedFilter === "Individual") {
+              transformedLawyers = transformedLawyers.filter(lawyer => lawyer.type === "Individual");
+            }
+
+            setLawyers(transformedLawyers);
+          } else {
+            console.log("No lawyers data in response:", data); // Debug log
+            setLawyers([]);
+          }
+        } catch (error) {
+          console.error("Error fetching lawyers:", error);
+          setLawyers([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchLawyers();
+    }, 500); // 500ms debounce delay
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchTerm, selectedFilter, selectedCategory, selectedJurisdiction, categories, jurisdictions]);
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
@@ -350,8 +382,6 @@ const List = () => {
       localStorage.setItem("lawyers_selectedFilter", JSON.stringify(selectedFilter));
       localStorage.setItem("lawyers_selectedCategory", JSON.stringify(selectedCategory));
       localStorage.setItem("lawyers_selectedJurisdiction", JSON.stringify(selectedJurisdiction));
-      localStorage.setItem("lawyers_companyLawyers", JSON.stringify(companyLawyers));
-      localStorage.setItem("lawyers_individualLawyers", JSON.stringify(individualLawyers));
       localStorage.setItem("lawyers_showLawyerDetail", JSON.stringify(showLawyerDetail));
       localStorage.setItem("lawyers_selectedLawyer", JSON.stringify(selectedLawyer));
       localStorage.setItem("lawyers_currentSlideIndex", JSON.stringify(currentSlideIndex));
@@ -360,7 +390,7 @@ const List = () => {
     } catch (error) {
       console.error("Error saving lawyers data to localStorage:", error);
     }
-  }, [selectedFilter, selectedCategory, selectedJurisdiction, companyLawyers, individualLawyers, showLawyerDetail, selectedLawyer, currentSlideIndex, selectedPricingOption, showPricingOptions]);
+  }, [selectedFilter, selectedCategory, selectedJurisdiction, showLawyerDetail, selectedLawyer, currentSlideIndex, selectedPricingOption, showPricingOptions]);
 
   const handleFilterClick = (filter) => {
     setSelectedFilter(filter);
@@ -372,14 +402,44 @@ const List = () => {
     }
   };
 
+  const calculateDropdownPosition = (buttonRef) => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    setDropdownPosition({
+      top: rect.bottom ,
+      left: rect.left + window.scrollX,
+      width: rect.width
+    });
+  };
+
+  const handleCategoryDropdownToggle = () => {
+    if (!showCategoryDropdown) {
+      calculateDropdownPosition(categoryButtonRef);
+      setActiveDropdownType('category');
+    }
+    setShowCategoryDropdown(!showCategoryDropdown);
+    setShowJurisdictionDropdown(false);
+  };
+
+  const handleJurisdictionDropdownToggle = () => {
+    if (!showJurisdictionDropdown) {
+      calculateDropdownPosition(jurisdictionButtonRef);
+      setActiveDropdownType('jurisdiction');
+    }
+    setShowJurisdictionDropdown(!showJurisdictionDropdown);
+    setShowCategoryDropdown(false);
+  };
+
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
     setShowCategoryDropdown(false);
+    setActiveDropdownType(null);
   };
 
   const handleJurisdictionSelect = (jurisdiction) => {
     setSelectedJurisdiction(jurisdiction);
     setShowJurisdictionDropdown(false);
+    setActiveDropdownType(null);
   };
 
   // Preload images for better performance
@@ -398,17 +458,37 @@ const List = () => {
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest('.position-relative')) {
+      const isClickOnButton = categoryButtonRef.current?.contains(event.target) || 
+                              jurisdictionButtonRef.current?.contains(event.target);
+      const isClickOnDropdown = event.target.closest('.lawyers-filter-dropdown-portal');
+      
+      if (!isClickOnButton && !isClickOnDropdown) {
         setShowCategoryDropdown(false);
         setShowJurisdictionDropdown(false);
+        setActiveDropdownType(null);
+      }
+    };
+
+    // Update dropdown position on scroll/resize
+    const updatePosition = () => {
+      if (showCategoryDropdown && categoryButtonRef.current) {
+        calculateDropdownPosition(categoryButtonRef);
+      }
+      if (showJurisdictionDropdown && jurisdictionButtonRef.current) {
+        calculateDropdownPosition(jurisdictionButtonRef);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+    
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
     };
-  }, []);
+  }, [showCategoryDropdown, showJurisdictionDropdown]);
 
   return (
     <div className="container-fluid">
@@ -453,12 +533,13 @@ const List = () => {
           </div>
         </div>
          {/* Filter Buttons */}
-         <div className="d-flex justify-content-start gap-3 flex-wrap lawyers-filter-tabs">
+         <div className="d-flex justify-content-start gap-3 flex-wrap lawyers-filter-tabs" style={{ position: "relative", zIndex: 100 }}>
            {filters.map((filter) => (
-             <div key={filter} className="position-relative">
+             <div key={filter} className="position-relative" style={{ zIndex: 100 }}>
                {filter === "Categories" ? (
                  <div className="position-relative">
                    <button
+                     ref={categoryButtonRef}
                      className={`btn px-4 py-2 portal-button-hover ${
                        selectedFilter === filter
                          ? "bg-black text-white"
@@ -466,8 +547,7 @@ const List = () => {
                      }`}
                      onClick={() => {
                        handleFilterClick(filter);
-                       setShowCategoryDropdown(!showCategoryDropdown);
-                       setShowJurisdictionDropdown(false);
+                       handleCategoryDropdownToggle();
                      }}
                      style={{
                        fontSize: "0.9rem",
@@ -485,25 +565,11 @@ const List = () => {
                      {selectedCategory || filter}
                      <i className="bi bi-chevron-down" style={{ fontSize: "0.8rem" }}></i>
                    </button>
-                   
-                   {showCategoryDropdown && (
-                     <div className="position-absolute top-100 start-0 mt-1 bg-white border rounded shadow-lg lawyers-filter-dropdown" style={{ zIndex: 1000, minWidth: "200px" }}>
-                       {categories.map((category) => (
-                         <button
-                           key={category}
-                           className="btn btn-light w-100 text-start px-3 py-2 border-0 lawyers-filter-dropdown-item"
-                           onClick={() => handleCategorySelect(category)}
-                           style={{ fontSize: "0.9rem" }}
-                         >
-                           {category}
-                         </button>
-                       ))}
-                     </div>
-                   )}
                  </div>
                ) : filter === "Jurisdiction" ? (
                  <div className="position-relative">
                    <button
+                     ref={jurisdictionButtonRef}
                      className={`btn px-4 py-2 portal-button-hover ${
                        selectedFilter === filter
                          ? "bg-black text-white"
@@ -511,8 +577,7 @@ const List = () => {
                      }`}
                      onClick={() => {
                        handleFilterClick(filter);
-                       setShowJurisdictionDropdown(!showJurisdictionDropdown);
-                       setShowCategoryDropdown(false);
+                       handleJurisdictionDropdownToggle();
                      }}
                      style={{
                        fontSize: "0.9rem",
@@ -530,21 +595,6 @@ const List = () => {
                      {selectedJurisdiction || filter}
                      <i className="bi bi-chevron-down" style={{ fontSize: "0.8rem" }}></i>
                    </button>
-                   
-                   {showJurisdictionDropdown && (
-                     <div className="position-absolute top-100 start-0 mt-1 bg-white border rounded shadow-lg lawyers-filter-dropdown" style={{ zIndex: 1000, minWidth: "200px" }}>
-                       {jurisdictions.map((jurisdiction) => (
-                         <button
-                           key={jurisdiction}
-                           className="btn btn-light w-100 text-start px-3 py-2 border-0 lawyers-filter-dropdown-item"
-                           onClick={() => handleJurisdictionSelect(jurisdiction)}
-                           style={{ fontSize: "0.9rem" }}
-                         >
-                           {jurisdiction}
-                         </button>
-                       ))}
-                     </div>
-                   )}
                  </div>
                ) : (
                  <button
@@ -577,21 +627,32 @@ const List = () => {
 
       {/* Lawyers Grid */}
       <div className="row">
-        {getCurrentData().length === 0 ? (
+        {loading ? (
+          <div className="col-12 d-flex align-items-center justify-content-center" style={{ minHeight: "400px" }}>
+            <div className="text-center">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          </div>
+        ) : lawyers.length === 0 ? (
           <div className="col-12 d-flex align-items-center justify-content-center" style={{ minHeight: "400px" }}>
             <div className="text-center p-5">
               <div className="mb-4">
                 <img src={NoLawyer} alt="No Lawyer" style={{ maxWidth: "200px", height: "auto" }} />
               </div>
-              <h4 className="text-muted mb-2 fw-bold">No Lawyers Hired</h4>
+              <h4 className="text-muted mb-2 fw-bold">No Lawyers Found</h4>
               <p className="text-muted mb-0">
-                You haven't hired any lawyers yet.
+                {searchTerm || selectedCategory || selectedJurisdiction 
+                  ? "Try adjusting your search or filters." 
+                  : "No lawyers available at the moment."}
               </p>
             </div>
           </div>
         ) : (
-          getCurrentData().map((lawyer, index) => (
-          <div key={lawyer.id} className="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay={`${100 + index * 100}`}>
+          lawyers.map((lawyer, index) => (
+          <div key={lawyer.id} className="col-lg-4 col-md-6 mb-4" data-aos="fade-up" data-aos-delay={`${100 + index * 100}`}
+              style= {{zIndex:1}}>
             <div
               className="card h-100 shadow-sm portal-card-hover"
               style={{
@@ -691,7 +752,12 @@ const List = () => {
               type="button"
               className="btn btn-light rounded-circle shadow-sm d-flex align-items-center justify-content-center lawyer-detail-close-btn"
               style={{ width: "30px", height: "33px" }}
-              onClick={() => setShowLawyerDetail(false)}
+              onClick={() => {
+                setShowLawyerDetail(false);
+                setLawyerDetails(null);
+                setMyService(null);
+                setCurrentSlideIndex(0);
+              }}
               aria-label="Close lawyer details"
             >
               <i className="bi bi-x-lg fs-5 pe-0"></i>
@@ -705,7 +771,12 @@ const List = () => {
               type="button"
               className="btn btn-light rounded-circle shadow-sm d-flex align-items-center justify-content-center lawyer-detail-close-btn"
               style={{ width: "30px", height: "33px" }}
-              onClick={() => setShowLawyerDetail(false)}
+              onClick={() => {
+                setShowLawyerDetail(false);
+                setLawyerDetails(null);
+                setMyService(null);
+                setCurrentSlideIndex(0);
+              }}
               aria-label="Close lawyer details"
             >
               <i className="bi bi-upload fs-5 pe-0"></i>
@@ -717,12 +788,22 @@ const List = () => {
               <button
                 type="button"
                 className="btn-close"
-                onClick={() => setShowLawyerDetail(false)}
+                onClick={() => {
+                setShowLawyerDetail(false);
+                setMyService(null);
+              }}
               ></button>
             </div>
           </div> */}
 
           <div className="offcanvas-body p-0 d-flex flex-column" style={{ height: "100%" }}>
+            {loadingLawyerDetails ? (
+              <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+              </div>
+            ) : (
             <div className="p-0 flex-grow-1" style={{ overflowY: "auto" }}>
               {/* Image Slider */}
               <div className="mb-4 position-relative" style={{ height: "390px" }}>
@@ -736,92 +817,151 @@ const List = () => {
                     backgroundColor: "#f8f9fa"
                   }}
                 >
-                  {/* Images */}
-                  {profileImages.map((image, index) => (
-                    <img
-                      key={index}
-                      src={image}
-                      alt={`Profile ${index + 1}`}
-                      className="w-100 h-100"
-                      loading="lazy"
-                      decoding="async"
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        objectPosition: "center top",
-                        opacity: index === currentSlideIndex ? 1 : 0,
-                        transition: "opacity 0.5s ease-in-out",
-                        borderTopRightRadius: "15px",
-                        borderTopLeftRadius: "15px",
-                      }}
-                    />
-                  ))}
-
-                  {/* Navigation Arrows */}
-                  <button
-                    type="button"
-                    className="btn btn-light rounded-circle position-absolute top-50 start-0 translate-middle-y ms-3 shadow-sm"
-                    style={{
-                      width: "20px",
-                      height: "33px",
-                      zIndex: 10,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: "rgba(255, 255, 255, 0.9)",
-                    }}
-                    onClick={prevSlide}
-                    aria-label="Previous image"
-                  >
-                    <i className="bi bi-chevron-left pe-1" style={{ fontSize: "1rem" }}></i>
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-light rounded-circle position-absolute top-50 end-0 translate-middle-y me-3 shadow-sm"
-                    style={{
-                      width: "20px",
-                      height: "33px",
-                      zIndex: 10,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: "rgba(255, 255, 255, 0.9)",
-                    }}
-                    onClick={nextSlide}
-                    aria-label="Next image"
-                  >
-                    <i className="bi bi-chevron-right pe-0" style={{ fontSize: "1rem" }}></i>
-                  </button>
-
-                  {/* Dots Indicator */}
-                  <div
-                    className="position-absolute bottom-0 start-50 translate-middle-x mb-3"
-                    style={{ zIndex: 10 }}
-                  >
-                    <div className="d-flex gap-2">
-                      {profileImages.map((_, index) => (
-                        <button
+                  {/* Images - Use lawyer images array or picture from API */}
+                  {(() => {
+                    // Get images array from API
+                    const lawyerImages = lawyerDetails?.images || [];
+                    // If we have multiple images, use them
+                    if (lawyerImages.length > 0) {
+                      return lawyerImages.map((image, index) => (
+                        <img
                           key={index}
-                          type="button"
-                          className="btn p-0 border-0"
-                          onClick={() => goToSlide(index)}
+                          src={image}
+                          alt={`${lawyerDetails?.name || lawyerDetails?.firm_name || 'Lawyer'} - Image ${index + 1}`}
+                          className="w-100 h-100"
+                          loading="lazy"
+                          decoding="async"
                           style={{
-                            width: index === currentSlideIndex ? "24px" : "8px",
-                            height: "8px",
-                            borderRadius: "4px",
-                            backgroundColor: index === currentSlideIndex ? "#ffffff" : "rgba(255, 255, 255, 0.5)",
-                            transition: "all 0.3s ease",
-                            cursor: "pointer",
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            objectPosition: "center top",
+                            opacity: index === currentSlideIndex ? 1 : 0,
+                            transition: "opacity 0.5s ease-in-out",
+                            borderTopRightRadius: "15px",
+                            borderTopLeftRadius: "15px",
                           }}
-                          aria-label={`Go to slide ${index + 1}`}
+                          onError={(e) => {
+                            e.target.src = lawyerDetails?.picture || notificationProfile;
+                          }}
                         />
-                      ))}
-                    </div>
-                  </div>
+                      ));
+                    }
+                    // If single picture, use it
+                    else if (lawyerDetails?.picture) {
+                      return (
+                        <img
+                          src={lawyerDetails.picture}
+                          alt={lawyerDetails.name || lawyerDetails.firm_name || "Lawyer"}
+                          className="w-100 h-100"
+                          loading="lazy"
+                          decoding="async"
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            objectPosition: "center top",
+                            borderTopRightRadius: "15px",
+                            borderTopLeftRadius: "15px",
+                          }}
+                          onError={(e) => {
+                            e.target.src = notificationProfile;
+                          }}
+                        />
+                      );
+                    }
+                    // No images available - show placeholder
+                    else {
+                      return (
+                        <div className="w-100 h-100 d-flex align-items-center justify-content-center" style={{ backgroundColor: "#f8f9fa" }}>
+                          <i className="bi bi-image fs-1 text-muted"></i>
+                        </div>
+                      );
+                    }
+                  })()}
+
+                  {/* Navigation Arrows - Show only if multiple images */}
+                  {(() => {
+                    const lawyerImages = lawyerDetails?.images || [];
+                    const imagesToShow = lawyerImages.length > 0 ? lawyerImages : 
+                                        (lawyerDetails?.picture ? [lawyerDetails.picture] : []);
+                    
+                    return imagesToShow.length > 1 ? (
+                      <>
+                        <button
+                          type="button"
+                          className="btn btn-light rounded-circle position-absolute top-50 start-0 translate-middle-y ms-3 shadow-sm"
+                          style={{
+                            width: "20px",
+                            height: "33px",
+                            zIndex: 10,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: "rgba(255, 255, 255, 0.9)",
+                          }}
+                          onClick={prevSlide}
+                          aria-label="Previous image"
+                        >
+                          <i className="bi bi-chevron-left pe-1" style={{ fontSize: "1rem" }}></i>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-light rounded-circle position-absolute top-50 end-0 translate-middle-y me-3 shadow-sm"
+                          style={{
+                            width: "20px",
+                            height: "33px",
+                            zIndex: 10,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: "rgba(255, 255, 255, 0.9)",
+                          }}
+                          onClick={nextSlide}
+                          aria-label="Next image"
+                        >
+                          <i className="bi bi-chevron-right pe-0" style={{ fontSize: "1rem" }}></i>
+                        </button>
+                      </>
+                    ) : null;
+                  })()}
+
+                  {/* Dots Indicator - Show only if multiple images */}
+                  {(() => {
+                    const lawyerImages = lawyerDetails?.images || [];
+                    const imagesToShow = lawyerImages.length > 0 ? lawyerImages : 
+                                        (lawyerDetails?.picture ? [lawyerDetails.picture] : []);
+                    
+                    return imagesToShow.length > 1 ? (
+                      <div
+                        className="position-absolute bottom-0 start-50 translate-middle-x mb-3"
+                        style={{ zIndex: 10 }}
+                      >
+                        <div className="d-flex gap-2">
+                          {imagesToShow.map((_, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              className="btn p-0 border-0"
+                              onClick={() => goToSlide(index)}
+                              style={{
+                                width: index === currentSlideIndex ? "24px" : "8px",
+                                height: "8px",
+                                borderRadius: "4px",
+                                backgroundColor: index === currentSlideIndex ? "#ffffff" : "rgba(255, 255, 255, 0.5)",
+                                transition: "all 0.3s ease",
+                                cursor: "pointer",
+                              }}
+                              aria-label={`Go to slide ${index + 1}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               </div>
 
@@ -850,39 +990,73 @@ const List = () => {
               </div> */}
 
               {/* Location */}
-              <div className="mb-2 px-3">
-                <small className="text-muted fs-3">{selectedLawyer.location}</small>
-              </div>
+              {lawyerDetails?.location && (
+                <div className="mb-2 px-3">
+                  <small className="text-muted fs-3">
+                    {lawyerDetails.location}
+                  </small>
+                </div>
+              )}
 
               {/* Name and Rating */}
               <div className="d-flex justify-content-between align-items-center mb-3 px-3 lawyer-card-title">
                 <h1 className="fw-bold text-dark mb-0">
-                  {selectedLawyer.type === "Individual" ? selectedLawyer.name : selectedLawyer.firmName}
+                  {lawyerDetails?.name || lawyerDetails?.firm_name || ""}
                 </h1>
                 <div className="d-flex align-items-center">
-                  <span className="text-muted me-2">
-                    {selectedLawyer.type === "Individual" ? selectedLawyer.title : "Commercial Lawyer"}
-                  </span>
-                  <div className="d-flex align-items-center">
-                    <i className="bi bi-star-fill text-dark me-1"></i>
-                    <span className="fw-bold">{selectedLawyer.rating}</span>
-                  </div>
+                  {(lawyerDetails?.categories?.[0]?.name || lawyerDetails?.sub_categories?.[0]?.name) && (
+                    <span className="text-muted me-2">
+                      {lawyerDetails.categories?.[0]?.name || lawyerDetails.sub_categories?.[0]?.name}
+                    </span>
+                  )}
+                  {lawyerDetails?.rating && (
+                    <div className="d-flex align-items-center">
+                      <i className="bi bi-star-fill text-dark me-1"></i>
+                      <span className="fw-bold">{lawyerDetails.rating}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Description */}
-              <p className="text-muted mb-4 px-3" style={{ lineHeight: "1.6" }}>
-                {selectedLawyer.description || "Experienced legal professional with expertise in various areas of law. Committed to providing high-quality legal services and achieving the best outcomes for clients."}
-              </p>
-              <div className="px-3">
-                <h2>Jurisdiction</h2>
-                <p className="text-muted">UAE Jurisdiction</p>
-              </div>
+              {(lawyerDetails?.about || lawyerDetails?.description) && (
+                <p className="text-muted mb-4 px-3" style={{ lineHeight: "1.6" }}>
+                  {lawyerDetails.about || lawyerDetails.description}
+                </p>
+              )}
 
-              <div className="px-3">
-                <h2>Expertise</h2>
-                <p className="text-muted">Criminal Law, Environment Law, Human rights l...</p>
-              </div>
+              {/* Jurisdictions */}
+              {lawyerDetails?.jurisdictions && lawyerDetails.jurisdictions.length > 0 && (
+                <div className="px-3 mb-3">
+                  <h6 className="fw-bold text-dark mb-2">Jurisdictions</h6>
+                  <div className="d-flex flex-wrap gap-2">
+                    {lawyerDetails.jurisdictions.map((jurisdiction, index) => (
+                      <span key={jurisdiction.id || index} className="badge bg-light text-dark">
+                        {jurisdiction.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Categories/Expertise */}
+              {(lawyerDetails?.categories || lawyerDetails?.sub_categories) && (
+                <div className="px-3 mb-3">
+                  <h6 className="fw-bold text-dark mb-2">Expertise</h6>
+                  <div className="d-flex flex-wrap gap-2">
+                    {lawyerDetails.categories?.map((category, index) => (
+                      <span key={category.id || index} className="badge bg-light text-dark">
+                        {category.name}
+                      </span>
+                    ))}
+                    {lawyerDetails.sub_categories?.map((subCategory, index) => (
+                      <span key={subCategory.id || index} className="badge bg-light text-dark">
+                        {subCategory.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Services */}
               <div className="mb-4 px-3">
@@ -903,191 +1077,293 @@ const List = () => {
               </div>
 
               {/* Reviews */}
-              <div className="mb-4 px-3">
-                <h6 className="fw-bold text-dark mb-3">Reviews</h6>
-                
-                {/* Overall Rating */}
-                <div className="d-flex align-items-center mb-3">
-                  <div className="d-flex me-3">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <i key={star} className="bi bi-star-fill text-dark"></i>
+              {lawyerDetails?.reviews && lawyerDetails.reviews.length > 0 && (
+                <div className="mb-4 px-3">
+                  <h6 className="fw-bold text-dark mb-3">Reviews</h6>
+                  
+                  {/* Overall Rating */}
+                  {lawyerDetails.rating && (
+                    <div className="d-flex align-items-center mb-3">
+                      <div className="d-flex me-3">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <i 
+                            key={star} 
+                            className={`bi bi-star${star <= Math.round(lawyerDetails.rating) ? '-fill' : ''} text-dark`}
+                          ></i>
+                        ))}
+                      </div>
+                      <span className="fw-bold me-2">{lawyerDetails.rating} out of 5</span>
+                      <span className="text-muted">{lawyerDetails.reviews.length} total review{lawyerDetails.reviews.length !== 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+
+                  {/* Individual Reviews */}
+                  <div className="d-flex flex-column gap-3">
+                    {lawyerDetails.reviews.slice(0, 5).map((review, index) => (
+                      <div key={review.id || index} className="d-flex align-items-start">
+                        <img
+                          src={review.user?.picture || notificationProfile}
+                          alt={review.user?.name || "Reviewer"}
+                          className="rounded-circle me-3"
+                          loading="lazy"
+                          decoding="async"
+                          style={{ width: "40px", height: "40px", objectFit: "cover" }}
+                          onError={(e) => {
+                            e.target.src = notificationProfile;
+                          }}
+                        />
+                        <div className="flex-grow-1">
+                          <div className="d-flex align-items-center justify-content-between mb-1">
+                            <span className="fw-bold">{review.user?.name || "Anonymous"}</span>
+                            <small className="text-muted">
+                              {review.created_at ? new Date(review.created_at).toLocaleDateString() : "Recently"}
+                            </small>
+                          </div>
+                          <div className="d-flex mb-2">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <i 
+                                key={star} 
+                                className={`bi bi-star${star <= review.rating ? '-fill' : ''}`}
+                                style={{ fontSize: "0.9rem", color: star <= review.rating ? "#000" : "#ccc" }}
+                              ></i>
+                            ))}
+                          </div>
+                          {review.comment && (
+                            <p className="text-muted mb-0" style={{ fontSize: "0.9rem" }}>
+                              {review.comment}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     ))}
                   </div>
-                  <span className="fw-bold me-2">5 out of 5</span>
-                  <span className="text-muted">41 total review</span>
-                </div>
-
-                {/* Rating Breakdown */}
-                <div className="mb-4">
-                  {[5, 4, 3, 2, 1].map((rating) => (
-                    <div key={rating} className="d-flex align-items-center mb-2">
-                      <span className="text-muted me-2" style={{ minWidth: "20px" }}>{rating} star</span>
-                      
-                      <div className="flex-grow-1 me-2">
-                        <div
-                          className="bg-dark"
-                          style={{
-                            height: "8px",
-                            width: rating === 5 ? "100%" : rating === 4 ? "75%" : rating === 3 ? "50%" : rating === 2 ? "25%" : "0%",
-                            borderRadius: "4px"
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Individual Reviews */}
-                <div className="d-flex flex-column gap-3">
-                  <div className="d-flex align-items-start">
-                    <img
-                      src={notificationProfile}
-                      alt="Reviewer"
-                      className="rounded-circle me-3"
-                      loading="lazy"
-                      decoding="async"
-                      style={{ width: "40px", height: "40px" }}
-                    />
-                    <div className="flex-grow-1">
-                      <div className="d-flex align-items-center justify-content-between mb-1">
-                        <span className="fw-bold">Mark Jorden</span>
-                        <small className="text-muted">2 hour ago</small>
-                      </div>
-                      <div className="d-flex mb-2">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <i key={star} className="bi bi-star-fill" style={{ fontSize: "0.9rem", color: "#000" }}></i>
-                        ))}
-                      </div>
-                      <p className="text-muted mb-0" style={{ fontSize: "0.9rem" }}>
-                        Excellent service and professional approach. Highly recommended!
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="d-flex align-items-start">
-                    <img
-                      src={notificationProfile}
-                      alt="Reviewer"
-                      className="rounded-circle me-3"
-                      loading="lazy"
-                      decoding="async"
-                      style={{ width: "40px", height: "40px" }}
-                    />
-                    <div className="flex-grow-1">
-                      <div className="d-flex align-items-center justify-content-between mb-1">
-                        <span className="fw-bold">Shamra Joseph</span>
-                        <small className="text-muted">2 hour ago</small>
-                      </div>
-                      <div className="d-flex mb-2">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <i key={star} className="bi bi-star-fill" style={{ fontSize: "0.9rem", color: "#000" }}></i>
-                        ))}
-                      </div>
-                      <p className="text-muted mb-0" style={{ fontSize: "0.9rem" }}>
-                        Great experience working with this lawyer. Very knowledgeable and helpful.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Pricing and Action Section - Fixed at bottom */}
-            <div className="p-4" style={{ backgroundColor: "#000", borderBottomRightRadius: "15px", borderBottomLeftRadius: "15px" }}>
-              {/* Pricing and Dropdown in Same Row */}
-              <div className="d-flex align-items-center justify-content-between mb-4 p-3 rounded" style={{ backgroundColor: "#000" }}>
-                <p className="text-white fw-bold mb-0" style={{ fontSize: "1.5rem" }}>
-                  {currentPricingLabel}
-                </p>
-                <button
-                  onClick={() => setShowPricingOptions(!showPricingOptions)}
-                  className="btn d-flex align-items-center gap-2 text-white"
-                  style={{
-                    backgroundColor: "#000",
-                    border: "1px solid #333",
-                    borderRadius: "8px",
-                    padding: "8px 16px"
-                  }}
-                >
-                  <span>2 options</span>
-                  <i className={`bi bi-chevron-${showPricingOptions ? 'up' : 'down'}`}></i>
-                </button>
-              </div>
-
-              {/* Expanded Pricing Options */}
-              {showPricingOptions && (
-                <div className="mb-4" style={{ transition: "all 0.3s ease" }}>
-                  {pricingOptions.map((option, index) => (
-                    <div
-                      key={option.value}
-                      onClick={() => {
-                        setSelectedPricingOption(option.value);
-                        setShowPricingOptions(false);
-                      }}
-                      className="d-flex align-items-center p-3 mb-2 rounded"
-                    style={{
-                        backgroundColor: selectedPricingOption === option.value ? "#007bff" : "#ffffff",
-                        border: selectedPricingOption === option.value ? "none" : "1px solid #e0e0e0",
-                        cursor: "pointer",
-                        transition: "all 0.2s ease"
-                      }}
-                    >
-                      <div
-                        className="rounded-circle d-flex align-items-center justify-content-center me-3"
-                        style={{
-                          width: "24px",
-                          height: "24px",
-                          backgroundColor: selectedPricingOption === option.value ? "#ffffff" : "transparent",
-                          border: selectedPricingOption === option.value ? "none" : "2px solid #ccc"
-                        }}
-                      >
-                        {selectedPricingOption === option.value && (
-                          <i className="bi bi-check" style={{ fontSize: "14px", fontWeight: "bold", color: "#007bff" }}></i>
-                        )}
-                      </div>
-                      <span
-                        style={{
-                          color: selectedPricingOption === option.value ? "#ffffff" : "#000000",
-                          fontWeight: selectedPricingOption === option.value ? "500" : "400"
-                        }}
-                      >
-                        {option.label}
-                      </span>
-                    </div>
-                  ))}
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="d-flex gap-3 justify-content-center">
-                <button
-                  className="btn d-flex align-items-center justify-content-center rounded-pill"
-                  style={{ 
-                    height: "50px", 
-                    width: "180px", 
-                    backgroundColor: "#474747",
-                    border: "none",
-                    color: "#ffffff"
-                  }}
-                >
-                  <i className="bi bi-apple me-2 text-white" style={{ fontSize: "1.2rem" }}></i>
-                  <span>Apple</span>
-                </button>
-                <button
-                  className="btn rounded-pill fw-bold"
-                  style={{ 
-                    height: "50px", 
-                    width: "190px",
-                    backgroundColor: "#808080", 
-                    color: "#ffffff",
-                    border: "none",
-                    fontSize: "1rem"
-                  }}
-                >
-                  Get Service
-                </button>
-              </div>
+              {/* Company Lawyers (if company) */}
+              {lawyerDetails?.is_company === 1 && lawyerDetails?.lawyers && lawyerDetails.lawyers.length > 0 && (
+                <div className="mb-4 px-3">
+                  <h6 className="fw-bold text-dark mb-3">Company Lawyers</h6>
+                  <div className="d-flex flex-column gap-2">
+                    {lawyerDetails.lawyers.map((lawyer, index) => (
+                      <div key={lawyer.id || index} className="d-flex align-items-center p-2 border rounded">
+                        <img
+                          src={lawyer.picture || notificationProfile}
+                          alt={lawyer.name}
+                          className="rounded-circle me-3"
+                          style={{ width: "50px", height: "50px", objectFit: "cover" }}
+                          onError={(e) => {
+                            e.target.src = notificationProfile;
+                          }}
+                        />
+                        <div className="flex-grow-1">
+                          <h6 className="mb-0 fw-bold">{lawyer.name}</h6>
+                          <small className="text-muted">
+                            {lawyer.categories?.[0]?.name || lawyer.sub_categories?.[0]?.name || "Lawyer"}
+                          </small>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Response Time */}
+              {lawyerDetails?.response_time && (
+                <div className="mb-4 px-3">
+                  <h6 className="fw-bold text-dark mb-2">Response Time</h6>
+                  <p className="text-muted mb-0">{lawyerDetails.response_time}</p>
+                </div>
+              )}
+
+              {/* Consultation Count */}
+              {lawyerDetails?.consult_count !== undefined && (
+                <div className="mb-4 px-3">
+                  <h6 className="fw-bold text-dark mb-2">Consultations Completed</h6>
+                  <p className="text-muted mb-0">{lawyerDetails.consult_count}</p>
+                </div>
+              )}
             </div>
+            )}
+            {/* Pricing and Action Section - Fixed at bottom */}
+            {myService ? (
+              // Show My Service Information
+              <div className="p-4" style={{ backgroundColor: "#000", borderBottomRightRadius: "15px", borderBottomLeftRadius: "15px" }}>
+                {myService.period === 'weekly' ? (
+                  // Weekly (One Time Service)
+                  <div>
+                    <div className="d-flex align-items-center justify-content-between">
+                        <p className="text-white fw-bold mb-1" style={{ fontSize: "1.5rem" }}>
+                          One Time Service
+                        </p>
+                        <span className="text-white fw-bold fs-2">
+                              ${myService.pay_amount || 0} USD
+                          </span>
+                    </div>
+                      <div className="my-3">
+                          <span className="badge bg-white text-black px-3 py-2 rounded-pill fs-6">
+                            {myService.status || 'Active'}
+                          </span>
+                      </div>
+                    
+                  </div>
+                ) : myService.period === 'monthly' ? (
+                  // Monthly Subscription
+                  <div>
+                    <div className="mb-3">
+                      <div className="d-flex align-items-center justify-content-between gap-3">
+                        <p className="text-white fw-bold mb-1" style={{ fontSize: "1.5rem" }}>
+                          {myService.expiry_date 
+                            ? `Expires on ${new Date(myService.expiry_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}`
+                            : 'Monthly Service'}
+                        </p>
+                        <span className="text-white fw-bold fs-2">
+                            ${myService.pay_amount || 0} USD
+                        </span>
+                      </div>
+
+                        <div className="d-flex align-items-center justify-content-between gap-3 mt-2">
+                          <span className="badge bg-white text-black px-3 py-2 rounded-pill fs-6">
+                            {myService.cancel_renewal === 1 ? "Cancelled" :myService.status || 'Active'}
+                          </span>
+                          {myService.cancel_renewal === 0 &&
+                            <button
+                              className="btn rounded-pill fw-bold"
+                              style={{ 
+                                backgroundColor: "#dc3545", 
+                                color: "#ffffff",
+                                border: "none",
+                                fontSize: "1rem"
+                              }}
+                              onClick={handleCancelService}
+                              disabled={cancellingService || myService.status === 'Cancelled'}
+                            >
+                              {cancellingService ? (
+                                <>
+                                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                  Cancelling...
+                                </>
+                              ) : (
+                                'Cancel'
+                              )}
+                            </button>
+                          }
+                        </div>
+
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : pricingOptions.length > 0 ? (
+              // Show Pricing Options if no service
+              <div className="p-4" style={{ backgroundColor: "#000", borderBottomRightRadius: "15px", borderBottomLeftRadius: "15px" }}>
+                {/* Pricing and Dropdown in Same Row */}
+                <div className="d-flex align-items-center justify-content-between mb-4 p-3 rounded" style={{ backgroundColor: "#000" }}>
+                  <p className="text-white fw-bold mb-0" style={{ fontSize: "1.5rem" }}>
+                    {pricingOptions.find((option) => option.value === selectedPricingOption)?.label || pricingOptions[0]?.label || ""}
+                  </p>
+                  {pricingOptions.length > 1 && (
+                  <button
+                    onClick={() => setShowPricingOptions(!showPricingOptions)}
+                    className="btn d-flex align-items-center gap-2 text-white"
+                    style={{
+                      backgroundColor: "#000",
+                      border: "1px solid #333",
+                      borderRadius: "8px",
+                      padding: "8px 16px"
+                    }}
+                  >
+                    <span>{pricingOptions.length} option{pricingOptions.length !== 1 ? 's' : ''}</span>
+                    <i className={`bi bi-chevron-${showPricingOptions ? 'up' : 'down'}`}></i>
+                  </button>
+                  )}
+                </div>
+
+                {/* Expanded Pricing Options */}
+                {showPricingOptions && pricingOptions.length > 1 && (
+                  <div className="mb-4" style={{ transition: "all 0.3s ease" }}>
+                    {pricingOptions.map((option, index) => (
+                      <div
+                        key={option.value}
+                        onClick={() => {
+                          setSelectedPricingOption(option.value);
+                          setShowPricingOptions(false);
+                        }}
+                        className="d-flex align-items-center p-3 mb-2 rounded"
+                      style={{
+                          backgroundColor: selectedPricingOption === option.value ? "#007bff" : "#ffffff",
+                          border: selectedPricingOption === option.value ? "none" : "1px solid #e0e0e0",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease"
+                        }}
+                      >
+                        <div
+                          className="rounded-circle d-flex align-items-center justify-content-center me-3"
+                          style={{
+                            width: "24px",
+                            height: "24px",
+                            backgroundColor: selectedPricingOption === option.value ? "#ffffff" : "transparent",
+                            border: selectedPricingOption === option.value ? "none" : "2px solid #ccc"
+                          }}
+                        >
+                          {selectedPricingOption === option.value && (
+                            <i className="bi bi-check" style={{ fontSize: "14px", fontWeight: "bold", color: "#007bff" }}></i>
+                          )}
+                        </div>
+                        <span
+                          style={{
+                            color: selectedPricingOption === option.value ? "#ffffff" : "#000000",
+                            fontWeight: selectedPricingOption === option.value ? "500" : "400"
+                          }}
+                        >
+                          {option.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="d-flex gap-3 justify-content-center">
+                  <button
+                    className="btn d-flex align-items-center justify-content-center rounded-pill"
+                    style={{ 
+                      height: "50px", 
+                      width: "180px", 
+                      backgroundColor: "#474747",
+                      border: "none",
+                      color: "#ffffff"
+                    }}
+                  >
+                    <i className="bi bi-apple me-2 text-white" style={{ fontSize: "1.2rem" }}></i>
+                    <span>Apple</span>
+                  </button>
+                  <button
+                    className="btn rounded-pill fw-bold"
+                    style={{ 
+                      height: "50px", 
+                      width: "190px",
+                      backgroundColor: "#808080", 
+                      color: "#ffffff",
+                      border: "none",
+                      fontSize: "1rem"
+                    }}
+                    onClick={() => {
+                      if (!lawyerDetails) return;
+                      const selectedOption = pricingOptions.find(opt => opt.value === selectedPricingOption);
+                      if (!selectedOption) {
+                        toast.error("Please select a pricing option");
+                        return;
+                      }
+                      setShowPaymentModal(true);
+                    }}
+                    disabled={!lawyerDetails || pricingOptions.length === 0}
+                  >
+                    Get Service
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       )}
@@ -1108,6 +1384,128 @@ const List = () => {
           }}
         ></div>
       )}
+
+      {/* Portal Dropdown for Categories and Jurisdictions */}
+      {(showCategoryDropdown || showJurisdictionDropdown) && createPortal(
+        <div
+          className="lawyers-filter-dropdown-portal bg-white border rounded shadow-lg"
+          style={{
+            position: "fixed",
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            width: `${Math.max(dropdownPosition.width, 200)}px`,
+            maxHeight: "400px",
+            overflowY: "auto",
+            overflowX: "hidden",
+            zIndex: 9999,
+            borderRadius: "8px",
+            padding: "4px 0",
+          }}
+        >
+          {loadingDropdowns ? (
+            <div className="p-3 text-center">
+              <div className="spinner-border spinner-border-sm text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : activeDropdownType === 'category' && categories.length > 0 ? (
+            categories.map((category) => (
+              <button
+                key={category.id}
+                className="btn btn-light w-100 text-start px-3 py-2 border-0 lawyers-filter-dropdown-item"
+                onClick={() => handleCategorySelect(category.name)}
+                style={{ fontSize: "0.9rem" }}
+              >
+                {category.name}
+              </button>
+            ))
+          ) : activeDropdownType === 'jurisdiction' && jurisdictions.length > 0 ? (
+            jurisdictions.map((jurisdiction) => (
+              <button
+                key={jurisdiction.id}
+                className="btn btn-light w-100 text-start px-3 py-2 border-0 lawyers-filter-dropdown-item"
+                onClick={() => handleJurisdictionSelect(jurisdiction.name)}
+                style={{ fontSize: "0.9rem" }}
+              >
+                {jurisdiction.name}
+              </button>
+            ))
+          ) : (
+            <div className="p-3 text-center text-muted">
+              <small>
+                {activeDropdownType === 'category' ? 'No categories available' : 'No jurisdictions available'}
+              </small>
+            </div>
+          )}
+        </div>,
+        document.body
+      )}
+
+      {/* Payment Modal */}
+      <PaymentModal
+        show={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        amount={(() => {
+          if (!lawyerDetails) return 0;
+          const selectedOption = pricingOptions.find(opt => opt.value === selectedPricingOption);
+          if (!selectedOption) return 0;
+          
+          if (selectedPricingOption === "monthly") {
+            return parseFloat(lawyerDetails.monthly_price || 0);
+          } else if (selectedPricingOption === "one-time") {
+            return parseFloat(lawyerDetails.weekly_price || lawyerDetails.consult_fee || 0);
+          }
+          return 0;
+        })()}
+        onSuccess={async (paymentResult) => {
+          try {
+            setProcessingPayment(true);
+            
+            // Determine period based on selected option
+            const period = selectedPricingOption === "monthly" ? "monthly" : "weekly";
+            
+            // Call buyService API
+            const response = await ApiService.request({
+              method: "POST",
+              url: "buyService",
+              data: {
+                lawyer_id: lawyerDetails.id || lawyerDetails.lawyer_id,
+                period: period,
+                transaction_id: paymentResult.paymentIntentId,
+              }
+            });
+
+            const data = response.data;
+            if (data.status) {
+              toast.success(data.message || "Service purchased successfully!");
+              setShowPaymentModal(false);
+              setShowLawyerDetail(false);
+              setMyService(null);
+              
+              // Refresh lawyer details or navigate
+              // You might want to refresh the lawyers list or navigate to chat
+              if (data.data && data.data.chat) {
+                // Optionally navigate to chat
+                // navigate(`/chat`);
+              }
+            } else {
+              toast.error(data.message || "Failed to purchase service");
+            }
+          } catch (error) {
+            console.error("Error purchasing service:", error);
+            toast.error("Failed to purchase service. Please try again.");
+          } finally {
+            setProcessingPayment(false);
+          }
+        }}
+        title="Purchase Service"
+        saveCard={true}
+        paymentType="service"
+        paymentData={{
+          lawyer_id: lawyerDetails?.id || lawyerDetails?.lawyer_id,
+          period: selectedPricingOption === "monthly" ? "monthly" : "weekly",
+        }}
+      />
     </div>
   );
 };

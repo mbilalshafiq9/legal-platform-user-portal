@@ -16,8 +16,6 @@ import SkillList from '../pages/skills/List';
 
 import BannerList from '../pages/banners/List';
 
-import JobList from '../pages/MyLawyers/List.jsx';
-
 import LawyersList from '../pages/Lawyers/List.jsx';
 
 import MyCasesList from '../pages/MyCases/List.jsx';
@@ -46,6 +44,11 @@ import TrackMyTicket from '../pages/TrackMyTicket/List';
 
 
 const routes = [
+    {
+        path: '/',
+        component: Dashboard,
+        meta: { requiresAuth: true, hideHeader: false }
+    },
     {
         path: '/dashboard',
         component: Dashboard,
@@ -117,7 +120,7 @@ const routes = [
    
     {
         path: '/my-lawyers',
-        component: JobList,
+        component: UserList,
         meta: { requiresAuth: true , hideHeader: false , permission:'list-lawyers'  }
     },
    

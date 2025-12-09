@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import AOS from "aos";
 import notificationProfile from "../../assets/images/notification-profile.png";
 
 const List = () => {
@@ -95,6 +96,11 @@ const List = () => {
     }
   }, [notifications]);
 
+  // Refresh AOS animations when notifications change
+  useEffect(() => {
+    AOS.refresh();
+  }, [notifications]);
+
   return (
     <div className="d-flex flex-column flex-column-fluid notification-header">
       <div id="kt_app_content" className="app-content flex-column-fluid">
@@ -102,10 +108,12 @@ const List = () => {
           {/* Notifications List */}
           <div className="row">
             <div className="col-12">
-              {notifications.map((notification) => (
+              {notifications.map((notification, index) => (
                 <div
                   key={notification.id}
-                  className="card mb-3 shadow-sm"
+                  className="card mb-3 shadow-sm notification-page-card-hover"
+                  data-aos="fade-up"
+                  data-aos-delay={index * 100}
                   style={{
                     borderRadius: "12px",
                     backgroundColor: "#f8f9fa",

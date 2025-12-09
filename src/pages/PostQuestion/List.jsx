@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import ApiService from "../../services/ApiService";
 import notificationProfile from "../../assets/images/notification-profile.png";
 import NoQuestion from "../../assets/images/NoQuestion.png";
+import PaymentModal from "../../components/PaymentModal";
 import "../../assets/css/siri-border-animation.css";
 
 const List = () => {
@@ -42,6 +43,9 @@ const List = () => {
   const [postingQuestion, setPostingQuestion] = useState(false);
   const [closingQuestion, setClosingQuestion] = useState(false);
   const [showJurisdictionDropdown, setShowJurisdictionDropdown] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [questionPaymentAmount, setQuestionPaymentAmount] = useState(0);
+  const [loadingPaymentAmount, setLoadingPaymentAmount] = useState(true);
 
   // Initialize with empty array - only API data will be shown
   const [questions, setQuestions] = useState([]);
@@ -421,7 +425,56 @@ const List = () => {
     setAttachments(files);
   };
 
-  const handlePostQuestion = async () => {
+  // Fetch question payment amount from getProfile API
+  useEffect(() => {
+    const fetchQuestionPaymentAmount = async () => {
+      try {
+        setLoadingPaymentAmount(true);
+        const response = await ApiService.request({
+          method: "GET",
+          url: "getProfile",
+        });
+        
+        const data = response.data;
+        console.log("Profile response:", data); // Debug log
+        
+        if (data.status && data.data) {
+          // Get the question payment amount from profile
+          const paymentAmount = data.data.question_payment;
+          
+          if (paymentAmount !== null && paymentAmount !== undefined && paymentAmount !== '') {
+            // Handle both string and number types
+            const amount = typeof paymentAmount === 'string' 
+              ? parseFloat(paymentAmount.replace(/[^0-9.]/g, '')) 
+              : parseFloat(paymentAmount);
+            
+            if (!isNaN(amount) && amount > 0) {
+              setQuestionPaymentAmount(amount);
+            } else {
+              console.warn("Invalid amount:", amount, "using default 1.00");
+              setQuestionPaymentAmount(1.00);
+            }
+          } else {
+            console.warn("question_payment not found in response, using default 1.00");
+            setQuestionPaymentAmount(1.00);
+          }
+        } else {
+          console.warn("Profile API response invalid, using default 1.00");
+          setQuestionPaymentAmount(1.00);
+        }
+      } catch (error) {
+        console.error("Error fetching question payment amount:", error);
+        // Default fallback on error
+        setQuestionPaymentAmount(1.00);
+      } finally {
+        setLoadingPaymentAmount(false);
+      }
+    };
+    
+    fetchQuestionPaymentAmount();
+  }, []);
+
+  const handlePostQuestion = () => {
     if (!questionText.trim()) {
       toast.error("Please enter your question");
       return;
@@ -432,6 +485,11 @@ const List = () => {
       return;
     }
 
+    // Show payment modal first
+    setShowPaymentModal(true);
+  };
+
+  const submitQuestionAfterPayment = async (paymentResult) => {
     try {
       setPostingQuestion(true);
       
@@ -1200,7 +1258,13 @@ const List = () => {
                   style={{ borderLeft: "1px solid #D3D3D3" }}
                 >
                   <div className="fw-bold">USD</div>
-                  <div className="fw-bold fs-5">1.00</div>
+                  <div className="fw-bold fs-5">
+                    {loadingPaymentAmount ? (
+                      <span className="spinner-border spinner-border-sm" role="status"></span>
+                    ) : (
+                      questionPaymentAmount > 0 ? questionPaymentAmount.toFixed(2) : "1.00"
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1268,6 +1332,22 @@ const List = () => {
           }}
         ></div>
       )}
+
+      {/* Payment Modal */}
+      <PaymentModal
+        show={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        amount={questionPaymentAmount}
+        onSuccess={async (paymentResult) => {
+          // After payment success, submit the question
+          await submitQuestionAfterPayment(paymentResult);
+          setShowPaymentModal(false);
+        }}
+        title="Pay to Post Question"
+        saveCard={true}
+        paymentType="question"
+        paymentData={{}}
+      />
     </div>
   );
 };

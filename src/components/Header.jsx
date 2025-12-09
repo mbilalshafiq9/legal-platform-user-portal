@@ -16,6 +16,11 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [user] = useState(   JSON.parse(localStorage.getItem("loggedUser")) || null );
+  
+  // Get user picture with fallback
+  const getUserPicture = (user) => {
+    return user?.picture || blank;
+  };
  
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -380,7 +385,10 @@ const Header = () => {
         <div className="d-flex align-items-center mb-3">
           <div className="symbol symbol-50px me-3">
             <img
-              src={blank}
+              src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
               alt="Profile"
               className="rounded-circle"
               style={{ width: "50px", height: "50px", objectFit: "cover" }}
@@ -484,7 +492,10 @@ const Header = () => {
             >
               <div className="symbol-label text-white rounded-circle cursor-pointer">
                 <img
-                  src={blank}
+                  src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                   className="w-40px h-40px rounded-circle"
                   alt="Profile"
                 />
@@ -561,7 +572,10 @@ const Header = () => {
             >
               <div className="symbol-label bg-warning text-white rounded-circle cursor-pointer">
                 <img
-                  src={blank}
+                  src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                   className="w-40px h-40px rounded-circle"
                   alt="Profile"
                 />
@@ -638,7 +652,10 @@ const Header = () => {
             >
               <div className="symbol-label bg-warning text-white rounded-circle cursor-pointer">
                 <img
-                  src={blank}
+                  src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                   className="w-40px h-40px rounded-circle"
                   alt="Profile"
                 />
@@ -714,7 +731,10 @@ const Header = () => {
               onMouseLeave={handleProfileDropdownLeave}
             >
               <img
-                src={blank}
+                src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                 className="w-40px h-40px rounded-circle cursor-pointer"
                 alt="Profile"
               />
@@ -791,7 +811,10 @@ const Header = () => {
               onMouseLeave={handleProfileDropdownLeave}
             >
               <img
-                src={blank}
+                src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                 className="w-40px h-40px rounded-circle cursor-pointer"
                 alt="Profile"
               />
@@ -864,7 +887,10 @@ const Header = () => {
               onMouseLeave={handleProfileDropdownLeave}
             >
               <img
-                src={blank}
+                src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                 className="w-40px h-40px rounded-circle cursor-pointer"
                 alt="Profile"
               />
@@ -937,7 +963,10 @@ const Header = () => {
               onMouseLeave={handleProfileDropdownLeave}
             >
               <img
-                src={blank}
+                src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                 className="w-40px h-40px rounded-circle cursor-pointer"
                 alt="Profile"
               />
@@ -1012,7 +1041,10 @@ const Header = () => {
               onMouseLeave={handleProfileDropdownLeave}
             >
               <img
-                src={blank}
+                src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                 className="w-40px h-40px rounded-circle cursor-pointer"
                 alt="Profile"
               />
@@ -1087,7 +1119,10 @@ const Header = () => {
               onMouseLeave={handleProfileDropdownLeave}
             >
               <img
-                src={blank}
+                src={getUserPicture(user)}
+              onError={(e) => {
+                e.target.src = blank;
+              }}
                 className="w-40px h-40px rounded-circle cursor-pointer"
                 alt="Profile"
               />
@@ -1176,7 +1211,14 @@ const Header = () => {
               onMouseLeave={handleProfileDropdownLeave}
             >
               <div className="cursor-pointer symbol symbol-35px symbol-md-40px profile-dropdown">
-                <img src={blank} alt="user" className="modern-profile-image" />
+                <img 
+                  src={getUserPicture(user)} 
+                  alt="user" 
+                  className="modern-profile-image"
+                  onError={(e) => {
+                    e.target.src = blank;
+                  }}
+                />
               </div>
               {showProfileDropdown && <ProfileDropdown />}
             </div>

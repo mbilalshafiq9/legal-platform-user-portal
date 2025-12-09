@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import notificationProfile from "../../assets/images/notification-profile.png";
-import circle from "../../assets/images/yellow-circle.png";
 import NoMessage from "../../assets/images/NoMessage.png";
 import NoLawyer from "../../assets/images/NoLawyer.png";
+import ApiService from "../../services/ApiService";
+import { toast } from "react-toastify";
 
 const formatMessageText = (text = "") => {
   const trimmed = text.trim();
@@ -48,303 +50,508 @@ const List = () => {
     };
   };
 
-  const [activeTab, setActiveTab] = useState(
-    loadFromLocalStorage("myLawyers_activeTab", "lawyers")
-  );
-  const [activeSubTab, setActiveSubTab] = useState(
-    loadFromLocalStorage("myLawyers_activeSubTab", "active")
-  );
-  const [selectedContact, setSelectedContact] = useState(
-    ensureAvatar(loadFromLocalStorage("myLawyers_selectedContact", null))
-  );
+  const navigate = useNavigate();
+  const messagesEndRef = useRef(null);
+  const [activeTab, setActiveTab] = useState("chats");
+  const [activeSubTab, setActiveSubTab] = useState("active");
+  const [selectedContact, setSelectedContact] = useState(null);
+  const [selectedChat, setSelectedChat] = useState(null);
   const [newMessage, setNewMessage] = useState("");
-  
-  // Load messages for selected contact or use default
-  const getMessagesForContact = (contactId) => {
-    const allMessages = loadFromLocalStorage("myLawyers_messages", {});
-    return allMessages[contactId] || [
-      {
-        id: 1,
-        text: "I will review the contract and get back to you with my analysis.",
-        time: "10:30 AM",
-        isFromUser: false,
-      },
-      {
-        id: 2,
-        text: "Thank you for the quick response. I'll wait for your feedback.",
-        time: "10:32 AM",
-        isFromUser: true,
-      },
-    ];
-  };
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileInputRef, setFileInputRef] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [chatContacts, setChatContacts] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [activeLawyers, setActiveLawyers] = useState([]);
+  const [inactiveLawyers, setInactiveLawyers] = useState([]);
+  const [loadingLawyers, setLoadingLawyers] = useState(false);
+  const [currentChatData, setCurrentChatData] = useState(null); // Store chat data with lawyer info
+  const [userPicture, setUserPicture] = useState(null); // Store current user picture
 
-  const [messages, setMessages] = useState(
-    selectedContact ? getMessagesForContact(selectedContact.id) : []
-  );
-
-  // Load lawyers and contacts from localStorage or use defaults
-  const [activeLawyers, setActiveLawyers] = useState(
-    ensureAvatar(
-      loadFromLocalStorage("myLawyers_activeLawyers", [
-    {
-      id: 1,
-      name: "Shamra Joseph",
-      title: "Corporate lawyer",
-      status: "Active",
-      avatar: notificationProfile,
-      specializations: "Criminal Law, Tax Law+",
-      renewalDate: "Renew 21 September",
-      price: "1.99 USD",
-      unreadCount: 0,
-    },
-    {
-      id: 2,
-      name: "Joseph Dan",
-      title: "Corporate lawyer",
-      status: "Active",
-      avatar: notificationProfile,
-      specializations: "Criminal Law, Tax Law+",
-      renewalDate: "Renew 21 September",
-      price: "1.99 USD",
-      unreadCount: 0,
-    },
-    {
-      id: 3,
-      name: "Dan Smith",
-      title: "Corporate lawyer",
-      status: "Active",
-      avatar: notificationProfile,
-      specializations: "Criminal Law, Tax Law+",
-      renewalDate: "Renew 21 September",
-      price: "1.99 USD",
-      unreadCount: 3,
-    },
-    {
-      id: 4,
-      name: "Sarah Mitchell",
-      title: "Family Law Attorney",
-      status: "Active",
-      avatar: notificationProfile,
-      specializations: "Family Law, Divorce Law+",
-      renewalDate: "Renew 15 October",
-      price: "2.25 USD",
-      unreadCount: 1,
-    },
-    {
-      id: 5,
-      name: "Robert Johnson",
-      title: "Real Estate Lawyer",
-      status: "Active",
-      avatar: notificationProfile,
-      specializations: "Real Estate Law, Property Law+",
-      renewalDate: "Renew 28 October",
-      price: "1.85 USD",
-      unreadCount: 0,
-    },
-      ])
-    )
-  );
-
-  const [inactiveLawyers, setInactiveLawyers] = useState(
-    ensureAvatar(
-      loadFromLocalStorage("myLawyers_inactiveLawyers", [
-    {
-      id: 7,
-      name: "David Brown",
-      title: "Tax Attorney",
-      status: "Inactive",
-      avatar: notificationProfile,
-      specializations: "Tax Law, Corporate Law+",
-      renewalDate: "Expired 15 October",
-      price: "2.50 USD",
-      unreadCount: 0,
-    },
-    {
-      id: 8,
-      name: "Lisa Davis",
-      title: "Real Estate Lawyer",
-      status: "Inactive",
-      avatar: notificationProfile,
-      specializations: "Real Estate Law, Property Law+",
-      renewalDate: "Expired 10 November",
-      price: "1.75 USD",
-      unreadCount: 1,
-    },
-    {
-      id: 9,
-      name: "John Smith",
-      title: "Criminal Defense",
-      status: "Inactive",
-      avatar: notificationProfile,
-      specializations: "Criminal Law, Defense Law+",
-      renewalDate: "Expired 5 December",
-      price: "3.00 USD",
-      unreadCount: 0,
-    },
-    {
-      id: 10,
-      name: "Maria Rodriguez",
-      title: "Immigration Lawyer",
-      status: "Inactive",
-      avatar: notificationProfile,
-      specializations: "Immigration Law, Visa Law+",
-      renewalDate: "Expired 20 November",
-      price: "2.75 USD",
-      unreadCount: 0,
-    },
-    {
-      id: 11,
-      name: "James Wilson",
-      title: "Personal Injury Attorney",
-      status: "Inactive",
-      avatar: notificationProfile,
-      specializations: "Personal Injury Law, Tort Law+",
-      renewalDate: "Expired 12 December",
-      price: "2.15 USD",
-      unreadCount: 2,
-    },
-      ])
-    )
-  );
-
-  const [chatContacts, setChatContacts] = useState(
-    ensureAvatar(
-      loadFromLocalStorage("myLawyers_chatContacts", [
-    {
-      id: 1,
-      name: "Emily Chen",
-      lastMessage:
-        "I've reviewed your case documents. Let's discuss the strategy.",
-      time: "2:30 PM",
-      unread: 2,
-      avatar: notificationProfile,
-    },
-    {
-      id: 2,
-      name: "Robert Martinez",
-      lastMessage: "The contract amendments are ready for your review.",
-      time: "1:15 PM",
-      unread: 0,
-      avatar: notificationProfile,
-    },
-    {
-      id: 3,
-      name: "Jennifer Lee",
-      lastMessage: "We need to schedule a consultation for next week.",
-      time: "11:45 AM",
-      unread: 1,
-      avatar: notificationProfile,
-    },
-    {
-      id: 4,
-      name: "Alex Thompson",
-      lastMessage: "I'll send you the updated legal brief by tomorrow.",
-      time: "10:20 AM",
-      unread: 0,
-      avatar: notificationProfile,
-    },
-    {
-      id: 5,
-      name: "Sarah Williams",
-      lastMessage: "The court hearing has been rescheduled to next Friday.",
-      time: "09:30 AM",
-      unread: 1,
-      avatar: notificationProfile,
-    },
-    {
-      id: 6,
-      name: "Michael Brown",
-      lastMessage: "I've prepared the settlement agreement for your review.",
-      time: "08:45 AM",
-      unread: 0,
-      avatar: notificationProfile,
-    },
-    {
-      id: 7,
-      name: "Lisa Garcia",
-      lastMessage: "The property documents are ready for signature.",
-      time: "08:15 AM",
-      unread: 2,
-      avatar: notificationProfile,
-    },
-    {
-      id: 8,
-      name: "David Wilson",
-      lastMessage: "We need to discuss the tax implications of this deal.",
-      time: "07:30 AM",
-      unread: 0,
-      avatar: notificationProfile,
-    },
-      ])
-    )
-  );
-
-  // Save state to localStorage whenever it changes
+  // Fetch user profile to get user picture
   useEffect(() => {
-    try {
-      localStorage.setItem("myLawyers_activeTab", JSON.stringify(activeTab));
-      localStorage.setItem("myLawyers_activeSubTab", JSON.stringify(activeSubTab));
-      localStorage.setItem("myLawyers_selectedContact", JSON.stringify(selectedContact));
-      localStorage.setItem("myLawyers_activeLawyers", JSON.stringify(activeLawyers));
-      localStorage.setItem("myLawyers_inactiveLawyers", JSON.stringify(inactiveLawyers));
-      localStorage.setItem("myLawyers_chatContacts", JSON.stringify(chatContacts));
-    } catch (error) {
-      console.error("Error saving myLawyers data to localStorage:", error);
-    }
-  }, [activeTab, activeSubTab, selectedContact, activeLawyers, inactiveLawyers, chatContacts]);
+    const fetchUserProfile = async () => {
+      try {
+        const response = await ApiService.request({
+          method: "GET",
+          url: "getProfile",
+        });
+        const data = response.data;
+        if (data.status && data.data && data.data.picture) {
+          setUserPicture(data.data.picture);
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      }
+    };
+    fetchUserProfile();
+  }, []);
 
-  // Load messages when contact is selected
+  // Fetch active and inactive lawyers from API
   useEffect(() => {
-    if (selectedContact) {
-      const contactMessages = getMessagesForContact(selectedContact.id);
-      setMessages(contactMessages);
-    } else {
-      setMessages([]);
-    }
-  }, [selectedContact]);
+    const fetchLawyers = async () => {
+      if (activeTab !== "lawyers") return;
+      
+      try {
+        setLoadingLawyers(true);
+        
+        // Fetch active lawyers
+        const activeResponse = await ApiService.request({
+          method: "GET",
+          url: "getMyServices",
+          data: { status: "active" }
+        });
+        
+        // Fetch inactive lawyers
+        const inactiveResponse = await ApiService.request({
+          method: "GET",
+          url: "getMyServices",
+          data: { status: "inactive" }
+        });
+        
+        // Transform active lawyers
+        if (activeResponse.data.status && activeResponse.data.data && activeResponse.data.data.items) {
+          const transformedActive = activeResponse.data.data.items.map((service) => {
+            const lawyer = service.lawyer || {};
+            const categories = lawyer.categories || [];
+            const subCategories = lawyer.sub_categories || [];
+            const allCategories = [...categories, ...subCategories];
+            const categoryNames = allCategories.map(cat => cat.name);
+            const specializations = categoryNames.length > 0 
+              ? categoryNames.slice(0, 2).join(", ") + (categoryNames.length > 2 ? "+" : "")
+              : "Lawyer";
+            
+            // Format renewal date
+            let renewalDate = "";
+            if (service.expiry_date) {
+              const expiryDate = new Date(service.expiry_date);
+              const now = new Date();
+              if (expiryDate > now) {
+                renewalDate = `Renew ${expiryDate.toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}`;
+              } else {
+                renewalDate = `Expired ${expiryDate.toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}`;
+              }
+            }
+            
+            return {
+              id: service.id,
+              lawyerId: lawyer.id,
+              name: lawyer.name || "Lawyer",
+              title: categories[0]?.name || subCategories[0]?.name || "Lawyer",
+              status: service.status || "Active",
+              avatar: lawyer.picture || notificationProfile,
+              specializations: specializations,
+              renewalDate: renewalDate,
+              price: service.pay_amount ? `$${service.pay_amount} USD` : "$0 USD",
+              unreadCount: service.chat_unread || 0,
+              rawData: service,
+            };
+          });
+          
+          setActiveLawyers(ensureAvatar(transformedActive));
+        } else {
+          setActiveLawyers([]);
+        }
+        
+        // Transform inactive lawyers
+        if (inactiveResponse.data.status && inactiveResponse.data.data && inactiveResponse.data.data.items) {
+          const transformedInactive = inactiveResponse.data.data.items.map((service) => {
+            const lawyer = service.lawyer || {};
+            const categories = lawyer.categories || [];
+            const subCategories = lawyer.sub_categories || [];
+            const allCategories = [...categories, ...subCategories];
+            const categoryNames = allCategories.map(cat => cat.name);
+            const specializations = categoryNames.length > 0 
+              ? categoryNames.slice(0, 2).join(", ") + (categoryNames.length > 2 ? "+" : "")
+              : "Lawyer";
+            
+            // Format renewal date
+            let renewalDate = "";
+            if (service.expiry_date) {
+              const expiryDate = new Date(service.expiry_date);
+              renewalDate = `Expired ${expiryDate.toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}`;
+            } else {
+              renewalDate = "Expired";
+            }
+            
+            return {
+              id: service.id,
+              lawyerId: lawyer.id,
+              name: lawyer.name || "Lawyer",
+              title: categories[0]?.name || subCategories[0]?.name || "Lawyer",
+              status: service.status || "Inactive",
+              avatar: lawyer.picture || notificationProfile,
+              specializations: specializations,
+              renewalDate: renewalDate,
+              price: service.pay_amount ? `$${service.pay_amount} USD` : "$0 USD",
+              unreadCount: service.chat_unread || 0,
+              rawData: service,
+            };
+          });
+          
+          setInactiveLawyers(ensureAvatar(transformedInactive));
+        } else {
+          setInactiveLawyers([]);
+        }
+      } catch (error) {
+        console.error("Error fetching lawyers:", error);
+        toast.error("Failed to load lawyers");
+        setActiveLawyers([]);
+        setInactiveLawyers([]);
+      } finally {
+        setLoadingLawyers(false);
+      }
+    };
+
+    fetchLawyers();
+  }, [activeTab, activeSubTab]);
+
+  // Fetch chats from API using getChats
+  useEffect(() => {
+    const fetchChats = async () => {
+      if (activeTab !== "chats") return;
+      
+      try {
+        setLoading(true);
+        
+        // Fetch both service and normal chats
+        const [serviceResponse, normalResponse] = await Promise.all([
+          ApiService.request({
+            method: "GET",
+            url: "getChats",
+            data: { type: "service" }
+          }),
+          ApiService.request({
+            method: "GET",
+            url: "getChats",
+            data: { type: "normal" }
+          })
+        ]);
+        
+        // Combine both types of chats
+        const allChats = [];
+        
+        if (serviceResponse.data.status && serviceResponse.data.data && serviceResponse.data.data.chats) {
+          allChats.push(...serviceResponse.data.data.chats);
+        }
+        
+        if (normalResponse.data.status && normalResponse.data.data && normalResponse.data.data.chats) {
+          allChats.push(...normalResponse.data.data.chats);
+        }
+        
+        if (allChats.length > 0) {
+          // Sort by latest message time
+          allChats.sort((a, b) => {
+            const timeA = a.latest_message_time ? new Date(a.latest_message_time).getTime() : 0;
+            const timeB = b.latest_message_time ? new Date(b.latest_message_time).getTime() : 0;
+            return timeB - timeA;
+          });
+          
+          // Transform API data to match component format
+          const transformedChats = allChats.map((chat) => {
+            const lawyer = chat.lawyer || {};
+            const lastMessageTime = chat.latest_message_time 
+              ? new Date(chat.latest_message_time).toLocaleTimeString('en-US', { 
+                  hour: '2-digit', 
+                  minute: '2-digit',
+                  hour12: true 
+                })
+              : "";
+            
+            return {
+              id: chat.id,
+              chatId: chat.id,
+              lawyerId: chat.lawyer_id,
+              name: lawyer.name || "Lawyer",
+              lastMessage: "", // Will be updated when we fetch messages
+              time: lastMessageTime,
+              unread: 0, // Will be updated when we fetch messages
+              avatar: lawyer.picture || notificationProfile,
+              userService: chat.user_service,
+              type: chat.type || "service",
+              rawData: chat,
+            };
+          });
+          
+          setChatContacts(transformedChats);
+        } else {
+          setChatContacts([]);
+        }
+      } catch (error) {
+        console.error("Error fetching chats:", error);
+        toast.error("Failed to load chats");
+        setChatContacts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChats();
+  }, [activeTab]);
+
+  // Fetch messages when chat is selected
+  useEffect(() => {
+    const fetchChatMessages = async () => {
+      if (!selectedChat) {
+        setMessages([]);
+        return;
+      }
+
+      try {
+        setLoadingMessages(true);
+        const response = await ApiService.request({
+          method: "GET",
+          url: "getChatMessages",
+          data: { chat_id: selectedChat.chatId }
+        });
+        
+        const data = response.data;
+        if (data.status && data.data) {
+          // Store chat data (includes lawyer info)
+          if (data.data.chat) {
+            setCurrentChatData(data.data.chat);
+          }
+          
+          // Transform API messages to match component format
+          let transformedMessages = [];
+          if (data.data.messages) {
+            transformedMessages = data.data.messages.map((msg) => {
+            const messageTime = msg.created_at 
+              ? new Date(msg.created_at).toLocaleTimeString('en-US', { 
+                  hour: '2-digit', 
+                  minute: '2-digit',
+                  hour12: true 
+                })
+              : "";
+            
+            return {
+              id: msg.id,
+              text: msg.message || "",
+              time: messageTime,
+              isFromUser: msg.sender === "user",
+              sender: msg.sender,
+              created_at: msg.created_at,
+                file: msg.file ? {
+                  name: msg.file,
+                  url: msg.file_url || (msg.file ? (() => {
+                    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+                    // Remove /api from base URL and add storage path
+                    const storageBaseUrl = baseUrl.replace('/api', '');
+                    return `${storageBaseUrl}/storage/uploads/${msg.file}`;
+                  })() : null),
+                  type: msg.file_type || 'doc',
+                } : null,
+              rawData: msg,
+            };
+          });
+          
+          setMessages(transformedMessages);
+          } else {
+            setMessages([]);
+          }
+          
+          // Update last message and unread count in chat contacts
+          if (transformedMessages.length > 0) {
+            const lastMsg = transformedMessages[0]; // Messages are ordered latest first
+            const unreadCount = transformedMessages.filter(msg => msg.sender === "lawyer" && !msg.is_read).length;
+            
+            setChatContacts(prev => prev.map(chat => 
+              chat.chatId === selectedChat.chatId
+                ? { 
+                    ...chat, 
+                    lastMessage: lastMsg.text, 
+                    time: lastMsg.time,
+                    unread: unreadCount
+                  }
+                : chat
+            ));
+          }
+          
+          // Mark messages as read
+          try {
+            await ApiService.request({
+              method: "POST",
+              url: "readChatMessages",
+              data: { chat_id: selectedChat.chatId }
+            });
+            
+            // Update unread count to 0 after marking as read
+            setChatContacts(prev => prev.map(chat => 
+              chat.chatId === selectedChat.chatId
+                ? { ...chat, unread: 0 }
+                : chat
+            ));
+          } catch (error) {
+            console.error("Error marking messages as read:", error);
+          }
+        } else {
+          setMessages([]);
+        }
+      } catch (error) {
+        console.error("Error fetching chat messages:", error);
+        toast.error("Failed to load messages");
+        setMessages([]);
+      } finally {
+        setLoadingMessages(false);
+      }
+    };
+
+    fetchChatMessages();
+  }, [selectedChat]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleContactSelect = (contact) => {
     setSelectedContact(contact);
-    const contactMessages = getMessagesForContact(contact.id);
-    setMessages(contactMessages);
+    setSelectedChat(contact);
   };
 
-  const handleSendMessage = () => {
-    if (newMessage.trim() && selectedContact) {
-      const currentTime = new Date().toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true 
-      });
+  // Helper function to get file type from extension
+  const getFileType = (fileName) => {
+    if (!fileName) return '';
+    const ext = fileName.split('.').pop().toLowerCase();
+    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+    const videoExts = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'];
+    const audioExts = ['mp3', 'wav', 'ogg', 'm4a', 'aac'];
+    
+    if (imageExts.includes(ext)) return 'image';
+    if (videoExts.includes(ext)) return 'video';
+    if (audioExts.includes(ext)) return 'audio';
+    return 'doc';
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef) {
+      fileInputRef.value = '';
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if ((!newMessage.trim() && !selectedFile) || !selectedChat) return;
+
+    const messageText = newMessage.trim();
+    setNewMessage("");
+    const fileToSend = selectedFile;
+    setSelectedFile(null);
+    if (fileInputRef) {
+      fileInputRef.value = '';
+    }
+    setSendingMessage(true);
+
+    // Optimistically add message to UI
+    const currentTime = new Date().toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
+    });
+    
+    const tempMsg = {
+      id: `temp-${Date.now()}`,
+      text: formatMessageText(messageText || (fileToSend ? `File: ${fileToSend.name}` : '')),
+      time: currentTime,
+      isFromUser: true,
+      sender: "user",
+      isPending: true,
+      file: fileToSend ? { name: fileToSend.name, type: getFileType(fileToSend.name) } : null,
+    };
+    
+    setMessages(prev => [...prev, tempMsg]);
+
+    try {
+      // Prepare FormData if file is present
+      let requestData;
+      let headers = {};
       
-      const newMsg = {
-        id: Date.now(),
-        text: formatMessageText(newMessage),
-        time: currentTime,
-        isFromUser: true,
-      };
-      
-      const updatedMessages = [...messages, newMsg];
-      setMessages(updatedMessages);
-      
-      // Save messages to localStorage for this contact
-      try {
-        const allMessages = loadFromLocalStorage("myLawyers_messages", {});
-        allMessages[selectedContact.id] = updatedMessages;
-        localStorage.setItem("myLawyers_messages", JSON.stringify(allMessages));
-        
-        // Update last message in chatContacts
-        const updatedContacts = chatContacts.map(contact => 
-          contact.id === selectedContact.id
-            ? { ...contact, lastMessage: newMsg.text, time: currentTime }
-            : contact
-        );
-        setChatContacts(updatedContacts);
-      } catch (error) {
-        console.error("Error saving message to localStorage:", error);
+      if (fileToSend) {
+        const formData = new FormData();
+        formData.append('chat_id', selectedChat.chatId);
+        if (messageText) {
+          formData.append('message', messageText);
+        }
+        formData.append('file', fileToSend);
+        formData.append('file_type', getFileType(fileToSend.name));
+        requestData = formData;
+        // Don't set Content-Type header - browser will set it automatically with boundary for FormData
+        headers = {};
+      } else {
+        requestData = {
+          chat_id: selectedChat.chatId,
+          message: messageText,
+        };
+        headers = {
+          'Content-Type': 'application/json',
+        };
       }
-      
-      setNewMessage("");
+
+      const response = await ApiService.request({
+        method: "POST",
+        url: "sendMessage",
+        data: requestData,
+        headers: headers,
+      });
+
+      const data = response.data;
+      if (data.status && data.data) {
+        // Replace temp message with actual message from API
+        const actualMsg = {
+          id: data.data.id,
+          text: formatMessageText(data.data.message || messageText || ''),
+          time: data.data.created_at 
+            ? new Date(data.data.created_at).toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+              })
+            : currentTime,
+          isFromUser: true,
+          sender: "user",
+          created_at: data.data.created_at,
+          file: data.data.file ? {
+            name: data.data.file,
+            url: data.data.file_url || data.data.file, // API might return full URL
+            type: data.data.file_type || 'doc',
+          } : null,
+          rawData: data.data,
+        };
+        
+        setMessages(prev => prev.map(msg => 
+          msg.id === tempMsg.id ? actualMsg : msg
+        ));
+        
+        // Update last message in chat contacts
+        setChatContacts(prev => prev.map(chat => 
+          chat.chatId === selectedChat.chatId
+            ? { ...chat, lastMessage: actualMsg.text, time: actualMsg.time }
+            : chat
+        ));
+      } else {
+        // Remove temp message on error
+        setMessages(prev => prev.filter(msg => msg.id !== tempMsg.id));
+        toast.error(data.message || "Failed to send message");
+        setNewMessage(messageText); // Restore message text
+      }
+    } catch (error) {
+      console.error("Error sending message:", error);
+      // Remove temp message on error
+      setMessages(prev => prev.filter(msg => msg.id !== tempMsg.id));
+      toast.error("Failed to send message. Please try again.");
+      setNewMessage(messageText); // Restore message text
+    } finally {
+      setSendingMessage(false);
     }
   };
 
@@ -485,11 +692,24 @@ const List = () => {
                       : "my-lawyers-contact-list"
                   }`}
                 >
-                  {getCurrentData().map((item, index) => (
+                  {(loading && activeTab === "chats") || (loadingLawyers && activeTab === "lawyers") ? (
+                    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "200px" }}>
+                      <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                    </div>
+                  ) : getCurrentData().length === 0 ? (
+                    <div className="d-flex justify-content-center align-items-center text-center p-4" style={{ minHeight: "200px" }}>
+                      <div>
+                        <p className="text-muted mb-0">No {activeTab === "chats" ? "chats" : "lawyers"} found</p>
+                      </div>
+                    </div>
+                  ) : (
+                  getCurrentData().map((item, index) => (
                     <div
-                      key={item.id}
+                      key={item.id || item.chatId}
                       className={`p-3 cursor-pointer mb-3 my-lawyers-contact-card ${
-                        selectedContact?.id === item.id
+                        selectedContact?.chatId === item.chatId || selectedContact?.id === item.id
                           ? "my-lawyers-contact-card-active"
                           : "bg-white"
                       }`}
@@ -590,7 +810,8 @@ const List = () => {
                         </div>
                       )}
                     </div>
-                  ))}
+                  ))
+                  )}
                 </div>
               </div>
             </div>
@@ -650,6 +871,13 @@ const List = () => {
                     data-aos="fade-left"
                     data-aos-delay="200"
                   >
+                    {loadingMessages ? (
+                      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "200px" }}>
+                        <div className="spinner-border text-primary" role="status">
+                          <span className="visually-hidden">Loading messages...</span>
+                        </div>
+                      </div>
+                    ) : (
                     <div className="d-flex flex-column gap-3">
                       {messages.map((message, index) => (
                         <div
@@ -670,9 +898,16 @@ const List = () => {
                             <div className="symbol symbol-30px mx-2">
                               <div className="symbol-label bg-black text-white rounded-circle">
                                 <img
-                                  src={circle}
-                                  alt="avatar"
+                                  src={
+                                    message.isFromUser
+                                      ? (userPicture || notificationProfile)
+                                      : (currentChatData?.lawyer?.picture || selectedContact?.avatar || notificationProfile)
+                                  }
+                                  alt={message.isFromUser ? "User" : "Lawyer"}
                                   className="rounded-circle my-lawyers-avatar-30"
+                                  onError={(e) => {
+                                    e.target.src = notificationProfile;
+                                  }}
                                 />
                               </div>
                             </div>
@@ -683,7 +918,31 @@ const List = () => {
                                   : "bg-white text-dark"
                               }`}
                             >
-                              <p className="mb-0">{message.text}</p>
+                              {message.text && <p className="mb-2">{message.text}</p>}
+                              {message.file && (
+                                <div className={`mb-2 ${message.isFromUser ? 'text-white' : 'text-dark'}`}>
+                                  <a
+                                    href={message.file.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`d-inline-flex align-items-center gap-2 p-2 rounded ${
+                                      message.isFromUser 
+                                        ? 'bg-dark border border-white-50 text-white' 
+                                        : 'bg-light text-dark'
+                                    }`}
+                                    style={{ textDecoration: 'none' }}
+                                  >
+                                    <i className={`bi ${
+                                      message.file.type === 'image' ? 'bi-image' :
+                                      message.file.type === 'video' ? 'bi-play-circle' :
+                                      message.file.type === 'audio' ? 'bi-music-note-beamed' :
+                                      'bi-file-earmark'
+                                    }`}></i>
+                                    <span className="small">{message.file.name}</span>
+                                    <i className="bi bi-download"></i>
+                                  </a>
+                                </div>
+                              )}
                               <small
                                 className={`${
                                   message.isFromUser
@@ -697,7 +956,9 @@ const List = () => {
                           </div>
                         </div>
                       ))}
+                      <div ref={messagesEndRef} />
                     </div>
+                    )}
                   </div>
 
                   {/* Message Input */}
@@ -706,8 +967,24 @@ const List = () => {
                     data-aos="fade-left"
                     data-aos-delay="300"
                   >
+                    {/* Selected File Display */}
+                    {selectedFile && (
+                      <div className="mb-2 p-2 bg-light rounded d-flex align-items-center justify-content-between">
+                        <div className="d-flex align-items-center gap-2">
+                          <i className="bi bi-file-earmark text-primary"></i>
+                          <span className="small text-dark">{selectedFile.name}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-link text-danger p-0"
+                          onClick={handleRemoveFile}
+                        >
+                          <i className="bi bi-x-circle"></i>
+                        </button>
+                      </div>
+                    )}
                     <div className="d-flex align-items-center gap-2 gap-lg-3">
-                      <div className="flex-fill">
+                      <div className="flex-fill position-relative">
                         <input
                           type="text"
                           className="form-control form-control-lg rounded-pill"
@@ -718,15 +995,35 @@ const List = () => {
                             e.key === "Enter" && handleSendMessage()
                           }
                         />
+                        <input
+                          type="file"
+                          ref={(el) => setFileInputRef(el)}
+                          onChange={handleFileSelect}
+                          className="d-none"
+                          id="file-input-chat"
+                          accept="*/*"
+                        />
                       </div>
-                      <button className="btn btn-sm d-none d-md-block">
+                      <button
+                        type="button"
+                        className="btn btn-sm d-none d-md-block"
+                        onClick={() => fileInputRef?.click()}
+                        title="Attach file"
+                      >
                         <i className="bi bi-paperclip"></i>
                       </button>
                       <button
                         className="btn btn-dark rounded-circle d-flex justify-content-center align-items-center my-lawyers-send-button"
                         onClick={handleSendMessage}
+                        disabled={sendingMessage || (!newMessage.trim() && !selectedFile)}
                       >
-                        <i className="bi bi-send-fill text-white"></i>
+                        {sendingMessage ? (
+                          <div className="spinner-border spinner-border-sm text-white" role="status">
+                            <span className="visually-hidden">Sending...</span>
+                          </div>
+                        ) : (
+                          <i className="bi bi-send-fill text-white"></i>
+                        )}
                       </button>
                     </div>
                   </div>

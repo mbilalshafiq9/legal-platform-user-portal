@@ -5,6 +5,7 @@ import lawyersImg from "../../assets/images/Lawyers.png";
 import NoLawyer from "../../assets/images/NoLawyer.png";
 import ApiService from "../../services/ApiService";
 import { toast } from "react-toastify";
+import PaymentModal from "../../components/PaymentModal";
 
 const List = () => {
   // Load data from localStorage
@@ -49,7 +50,9 @@ const List = () => {
     loadFromLocalStorage("lawyers_selectedLawyer", null)
   );
   const [lawyerDetails, setLawyerDetails] = useState(null);
+  const [myService, setMyService] = useState(null);
   const [loadingLawyerDetails, setLoadingLawyerDetails] = useState(false);
+  const [cancellingService, setCancellingService] = useState(false);
   const [imageLoadingStates, setImageLoadingStates] = useState({});
   const [currentSlideIndex, setCurrentSlideIndex] = useState(
     loadFromLocalStorage("lawyers_currentSlideIndex", 0)
@@ -58,12 +61,15 @@ const List = () => {
   const [pricingOptions, setPricingOptions] = useState([]);
   const [selectedPricingOption, setSelectedPricingOption] = useState(null);
   const [showPricingOptions, setShowPricingOptions] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   const handleLawyerClick = async (lawyer) => {
     setSelectedLawyer(lawyer);
     setShowLawyerDetail(true);
     setCurrentSlideIndex(0); // Reset slider to first image when opening
     setLawyerDetails(null); // Clear previous details
+    setMyService(null); // Clear previous service
     // Fetch detailed lawyer information
     const lawyerId = lawyer.id || lawyer.rawData?.id;
     if (lawyerId) {
@@ -85,6 +91,7 @@ const List = () => {
       const data = response.data;
       if (data.status && data.data) {
         setLawyerDetails(data.data);
+        setMyService(data.my_service || null);
         
         // Update pricing options based on API data
         const lawyer = data.data;
@@ -135,6 +142,44 @@ const List = () => {
       toast.error("Failed to load lawyer details");
     } finally {
       setLoadingLawyerDetails(false);
+    }
+  };
+
+  const handleCancelService = async () => {
+    if (!myService || !myService.id) {
+      toast.error("Service information not available");
+      return;
+    }
+
+    if (!window.confirm("Are you sure you want to cancel this subscription?")) {
+      return;
+    }
+
+    try {
+      setCancellingService(true);
+      const response = await ApiService.request({
+        method: "POST",
+        url: "cancelService",
+        data: { user_service_id: myService.id }
+      });
+
+      const data = response.data;
+      if (data.status && data.data) {
+        // Update myService with cancelled status
+        setMyService(prev => ({
+          ...prev,
+          status: 'Cancelled',
+          cancel_renewal: 1
+        }));
+        toast.success(data.message || "Service cancelled successfully");
+      } else {
+        toast.error(data.message || "Failed to cancel service");
+      }
+    } catch (error) {
+      console.error("Error cancelling service:", error);
+      toast.error("Failed to cancel service. Please try again.");
+    } finally {
+      setCancellingService(false);
     }
   };
 
@@ -710,6 +755,7 @@ const List = () => {
               onClick={() => {
                 setShowLawyerDetail(false);
                 setLawyerDetails(null);
+                setMyService(null);
                 setCurrentSlideIndex(0);
               }}
               aria-label="Close lawyer details"
@@ -728,6 +774,7 @@ const List = () => {
               onClick={() => {
                 setShowLawyerDetail(false);
                 setLawyerDetails(null);
+                setMyService(null);
                 setCurrentSlideIndex(0);
               }}
               aria-label="Close lawyer details"
@@ -741,7 +788,10 @@ const List = () => {
               <button
                 type="button"
                 className="btn-close"
-                onClick={() => setShowLawyerDetail(false)}
+                onClick={() => {
+                setShowLawyerDetail(false);
+                setMyService(null);
+              }}
               ></button>
             </div>
           </div> */}
@@ -1136,105 +1186,184 @@ const List = () => {
             </div>
             )}
             {/* Pricing and Action Section - Fixed at bottom */}
-            {pricingOptions.length > 0 && (
-            <div className="p-4" style={{ backgroundColor: "#000", borderBottomRightRadius: "15px", borderBottomLeftRadius: "15px" }}>
-              {/* Pricing and Dropdown in Same Row */}
-              <div className="d-flex align-items-center justify-content-between mb-4 p-3 rounded" style={{ backgroundColor: "#000" }}>
-                <p className="text-white fw-bold mb-0" style={{ fontSize: "1.5rem" }}>
-                  {pricingOptions.find((option) => option.value === selectedPricingOption)?.label || pricingOptions[0]?.label || ""}
-                </p>
-                {pricingOptions.length > 1 && (
-                <button
-                  onClick={() => setShowPricingOptions(!showPricingOptions)}
-                  className="btn d-flex align-items-center gap-2 text-white"
-                  style={{
-                    backgroundColor: "#000",
-                    border: "1px solid #333",
-                    borderRadius: "8px",
-                    padding: "8px 16px"
-                  }}
-                >
-                  <span>{pricingOptions.length} option{pricingOptions.length !== 1 ? 's' : ''}</span>
-                  <i className={`bi bi-chevron-${showPricingOptions ? 'up' : 'down'}`}></i>
-                </button>
-                )}
-              </div>
-
-              {/* Expanded Pricing Options */}
-              {showPricingOptions && pricingOptions.length > 1 && (
-                <div className="mb-4" style={{ transition: "all 0.3s ease" }}>
-                  {pricingOptions.map((option, index) => (
-                    <div
-                      key={option.value}
-                      onClick={() => {
-                        setSelectedPricingOption(option.value);
-                        setShowPricingOptions(false);
-                      }}
-                      className="d-flex align-items-center p-3 mb-2 rounded"
-                    style={{
-                        backgroundColor: selectedPricingOption === option.value ? "#007bff" : "#ffffff",
-                        border: selectedPricingOption === option.value ? "none" : "1px solid #e0e0e0",
-                        cursor: "pointer",
-                        transition: "all 0.2s ease"
-                      }}
-                    >
-                      <div
-                        className="rounded-circle d-flex align-items-center justify-content-center me-3"
-                        style={{
-                          width: "24px",
-                          height: "24px",
-                          backgroundColor: selectedPricingOption === option.value ? "#ffffff" : "transparent",
-                          border: selectedPricingOption === option.value ? "none" : "2px solid #ccc"
-                        }}
-                      >
-                        {selectedPricingOption === option.value && (
-                          <i className="bi bi-check" style={{ fontSize: "14px", fontWeight: "bold", color: "#007bff" }}></i>
-                        )}
-                      </div>
-                      <span
-                        style={{
-                          color: selectedPricingOption === option.value ? "#ffffff" : "#000000",
-                          fontWeight: selectedPricingOption === option.value ? "500" : "400"
-                        }}
-                      >
-                        {option.label}
-                      </span>
+            {myService ? (
+              // Show My Service Information
+              <div className="p-4" style={{ backgroundColor: "#000", borderBottomRightRadius: "15px", borderBottomLeftRadius: "15px" }}>
+                {myService.period === 'weekly' ? (
+                  // Weekly (One Time Service)
+                  <div>
+                    <div className="d-flex align-items-center justify-content-between">
+                        <p className="text-white fw-bold mb-1" style={{ fontSize: "1.5rem" }}>
+                          One Time Service
+                        </p>
+                        <span className="text-white fw-bold fs-2">
+                              ${myService.pay_amount || 0} USD
+                          </span>
                     </div>
-                  ))}
-                </div>
-              )}
+                      <div className="my-3">
+                          <span className="badge bg-white text-black px-3 py-2 rounded-pill fs-6">
+                            {myService.status || 'Active'}
+                          </span>
+                      </div>
+                    
+                  </div>
+                ) : myService.period === 'monthly' ? (
+                  // Monthly Subscription
+                  <div>
+                    <div className="mb-3">
+                      <div className="d-flex align-items-center justify-content-between gap-3">
+                        <p className="text-white fw-bold mb-1" style={{ fontSize: "1.5rem" }}>
+                          {myService.expiry_date 
+                            ? `Expires on ${new Date(myService.expiry_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}`
+                            : 'Monthly Service'}
+                        </p>
+                        <span className="text-white fw-bold fs-2">
+                            ${myService.pay_amount || 0} USD
+                        </span>
+                      </div>
 
-              {/* Action Buttons */}
-              <div className="d-flex gap-3 justify-content-center">
-                <button
-                  className="btn d-flex align-items-center justify-content-center rounded-pill"
-                  style={{ 
-                    height: "50px", 
-                    width: "180px", 
-                    backgroundColor: "#474747",
-                    border: "none",
-                    color: "#ffffff"
-                  }}
-                >
-                  <i className="bi bi-apple me-2 text-white" style={{ fontSize: "1.2rem" }}></i>
-                  <span>Apple</span>
-                </button>
-                <button
-                  className="btn rounded-pill fw-bold"
-                  style={{ 
-                    height: "50px", 
-                    width: "190px",
-                    backgroundColor: "#808080", 
-                    color: "#ffffff",
-                    border: "none",
-                    fontSize: "1rem"
-                  }}
-                >
-                  Get Service
-                </button>
+                        <div className="d-flex align-items-center justify-content-between gap-3 mt-2">
+                          <span className="badge bg-white text-black px-3 py-2 rounded-pill fs-6">
+                            {myService.cancel_renewal === 1 ? "Cancelled" :myService.status || 'Active'}
+                          </span>
+                          {myService.cancel_renewal === 0 &&
+                            <button
+                              className="btn rounded-pill fw-bold"
+                              style={{ 
+                                backgroundColor: "#dc3545", 
+                                color: "#ffffff",
+                                border: "none",
+                                fontSize: "1rem"
+                              }}
+                              onClick={handleCancelService}
+                              disabled={cancellingService || myService.status === 'Cancelled'}
+                            >
+                              {cancellingService ? (
+                                <>
+                                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                  Cancelling...
+                                </>
+                              ) : (
+                                'Cancel'
+                              )}
+                            </button>
+                          }
+                        </div>
+
+                    </div>
+                  </div>
+                ) : null}
               </div>
-            </div>
-            )}
+            ) : pricingOptions.length > 0 ? (
+              // Show Pricing Options if no service
+              <div className="p-4" style={{ backgroundColor: "#000", borderBottomRightRadius: "15px", borderBottomLeftRadius: "15px" }}>
+                {/* Pricing and Dropdown in Same Row */}
+                <div className="d-flex align-items-center justify-content-between mb-4 p-3 rounded" style={{ backgroundColor: "#000" }}>
+                  <p className="text-white fw-bold mb-0" style={{ fontSize: "1.5rem" }}>
+                    {pricingOptions.find((option) => option.value === selectedPricingOption)?.label || pricingOptions[0]?.label || ""}
+                  </p>
+                  {pricingOptions.length > 1 && (
+                  <button
+                    onClick={() => setShowPricingOptions(!showPricingOptions)}
+                    className="btn d-flex align-items-center gap-2 text-white"
+                    style={{
+                      backgroundColor: "#000",
+                      border: "1px solid #333",
+                      borderRadius: "8px",
+                      padding: "8px 16px"
+                    }}
+                  >
+                    <span>{pricingOptions.length} option{pricingOptions.length !== 1 ? 's' : ''}</span>
+                    <i className={`bi bi-chevron-${showPricingOptions ? 'up' : 'down'}`}></i>
+                  </button>
+                  )}
+                </div>
+
+                {/* Expanded Pricing Options */}
+                {showPricingOptions && pricingOptions.length > 1 && (
+                  <div className="mb-4" style={{ transition: "all 0.3s ease" }}>
+                    {pricingOptions.map((option, index) => (
+                      <div
+                        key={option.value}
+                        onClick={() => {
+                          setSelectedPricingOption(option.value);
+                          setShowPricingOptions(false);
+                        }}
+                        className="d-flex align-items-center p-3 mb-2 rounded"
+                      style={{
+                          backgroundColor: selectedPricingOption === option.value ? "#007bff" : "#ffffff",
+                          border: selectedPricingOption === option.value ? "none" : "1px solid #e0e0e0",
+                          cursor: "pointer",
+                          transition: "all 0.2s ease"
+                        }}
+                      >
+                        <div
+                          className="rounded-circle d-flex align-items-center justify-content-center me-3"
+                          style={{
+                            width: "24px",
+                            height: "24px",
+                            backgroundColor: selectedPricingOption === option.value ? "#ffffff" : "transparent",
+                            border: selectedPricingOption === option.value ? "none" : "2px solid #ccc"
+                          }}
+                        >
+                          {selectedPricingOption === option.value && (
+                            <i className="bi bi-check" style={{ fontSize: "14px", fontWeight: "bold", color: "#007bff" }}></i>
+                          )}
+                        </div>
+                        <span
+                          style={{
+                            color: selectedPricingOption === option.value ? "#ffffff" : "#000000",
+                            fontWeight: selectedPricingOption === option.value ? "500" : "400"
+                          }}
+                        >
+                          {option.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="d-flex gap-3 justify-content-center">
+                  <button
+                    className="btn d-flex align-items-center justify-content-center rounded-pill"
+                    style={{ 
+                      height: "50px", 
+                      width: "180px", 
+                      backgroundColor: "#474747",
+                      border: "none",
+                      color: "#ffffff"
+                    }}
+                  >
+                    <i className="bi bi-apple me-2 text-white" style={{ fontSize: "1.2rem" }}></i>
+                    <span>Apple</span>
+                  </button>
+                  <button
+                    className="btn rounded-pill fw-bold"
+                    style={{ 
+                      height: "50px", 
+                      width: "190px",
+                      backgroundColor: "#808080", 
+                      color: "#ffffff",
+                      border: "none",
+                      fontSize: "1rem"
+                    }}
+                    onClick={() => {
+                      if (!lawyerDetails) return;
+                      const selectedOption = pricingOptions.find(opt => opt.value === selectedPricingOption);
+                      if (!selectedOption) {
+                        toast.error("Please select a pricing option");
+                        return;
+                      }
+                      setShowPaymentModal(true);
+                    }}
+                    disabled={!lawyerDetails || pricingOptions.length === 0}
+                  >
+                    Get Service
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       )}
@@ -1311,6 +1440,72 @@ const List = () => {
         </div>,
         document.body
       )}
+
+      {/* Payment Modal */}
+      <PaymentModal
+        show={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        amount={(() => {
+          if (!lawyerDetails) return 0;
+          const selectedOption = pricingOptions.find(opt => opt.value === selectedPricingOption);
+          if (!selectedOption) return 0;
+          
+          if (selectedPricingOption === "monthly") {
+            return parseFloat(lawyerDetails.monthly_price || 0);
+          } else if (selectedPricingOption === "one-time") {
+            return parseFloat(lawyerDetails.weekly_price || lawyerDetails.consult_fee || 0);
+          }
+          return 0;
+        })()}
+        onSuccess={async (paymentResult) => {
+          try {
+            setProcessingPayment(true);
+            
+            // Determine period based on selected option
+            const period = selectedPricingOption === "monthly" ? "monthly" : "weekly";
+            
+            // Call buyService API
+            const response = await ApiService.request({
+              method: "POST",
+              url: "buyService",
+              data: {
+                lawyer_id: lawyerDetails.id || lawyerDetails.lawyer_id,
+                period: period,
+                transaction_id: paymentResult.paymentIntentId,
+              }
+            });
+
+            const data = response.data;
+            if (data.status) {
+              toast.success(data.message || "Service purchased successfully!");
+              setShowPaymentModal(false);
+              setShowLawyerDetail(false);
+              setMyService(null);
+              
+              // Refresh lawyer details or navigate
+              // You might want to refresh the lawyers list or navigate to chat
+              if (data.data && data.data.chat) {
+                // Optionally navigate to chat
+                // navigate(`/chat`);
+              }
+            } else {
+              toast.error(data.message || "Failed to purchase service");
+            }
+          } catch (error) {
+            console.error("Error purchasing service:", error);
+            toast.error("Failed to purchase service. Please try again.");
+          } finally {
+            setProcessingPayment(false);
+          }
+        }}
+        title="Purchase Service"
+        saveCard={true}
+        paymentType="service"
+        paymentData={{
+          lawyer_id: lawyerDetails?.id || lawyerDetails?.lawyer_id,
+          period: selectedPricingOption === "monthly" ? "monthly" : "weekly",
+        }}
+      />
     </div>
   );
 };

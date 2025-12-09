@@ -34,6 +34,11 @@ const ApiService = {
     if (method === 'GET' && data) {
       config.params = data;
     } else if (data) {
+      // If data is FormData, don't set Content-Type header (let browser set it with boundary)
+      if (data instanceof FormData) {
+        // Remove Content-Type from headers to let browser set it automatically
+        delete config.headers['Content-Type'];
+      }
       config.data = data;
     }
 

@@ -1,7 +1,7 @@
 import io from 'socket.io-client';
 
 // Get socket URL from environment variables
-const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://sky.devicebee.com:4000';
+const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://legalplatform.co:4000';
 
 // Socket connection options
 const socketOptions = {
@@ -11,7 +11,7 @@ const socketOptions = {
     reconnectionDelayMax: 5000,
     timeout: 20000,
     transports: ['websocket'],
-    path: '/WingStop/socket.io',
+    path: '/socket.io',
 };
 
 // Create socket instance
@@ -45,7 +45,6 @@ socket.on('reconnect_failed', () => {
 // Export socket instance and helper functions
 export default {
   socket,
-  
   // Helper function to subscribe to events
   subscribe(event, callback) {
     socket.on(event, callback);

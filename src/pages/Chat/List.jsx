@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import notificationProfile from "../../assets/images/notification-profile.png";
 import NoMessage from "../../assets/images/NoMessage.png";
 import ApiService from "../../services/ApiService";
 import { toast } from "react-toastify";
+import SocketService from "../../services/SocketService";
+import { Link } from "react-router-dom";
+
 
 const formatMessageText = (text = "") => {
   const trimmed = text.trim();
@@ -254,6 +257,12 @@ const List = () => {
             });
             
             setChatContacts(transformedChats);
+            
+            // Automatically select the first chat if none is selected
+            if (transformedChats.length > 0 && !selectedChat) {
+              setSelectedChat(transformedChats[0]);
+              setSelectedContact(transformedChats[0]);
+            }
           } else {
             setChatContacts([]);
           }
@@ -272,122 +281,185 @@ const List = () => {
     fetchChats();
   }, [activeTab]);
 
-  // Fetch messages when chat is selected
-  useEffect(() => {
-    const fetchChatMessages = async () => {
-      if (!selectedChat) {
-        setMessages([]);
+  // Fetch messages function
+  const fetchChatMessages = useCallback(async () => {
+    if (!selectedChat) {
+      setMessages([]);
+      return;
+    }
+
+    try {
+      setLoadingMessages(true);
+      
+      // Prepare request data based on chat type
+      let requestData = {};
+      
+      // If chatId exists, use it (for existing chats)
+      if (selectedChat.chatId) {
+        requestData.chat_id = selectedChat.chatId;
+      } 
+      // If userServiceId exists (from My Lawyers tab), use it for service chats
+      else if (selectedChat.userServiceId) {
+        requestData.user_service_id = selectedChat.userServiceId;
+      }
+      // Otherwise, use lawyer_id for normal chats
+      else if (selectedChat.lawyerId) {
+        requestData.lawyer_id = selectedChat.lawyerId;
+      }
+      // If none are available, show error
+      else {
+        toast.error("Unable to load chat. Missing chat information.");
+        setLoadingMessages(false);
         return;
       }
-
-      try {
-        setLoadingMessages(true);
-        
-        // Prepare request data based on chat type
-        let requestData = {};
-        
-        // If chatId exists, use it (for existing chats)
-        if (selectedChat.chatId) {
-          requestData.chat_id = selectedChat.chatId;
-        } 
-        // If userServiceId exists (from My Lawyers tab), use it for service chats
-        else if (selectedChat.userServiceId) {
-          requestData.user_service_id = selectedChat.userServiceId;
-        }
-        // Otherwise, use lawyer_id for normal chats
-        else if (selectedChat.lawyerId) {
-          requestData.lawyer_id = selectedChat.lawyerId;
-        }
-        // If none are available, show error
-        else {
-          toast.error("Unable to load chat. Missing chat information.");
-          setLoadingMessages(false);
-          return;
-        }
-        
-        const response = await ApiService.request({
-          method: "GET",
-          url: "getChatMessages",
-          data: requestData
+      
+      const response = await ApiService.request({
+        method: "GET",
+        url: "getChatMessages",
+        data: requestData
+      });
+      
+      const data = response.data;
+      if (data.status && data.data && data.data.messages) {
+        // Transform API messages to match component format
+        const transformedMessages = data.data.messages.map((msg) => {
+          const messageTime = msg.created_at 
+            ? new Date(msg.created_at).toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+              })
+            : "";
+          
+          return {
+            id: msg.id,
+            text: msg.message || "",
+            time: messageTime,
+            isFromUser: msg.sender === "user",
+            sender: msg.sender,
+            created_at: msg.created_at,
+            file: msg.file || null,
+            file_type: msg.file_type || null,
+            file_name: msg.file ? msg.file.split('/').pop() : null,
+            rawData: msg,
+          };
         });
         
-        const data = response.data;
-        if (data.status && data.data && data.data.messages) {
-          // Transform API messages to match component format
-          const transformedMessages = data.data.messages.map((msg) => {
-            const messageTime = msg.created_at 
-              ? new Date(msg.created_at).toLocaleTimeString('en-US', { 
-                  hour: '2-digit', 
-                  minute: '2-digit',
-                  hour12: true 
-                })
-              : "";
-            
-            return {
-              id: msg.id,
-              text: msg.message || "",
-              time: messageTime,
-              isFromUser: msg.sender === "user",
-              sender: msg.sender,
-              created_at: msg.created_at,
-              file: msg.file || null,
-              file_type: msg.file_type || null,
-              file_name: msg.file ? msg.file.split('/').pop() : null,
-              rawData: msg,
-            };
+        // Reverse messages to show oldest first (API returns latest first)
+        const reversedMessages = transformedMessages.reverse();
+        setMessages(reversedMessages);
+        
+        // Update last message and unread count in chat contacts
+        if (reversedMessages.length > 0) {
+          const lastMsg = reversedMessages[reversedMessages.length - 1];
+          const unreadCount = transformedMessages.filter(msg => msg.sender === "lawyer" && !msg.is_read).length;
+          
+          setChatContacts(prev => prev.map(chat => 
+            chat.chatId === selectedChat.chatId
+              ? { 
+                  ...chat, 
+                  lastMessage: lastMsg.text, 
+                  time: lastMsg.time,
+                  unread: unreadCount
+                }
+              : chat
+          ));
+        }
+        
+        // Mark messages as read
+        try {
+          await ApiService.request({
+            method: "POST",
+            url: "readChatMessages",
+            data: { chat_id: selectedChat.chatId }
           });
           
-          // Reverse messages to show oldest first (API returns latest first)
-          const reversedMessages = transformedMessages.reverse();
-          setMessages(reversedMessages);
-          
-          // Update last message and unread count in chat contacts
-          if (reversedMessages.length > 0) {
-            const lastMsg = reversedMessages[reversedMessages.length - 1];
-            const unreadCount = transformedMessages.filter(msg => msg.sender === "lawyer" && !msg.is_read).length;
-            
-            setChatContacts(prev => prev.map(chat => 
-              chat.chatId === selectedChat.chatId
-                ? { 
-                    ...chat, 
-                    lastMessage: lastMsg.text, 
-                    time: lastMsg.time,
-                    unread: unreadCount
-                  }
-                : chat
-            ));
-          }
-          
-          // Mark messages as read
-          try {
-            await ApiService.request({
-              method: "POST",
-              url: "readChatMessages",
-              data: { chat_id: selectedChat.chatId }
-            });
-            
-            // Update unread count to 0 after marking as read
-            setChatContacts(prev => prev.map(chat => 
-              chat.chatId === selectedChat.chatId
-                ? { ...chat, unread: 0 }
-                : chat
-            ));
-          } catch (error) {
-            console.error("Error marking messages as read:", error);
-          }
-        } else {
-          setMessages([]);
+          // Update unread count to 0 after marking as read
+          setChatContacts(prev => prev.map(chat => 
+            chat.chatId === selectedChat.chatId
+              ? { ...chat, unread: 0 }
+              : chat
+          ));
+        } catch (error) {
+          console.error("Error marking messages as read:", error);
         }
-      } catch (error) {
-        console.error("Error fetching chat messages:", error);
-        toast.error("Failed to load messages");
+      } else {
         setMessages([]);
-      } finally {
-        setLoadingMessages(false);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching chat messages:", error);
+      toast.error("Failed to load messages");
+      setMessages([]);
+    } finally {
+      setLoadingMessages(false);
+    }
+  }, [selectedChat]);
 
+  // Fetch messages when chat is selected
+  useEffect(() => {
     fetchChatMessages();
+  }, [fetchChatMessages]);
+
+  // Socket listener for new messages
+  useEffect(() => {
+    const unsubscribe = SocketService.subscribe("receive-message", (data) => {
+      console.log("New message received via socket:", data);
+      
+      if (!selectedChat) return;
+
+      // Transform the new message
+      const messageTime = data.created_at 
+        ? new Date(data.created_at).toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: true 
+          })
+        : new Date().toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: true 
+          });
+
+      const newMessage = {
+        id: data.id || Date.now(),
+        text: data.message || "",
+        time: messageTime,
+        isFromUser: data.sender === "user",
+        sender: data.sender,
+        created_at: data.created_at || new Date().toISOString(),
+        file: data.file || null,
+        file_type: data.file_type || null,
+        file_name: data.file ? data.file.split('/').pop() : null,
+        rawData: data,
+      };
+
+      // Append to messages
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
+      
+      // Update last message in sidebar
+      setChatContacts(prev => prev.map(chat => 
+        chat.chatId === selectedChat.chatId
+          ? { 
+              ...chat, 
+              lastMessage: newMessage.text, 
+              time: newMessage.time,
+              unread: 0
+            }
+          : chat
+      ));
+      
+      // Mark as read
+      try {
+        ApiService.request({
+          method: "POST",
+          url: "readChatMessages",
+          data: { chat_id: selectedChat.chatId }
+        });
+      } catch (error) {
+        console.error("Error marking message as read:", error);
+      }
+    });
+    return unsubscribe;
   }, [selectedChat]);
 
   // Scroll to bottom when messages change or when loading completes
@@ -537,6 +609,8 @@ const List = () => {
 
       const data = response.data;
       if (data.status && data.data) {
+        // console.log(selectedChat);
+        SocketService.emit('send-message', data.data, selectedChat?.rawData?.chat);
         // Replace temp message with actual message from API
         const actualMsg = {
           id: data.data.id,
@@ -888,40 +962,43 @@ const List = () => {
                   {/* Conversation Header */}
                   <div className="p-4 bg-white my-lawyers-conversation-header">
                     <div className="d-flex justify-content-between align-items-center">
-                      <div className="d-flex align-items-center">
-                        {/* Mobile Back Button */}
-                        <button 
-                          className="btn btn-sm d-lg-none me-3"
-                          onClick={() => setSelectedContact(null)}
-                        >
-                          <i className="bi bi-arrow-left"></i>
-                        </button>
-                        <div className="symbol symbol-40px me-3">
-                          <img
-                            src={selectedContact.avatar}
-                            alt={selectedContact.name}
-                            className="rounded-circle my-lawyers-avatar-40"
-                          />
+                      <Link to={`/lawyers?id=${selectedContact.lawyerId}`} className="text-decoration-none">
+                        <div className="d-flex align-items-center">
+                          {/* Mobile Back Button */}
+                          <button 
+                            className="btn btn-sm d-lg-none me-3"
+                            onClick={() => setSelectedContact(null)}
+                          >
+                            <i className="bi bi-arrow-left"></i>
+                          </button>
+                          <div className="symbol symbol-40px me-3">
+                            <img
+                              src={selectedContact.avatar}
+                              alt={selectedContact.name}
+                              className="rounded-circle my-lawyers-avatar-40"
+                            />
+                          </div>
+                          <div>
+                            <h6 className="mb-0 fw-bold text-dark">
+                              {selectedContact.name}
+                            </h6>
+                            <small className="text-muted">
+                              {activeTab === "chats"
+                                ? "Lawyer"
+                                : `${selectedContact.title || "Lawyer"}`}
+                            </small>
+                          </div>
                         </div>
-                        <div>
-                          <h6 className="mb-0 fw-bold text-dark">
-                            {selectedContact.name}
-                          </h6>
-                          <small className="text-muted">
-                            {activeTab === "chats"
-                              ? "Lawyer"
-                              : `${selectedContact.title || "Lawyer"}`}
-                          </small>
-                        </div>
-                      </div>
-                      <div className="d-flex gap-2">
+                      </Link>
+                      {/* <div className="d-flex gap-2">
                         <button className="btn btn-sm">
                           <i className="bi bi-search"></i>
                         </button>
                         <button className="btn btn-sm">
                           <i className="bi bi-three-dots-vertical"></i>
                         </button>
-                      </div>
+                      </div> */}
+
                     </div>
                   </div>
 
@@ -952,10 +1029,10 @@ const List = () => {
                               message.isFromUser ? "flex-row-reverse" : ""
                             }`}
                           >
-                            <div className="symbol symbol-30px me-2">
+                            <div className="symbol symbol-30px mx-2">
                               <div className="symbol-label bg-black text-white rounded-circle">
                                 <img
-                                  src={message.isFromUser ? userProfile.picture : selectedContact.avatar || notificationProfile}
+                                  src={message.isFromUser ? userProfile?.picture : selectedContact.avatar || notificationProfile}
                                   alt="avatar"
                                   className="rounded-circle my-lawyers-avatar-30"
                                 />
@@ -1119,7 +1196,7 @@ const List = () => {
                         <i className="bi bi-paperclip"></i>
                       </button>
                       <button
-                        className="btn rounded-circle d-flex justify-content-center align-items-center my-lawyers-send-button"
+                        className="btn rounded-circle btn-dark text-center my-lawyers-send-button p-1"
                         onClick={handleSendMessage}
                         disabled={sendingMessage || (!newMessage.trim() && !selectedFile)}
                       >
@@ -1128,7 +1205,7 @@ const List = () => {
                             <span className="visually-hidden">Sending...</span>
                           </div>
                         ) : (
-                          <i className="bi bi-send-fill text-white"></i>
+                          <i className="bi bi-send text-white"></i>
                         )}
                       </button>
                     </div>

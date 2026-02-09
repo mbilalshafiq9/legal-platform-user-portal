@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import moment from "moment";
 import { NavLink } from "react-router-dom";
 import LogoutModal from "./LogoutModal";
+import SocketService from "../services/SocketService";
 import { motion, AnimatePresence } from "framer-motion";
 import "../assets/css/profile-dropdown.css";
 import "../assets/css/dark-mode.css";
@@ -170,6 +171,10 @@ const Header = () => {
   };
 
   useEffect(() => {
+    if(!SocketService.isConnected()){
+      SocketService.emit('user-connected',user);
+    }
+    // SocketService.SocketService();
     if(!user){
       navigate("/login");
     } else {

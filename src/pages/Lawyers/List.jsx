@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 import notificationProfile from "../../assets/images/lawyerImg.png";
 import lawyersImg from "../../assets/images/Lawyers.png";
@@ -8,6 +9,7 @@ import { toast } from "react-toastify";
 import PaymentModal from "../../components/PaymentModal";
 
 const List = () => {
+  const location = useLocation();
   // Load data from localStorage
   const loadFromLocalStorage = (key, defaultValue) => {
     try {
@@ -133,6 +135,7 @@ const List = () => {
         
         // Reset slide index when new lawyer details are loaded
         setCurrentSlideIndex(0);
+        return data.data;
       } else {
         console.error("Failed to fetch lawyer details:", data.message);
         toast.error(data.message || "Failed to load lawyer details");
@@ -143,7 +146,36 @@ const List = () => {
     } finally {
       setLoadingLawyerDetails(false);
     }
+    return null;
   };
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const id = searchParams.get("id");
+    if (id) {
+      const loadDetails = async () => {
+        const details = await fetchLawyerDetails(id);
+        if (details) {
+          // Construct a minimal selectedLawyer object to satisfy rendering conditions
+          const lawyer = {
+            id: details.id,
+            type: details.company_id ? "Company" : "Individual",
+            name: details.name || "",
+            firmName: details.company_name || details.name || "",
+            title: details.title || "Legal Expert",
+            rating: parseFloat(details.rating) || 0,
+            location: `${details.city || ""}${details.city && details.country ? ", " : ""}${details.country || ""}`.trim() || "Location not available",
+            image: details.picture || lawyersImg,
+            specialization: "", 
+            rawData: details
+          };
+          setSelectedLawyer(lawyer);
+          setShowLawyerDetail(true);
+        }
+      };
+      loadDetails();
+    }
+  }, [location.search]);
 
   const handleCancelService = async () => {
     if (!myService || !myService.id) {
